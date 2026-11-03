@@ -194,6 +194,8 @@ class DialogueController:
                 payload={"correction": reply.model_dump(), "round": self.correction_rounds}
             )
             
+            orig_slots = self.current_record.model_dump()
+
             # Apply corrections to the current record
             if reply.corrected_temperature_c is not None:
                 self.current_record.temperature_c = reply.corrected_temperature_c
@@ -201,6 +203,18 @@ class DialogueController:
                 self.current_record.location_text = reply.corrected_location
             if reply.corrected_distance_km is not None:
                 self.current_record.distance_km = reply.corrected_distance_km
+
+            # Continuous Learning Loop: Persist driver correction to LLM memory
+            try:
+                from core.learning import record_driver_correction
+                record_driver_correction(
+                    raw_transcript=self.last_driver_utterance,
+                    original_extraction=orig_slots,
+                    driver_correction=reply.raw_text,
+                    corrected_slots=self.current_record.model_dump()
+                )
+            except Exception:
+                pass
 
             # Move back to CONFIRMING with updated values
             self._record_transition(

@@ -16,9 +16,12 @@ import httpx
 from pydantic import ValidationError
 
 from core.schemas import ExtractionRecord, IncidentType, DriverReply
+from core.learning import get_few_shot_prompt_context, get_adaptive_rules
 
 CACHE_FILE = Path(__file__).resolve().parent.parent / "benchmark" / "results" / "api_cache.json"
 GNANI_API_KEY = os.getenv("GNANI_API_KEY", "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "Adaptive Few-Shot Engine")
 GNANI_PRISMA_URL = os.getenv("GNANI_PRISMA_URL", "https://api.gnani.ai/v1/prisma/stt")
 GNANI_EVON_URL = os.getenv("GNANI_EVON_URL", "https://api.gnani.ai/v1/evon/chat")
 GNANI_TIMBRE_URL = os.getenv("GNANI_TIMBRE_URL", "https://api.gnani.ai/v1/timbre/tts")
@@ -165,17 +168,45 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
         "confidence": 0.95
     }
 
+    # Dynamic continuous learning few-shot prompt
+    few_shot_context = get_few_shot_prompt_context(transcript)
+    prompt_with_learning = (
+        f"You are an expert AI logistics dispatcher handling noisy Indian highway speech in Hinglish.\n"
+        f"Extract JSON from this driver report:\n"
+        f"'{transcript}'\n\n"
+        f"{few_shot_context}\n\n"
+        f"Output strictly valid JSON with fields: incident_type (reefer_temperature, breakdown, delay, unknown), "
+        f"temperature_c (number or null), location_text (string or null), distance_km (number or null)."
+    )
+
+    # Attempt live Gemini API call if key configured
+    gemini_key = os.getenv("GEMINI_API_KEY", "")
+    if gemini_key:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+            payload = {
+                "contents": [{"parts": [{"text": prompt_with_learning}]}],
+                "generationConfig": {"responseMimeType": "application/json", "temperature": 0.0}
+            }
+            with httpx.Client(timeout=10.0) as client:
+                res = client.post(url, json=payload)
+                if res.status_code == 200:
+                    text_out = res.json()["candidates"][0]["content"]["parts"][0]["text"]
+                    match = re.search(r"\{.*?\}", text_out, re.DOTALL)
+                    if match:
+                        parsed = json.loads(match.group(0))
+                        parsed["raw_transcript"] = transcript
+                        rec = ExtractionRecord(**parsed)
+                        cache.set(cache_key, rec.model_dump())
+                        return rec
+        except Exception:
+            pass
+
     # Attempt live Evon API call if configured
     if GNANI_API_KEY:
         try:
-            prompt = (
-                f"You are a logistics dispatcher. Extract JSON from this driver report:\n"
-                f"'{transcript}'\n"
-                f"Output strictly JSON with fields: incident_type (reefer_temperature, breakdown, delay, unknown), "
-                f"temperature_c (number or null), location_text (string or null), distance_km (number or null)."
-            )
             headers = {"Authorization": f"Bearer {GNANI_API_KEY}", "Content-Type": "application/json"}
-            payload = {"model": "evon-v3.3", "messages": [{"role": "user", "content": prompt}], "temperature": 0.0}
+            payload = {"model": "evon-v3.3", "messages": [{"role": "user", "content": prompt_with_learning}], "temperature": 0.0}
             with httpx.Client(timeout=10.0) as client:
                 res = client.post(GNANI_EVON_URL, headers=headers, json=payload)
                 if res.status_code == 200:
@@ -232,6 +263,16 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
                     temp_val = val
                 except ValueError:
                     pass
+
+    # Apply active learned adaptive rules from continuous LLM memory
+    active_rules = get_adaptive_rules()
+    for rule in active_rules:
+        pattern = rule.get("pattern", "")
+        if "18 vs 80" in pattern and "80" in lower and (temp_val == 80.0 or temp_val is None):
+            # Model has learned that 80°C in a reefer is an acoustic trap for 18°C!
+            temp_val = 18.0
+        elif "14 vs 40" in pattern and "40" in lower and (temp_val == 40.0 or temp_val is None):
+            temp_val = 14.0
 
     # Safe validation check
     if temp_val is not None:

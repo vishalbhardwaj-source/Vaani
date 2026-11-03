@@ -152,6 +152,41 @@ def test_retry_threshold_escalates_to_human_dispatcher():
     assert controller.last_action_result is None  # Dispatch NEVER ran
 
 
+def test_continuous_learning_records_driver_correction():
+    """Verify that driver corrections are persisted into the continuous learning memory store."""
+    from core.learning import get_learned_corrections, get_adaptive_rules
+
+    controller = DialogueController(vehicle_id="HR-55-TC-1102")
+    controller.receive_driver_utterance("Reefer 18 degree toll plaza")
+
+    # Erroneous extraction (e.g. 28 instead of 18)
+    err_rec = ExtractionRecord(
+        incident_type=IncidentType.REEFER_TEMPERATURE,
+        temperature_c=28.0,
+        location_text="Toll Plaza"
+    )
+    controller.process_extraction(err_rec)
+
+    # Driver corrects
+    reply = DriverReply(
+        intent="CORRECT",
+        corrected_temperature_c=18.0,
+        raw_text="nahi 28 nahi 18 degree hai"
+    )
+    controller.handle_confirmation_reply(reply)
+
+    # Check learning store
+    corrections = get_learned_corrections(limit=5)
+    assert len(corrections) > 0
+    assert any("18" in str(c["corrected_slots"]) for c in corrections)
+    
+    # Check adaptive rules updated
+    rules = get_adaptive_rules()
+    assert len(rules) > 0
+    pattern_names = [r["pattern"] for r in rules]
+    assert any("18 vs 28" in p or "18 vs 80" in p for p in pattern_names)
+
+
 def test_pydantic_schema_validation():
     """Verify Pydantic prevents invalid temperatures or distances."""
     with pytest.raises(ValidationError):
