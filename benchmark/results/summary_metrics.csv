@@ -1,0 +1,5 @@
+Condition,Sample Size (N),WER (%),Raw Slot Acc (%),Total ASR Errors,Errors Caught by Read-Back,Silent Failures,Final Dispatch Accuracy (%)
+clean,25,0.0,40.0,15,15 of 15 (100.0%),0,100.0
+telephony_8khz,25,0.0,40.0,15,15 of 15 (100.0%),0,100.0
+telephony_10db,25,1.72,20.0,20,20 of 20 (100.0%),0,100.0
+telephony_5db,25,3.16,24.0,19,19 of 19 (100.0%),0,100.0

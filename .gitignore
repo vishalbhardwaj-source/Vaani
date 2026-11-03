@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.streamlit/
+*.mp3
+!benchmark/audio/*.wav
+benchmark/audio/tts_cache/

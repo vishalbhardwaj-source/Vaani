@@ -1,0 +1,26 @@
+id,utterance,incident_type,true_temperature_c,true_location,true_distance_km,acoustic_trap
+utt_01,"Bhaiya reefer ka temperature 18 degree ho gaya hai toll plaza se 42 km aage",reefer_temperature,18,Toll Plaza,42,18 vs 80 ambiguity
+utt_02,"Sir gaadi ka temperature 80 degree nahi 18 degree hai Panipat toll ke paas",reefer_temperature,18,Panipat Toll,None,Direct distinction of 18 and 80
+utt_03,"Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle",reefer_temperature,-14,Murthal Dhaba,10,Negative temperature and 14 vs 40
+utt_04,"Reefer warning aayi hai 40 degree show kar raha hai Bilaspur Chowk pe",reefer_temperature,40,Bilaspur Chowk,None,40 vs 14 acoustic trap
+utt_05,"Cabin me beep ho rahi hai minus 20 degree ho gaya Kundli Border se 15 km",reefer_temperature,-20,Kundli Border,15,Sub-zero deep freeze
+utt_06,"Sir breakdown ho gaya hai engine dhuan de raha hai Karnal Toll se 8 km aage",breakdown,None,Karnal Toll,8,Mechanical breakdown with distance
+utt_07,"Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas",reefer_temperature,15,Shahbad,None,Chiller failure
+utt_08,"Bhaiya 14 degree ho gaya hai dairy consignment ka Dharuhera flyover pe",reefer_temperature,14,Dharuhera,None,Perishable dairy critical 14C
+utt_09,"Reefer temp 22 degree chala gaya hai Shambhu Border se 25 km pehle",reefer_temperature,22,Shambhu Border,25,Highway border checkpoint
+utt_10,"Compressor trip ho gaya hai temperature 4 degree se 12 degree ho gaya Ambala Cantt",reefer_temperature,12,Ambala Cantt,None,Temperature jump
+utt_11,"Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km",breakdown,None,Vadodara Bypass,30,Puncture and breakdown
+utt_12,"Emergency hai ice cream melt ho rahi hai temp minus 8 degree ho gaya Jaipur Highway",reefer_temperature,-8,Jaipur Highway,None,Sub-zero thawing
+utt_13,"Temperature 28 degree ho gaya hai Gurugram Toll se 16 km pe",reefer_temperature,28,Gurugram Toll,16,28 vs 18 confusion
+utt_14,"Bhaiya reefer ka sensor minus 22 degree ki jagah minus 2 degree dikha raha hai Sonipat",reefer_temperature,-2,Sonipat,None,Minus polarity error
+utt_15,"Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68",breakdown,None,Mumbai Pune Expressway,68,Major expressway milestone
+utt_16,"Temp badh ke 16 degree ho gaya hai Bawal Industrial Area ke samne",reefer_temperature,16,Bawal,None,Industrial belt location
+utt_17,"Temperature 30 degree cross kar gaya reefer unit fail ho gayi Neemrana se 5 km",reefer_temperature,30,Neemrana,5,Extreme heat alert
+utt_18,"Bhaiya reefer temperature 13 degree hai aur diesel leak ho raha hai Manesar",reefer_temperature,13,Manesar,None,Leakage plus temp alert
+utt_19,"Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage",reefer_temperature,19,Ghaziabad Border,12,19 vs 90 phonetic similarity
+utt_20,"Gaadi heat ho gayi engine band ho gaya NH 44 Milepost 94 pe",breakdown,None,NH 44 Milepost 94,None,Highway milestone
+utt_21,"Reefer cooling drop ho gayi temp minus 16 degree se minus 6 ho gaya Panipat",reefer_temperature,-6,Panipat,None,Negative temperature drift
+utt_22,"Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km",reefer_temperature,25,Rewari Bypass,18,Distance is 18 while temp is 25
+utt_23,"Reefer alarm baj raha hai temperature 17 degree ho gaya Mathura Toll Plaza",reefer_temperature,17,Mathura Toll Plaza,None,Toll plaza acoustic echo
+utt_24,"Bhaiya fan belt toot gayi hai temperature 21 degree Agra Expressway km 110",reefer_temperature,21,Agra Expressway,110,Three-digit milestone km
+utt_25,"Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway",reefer_temperature,18,KMP Expressway,None,Rapid thermal spike

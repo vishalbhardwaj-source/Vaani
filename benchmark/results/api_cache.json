@@ -1,0 +1,942 @@
+{
+  "prisma_3debd14146257c75": {
+    "transcript": "Bhaiya reefer ka temperature 18 degree ho gaya hai toll plaza se 42 km aage",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_7508ea678d0273fb": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 18.0,
+    "location_text": "Toll Plaza",
+    "distance_km": 42.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer ka temperature 18 degree ho gaya hai toll plaza se 42 km aage",
+    "confidence": 0.95
+  },
+  "prisma_8630411fc539cda0": {
+    "transcript": "Bhaiya reefer ka temperature 18 degree ho gaya hai toll plaza se 42 km aage",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_364fc7f7797d7685": {
+    "transcript": "Bhaiya reefer ka temperature 80 degree ho gaya hai toll plaza se 42 km aage",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_5d1028f8e618a5c9": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Toll Plaza",
+    "distance_km": 42.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer ka temperature 80 degree ho gaya hai toll plaza se 42 km aage",
+    "confidence": 0.95
+  },
+  "prisma_a79a801d8d497207": {
+    "transcript": "Bhaiya reefer ka temperature 28 degree ho gaya hai toll plaza se 42 km aage",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_452a3daf0c71c89b": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 28.0,
+    "location_text": "Toll Plaza",
+    "distance_km": 42.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer ka temperature 28 degree ho gaya hai toll plaza se 42 km aage",
+    "confidence": 0.95
+  },
+  "prisma_b6df18cdfc95ed4e": {
+    "transcript": "Sir gaadi ka temperature 80 degree nahi 18 degree hai Panipat toll ke paas",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_24cc05778a52da67": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 18.0,
+    "location_text": "Panipat Toll",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir gaadi ka temperature 80 degree nahi 18 degree hai Panipat toll ke paas",
+    "confidence": 0.95
+  },
+  "prisma_78b3f93e6b018abc": {
+    "transcript": "Sir gaadi ka temperature 80 degree nahi 18 degree hai Panipat toll ke paas",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_c272a645266c9dc2": {
+    "transcript": "Sir gaadi ka temperature 80 degree nahi 80 degree hai Panipat toll ke paas",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_ab3da50bd78651ed": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Panipat Toll",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir gaadi ka temperature 80 degree nahi 80 degree hai Panipat toll ke paas",
+    "confidence": 0.95
+  },
+  "prisma_94c714ff459d4663": {
+    "transcript": "Sir gaadi ka temperature 80 degree nahi 28 degree hai Panipat toll ke paas",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_e497c98e3abe82d1": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 28.0,
+    "location_text": "Panipat Toll",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir gaadi ka temperature 80 degree nahi 28 degree hai Panipat toll ke paas",
+    "confidence": 0.95
+  },
+  "prisma_62c29010bbc2a054": {
+    "transcript": "Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_6c7d0152af98b615": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 14.0,
+    "location_text": "Murthal Dhaba",
+    "distance_km": 10.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.95
+  },
+  "prisma_eb69aeb27ab7cc0c": {
+    "transcript": "Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_6fdfd6a43f97fa66": {
+    "transcript": "Temperature minus 40 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_06fc1b7a87515d2b": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 40.0,
+    "location_text": "Murthal Dhaba",
+    "distance_km": 10.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature minus 40 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.95
+  },
+  "prisma_c9e2eaacf75865d6": {
+    "transcript": "Temperature  14 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_6590abe6ba7678ce": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 14.0,
+    "location_text": "Murthal Dhaba",
+    "distance_km": 10.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature  14 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.95
+  },
+  "prisma_d7cab8e0477e374f": {
+    "transcript": "Reefer warning aayi hai 40 degree show kar raha hai Bilaspur Chowk pe",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_5fadddc0a64dabfc": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 40.0,
+    "location_text": "Bilaspur Chowk",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer warning aayi hai 40 degree show kar raha hai Bilaspur Chowk pe",
+    "confidence": 0.95
+  },
+  "prisma_4d550d91f5a78737": {
+    "transcript": "Reefer warning aayi hai 40 degree show kar raha hai Bilaspur Chowk pe",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_538323989afd9910": {
+    "transcript": "Reefer warning aayi hai 40 degree show kar raha hai Bilaspur Chowk pe",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_63b385dc7063d601": {
+    "transcript": "Reefer warning aayi hai 40 degree show kar raha hai Bilaspur Chowk pe",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_b55ae0ee7da69796": {
+    "transcript": "Cabin me beep ho rahi hai minus 20 degree ho gaya Kundli Border se 15 km",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_8680f161fbca9c6f": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 20.0,
+    "location_text": "NH Highway Milepost",
+    "distance_km": 15.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Cabin me beep ho rahi hai minus 20 degree ho gaya Kundli Border se 15 km",
+    "confidence": 0.95
+  },
+  "prisma_45e0f1b1f89dbf7b": {
+    "transcript": "Cabin me beep ho rahi hai minus 20 degree ho gaya Kundli Border se 15 km",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_159618b221263ba6": {
+    "transcript": "Cabin me beep ho rahi hai minus 20 degree ho gaya Kundli Border se 15 km",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_c2d40e140297c073": {
+    "transcript": "Cabin me beep ho rahi hai  20 degree ho gaya Kundli Border se 15 km",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_a522e1644ff9a008": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 20.0,
+    "location_text": "NH Highway Milepost",
+    "distance_km": 15.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Cabin me beep ho rahi hai  20 degree ho gaya Kundli Border se 15 km",
+    "confidence": 0.95
+  },
+  "prisma_12753b67dffe47bb": {
+    "transcript": "Sir breakdown ho gaya hai engine dhuan de raha hai Karnal Toll se 8 km aage",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_48f7fe9141762597": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 8.0,
+    "location_text": "Karnal Toll",
+    "distance_km": 8.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir breakdown ho gaya hai engine dhuan de raha hai Karnal Toll se 8 km aage",
+    "confidence": 0.95
+  },
+  "prisma_e690769ced5573cd": {
+    "transcript": "Sir breakdown ho gaya hai engine dhuan de raha hai Karnal Toll se 8 km aage",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_9f6ab0c7101afad9": {
+    "transcript": "Sir breakdown ho gaya hai engine dhuan de raha hai Karnal Toll se 8 km aage",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_675a3ce907b716c6": {
+    "transcript": "Sir breakdown ho gaya hai engine dhuan de raha hai Karnal Toll se 8 km aage",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_ee2ec6f0d5f52d13": {
+    "transcript": "Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_2ab3bc7ab188e592": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 15.0,
+    "location_text": "NH Highway Milepost",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas",
+    "confidence": 0.95
+  },
+  "prisma_cb9a548ab4d9cda0": {
+    "transcript": "Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_f39c3fa89327c380": {
+    "transcript": "Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_9451a628408c967e": {
+    "transcript": "Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_91d1fdc90a167b31": {
+    "transcript": "Bhaiya 14 degree ho gaya hai dairy consignment ka Dharuhera flyover pe",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_cb70c75174127980": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 14.0,
+    "location_text": "Dharuhera",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya 14 degree ho gaya hai dairy consignment ka Dharuhera flyover pe",
+    "confidence": 0.95
+  },
+  "prisma_92f43d942f1608f0": {
+    "transcript": "Bhaiya 14 degree ho gaya hai dairy consignment ka Dharuhera flyover pe",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_2e2e87d6c1959572": {
+    "transcript": "Bhaiya 40 degree ho gaya hai dairy consignment ka Dharuhera flyover pe",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_42a0fed659ce2422": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 40.0,
+    "location_text": "Dharuhera",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya 40 degree ho gaya hai dairy consignment ka Dharuhera flyover pe",
+    "confidence": 0.95
+  },
+  "prisma_033e39fcda445e09": {
+    "transcript": "Bhaiya 14 degree ho gaya hai dairy consignment ka Dharuhera flyover pe",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_ce06b7042123b889": {
+    "transcript": "Reefer temp 22 degree chala gaya hai Shambhu Border se 25 km pehle",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_861e5ebd03b1d67c": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 22.0,
+    "location_text": "Shambhu Border",
+    "distance_km": 25.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer temp 22 degree chala gaya hai Shambhu Border se 25 km pehle",
+    "confidence": 0.95
+  },
+  "prisma_5a00e39cc329f8b3": {
+    "transcript": "Reefer temp 22 degree chala gaya hai Shambhu Border se 25 km pehle",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_80b4f481a0d6bfad": {
+    "transcript": "Reefer temp 22 degree chala gaya hai Shambhu Border se 25 km pehle",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_db0523c56437285c": {
+    "transcript": "Reefer temp 22 degree chala gaya hai Shambhu Border se 25 km pehle",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_d8a04acc5aeb2a00": {
+    "transcript": "Compressor trip ho gaya hai temperature 4 degree se 12 degree ho gaya Ambala Cantt",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_31d664cb4fdbfcee": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 12.0,
+    "location_text": "NH Highway Milepost",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Compressor trip ho gaya hai temperature 4 degree se 12 degree ho gaya Ambala Cantt",
+    "confidence": 0.95
+  },
+  "prisma_1fc031b87ad88031": {
+    "transcript": "Compressor trip ho gaya hai temperature 4 degree se 12 degree ho gaya Ambala Cantt",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_46cb2b4139d21dc3": {
+    "transcript": "Compressor trip ho gaya hai temperature 4 degree se 12 degree ho gaya Ambala Cantt",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_5881c5032a8b437c": {
+    "transcript": "Compressor trip ho gaya hai temperature 4 degree se 12 degree ho gaya Ambala Cantt",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_1258387f3c57bfde": {
+    "transcript": "Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_d3fa4a34a6998751": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 30.0,
+    "location_text": "Vadodara Bypass",
+    "distance_km": 30.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km",
+    "confidence": 0.95
+  },
+  "prisma_0d1a445ab671dda8": {
+    "transcript": "Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_d54396b5ad792fdc": {
+    "transcript": "Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_d97815b8bf7fcaac": {
+    "transcript": "Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_721cb816d8f0c0ab": {
+    "transcript": "Emergency hai ice cream melt ho rahi hai temp minus 8 degree ho gaya Jaipur Highway",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_9eaa95e4d0ed5993": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 8.0,
+    "location_text": "NH Highway Milepost",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Emergency hai ice cream melt ho rahi hai temp minus 8 degree ho gaya Jaipur Highway",
+    "confidence": 0.95
+  },
+  "prisma_8ba0b0f3c750f1f6": {
+    "transcript": "Emergency hai ice cream melt ho rahi hai temp minus 8 degree ho gaya Jaipur Highway",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_444b484bc2f39c9a": {
+    "transcript": "Emergency hai ice cream melt ho rahi hai temp minus 8 degree ho gaya Jaipur Highway",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_9080e93fe2bc7185": {
+    "transcript": "Emergency hai ice cream melt ho rahi hai temp  8 degree ho gaya Jaipur Highway",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_9f55d3457840386c": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 8.0,
+    "location_text": "NH Highway Milepost",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Emergency hai ice cream melt ho rahi hai temp  8 degree ho gaya Jaipur Highway",
+    "confidence": 0.95
+  },
+  "prisma_d90f7b11f5e4b312": {
+    "transcript": "Temperature 28 degree ho gaya hai Gurugram Toll se 16 km pe",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_73b85a22c731cd9a": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 28.0,
+    "location_text": "Toll",
+    "distance_km": 16.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 28 degree ho gaya hai Gurugram Toll se 16 km pe",
+    "confidence": 0.95
+  },
+  "prisma_254cc57679e17098": {
+    "transcript": "Temperature 28 degree ho gaya hai Gurugram Toll se 16 km pe",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_8650156b51cefd53": {
+    "transcript": "Temperature 28 degree ho gaya hai Gurugram Toll se 16 km pe",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_4d73b51d5754693b": {
+    "transcript": "Temperature 28 degree ho gaya hai Gurugram Toll se 16 km pe",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_5c65bf141e2b22b0": {
+    "transcript": "Bhaiya reefer ka sensor minus 22 degree ki jagah minus 2 degree dikha raha hai Sonipat",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_e624d5349b6ed630": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 2.0,
+    "location_text": "NH Highway Milepost",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer ka sensor minus 22 degree ki jagah minus 2 degree dikha raha hai Sonipat",
+    "confidence": 0.95
+  },
+  "prisma_c1acfcd0bb1e4454": {
+    "transcript": "Bhaiya reefer ka sensor minus 22 degree ki jagah minus 2 degree dikha raha hai Sonipat",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_8302ec2516d0f4e6": {
+    "transcript": "Bhaiya reefer ka sensor minus 22 degree ki jagah minus 2 degree dikha raha hai Sonipat",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_e7785b954e1bb100": {
+    "transcript": "Bhaiya reefer ka sensor  22 degree ki jagah  2 degree dikha raha hai Sonipat",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_253c464e2b12018a": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 2.0,
+    "location_text": "NH Highway Milepost",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer ka sensor  22 degree ki jagah  2 degree dikha raha hai Sonipat",
+    "confidence": 0.95
+  },
+  "prisma_b76b01942a6fdde8": {
+    "transcript": "Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_c57b94db1c8ced99": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Expressway",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68",
+    "confidence": 0.95
+  },
+  "prisma_1a30c8783fda0aa8": {
+    "transcript": "Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_c771d3772e152e03": {
+    "transcript": "Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_65d7e17f2fa15e52": {
+    "transcript": "Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_478e160dcb2885c0": {
+    "transcript": "Temp badh ke 16 degree ho gaya hai Bawal Industrial Area ke samne",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_b0c8f0ed89eacfb7": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 16.0,
+    "location_text": "NH Highway Milepost",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temp badh ke 16 degree ho gaya hai Bawal Industrial Area ke samne",
+    "confidence": 0.95
+  },
+  "prisma_4f88517bd3bc910d": {
+    "transcript": "Temp badh ke 16 degree ho gaya hai Bawal Industrial Area ke samne",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_166271494017a5f2": {
+    "transcript": "Temp badh ke 16 degree ho gaya hai Bawal Industrial Area ke samne",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_231574d1ff22bdd9": {
+    "transcript": "Temp badh ke 16 degree ho gaya hai Bawal Industrial Area ke samne",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_0a8311c6ef64ebe6": {
+    "transcript": "Temperature 30 degree cross kar gaya reefer unit fail ho gayi Neemrana se 5 km",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_3b261d1d9ebdaa80": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 30.0,
+    "location_text": "NH Highway Milepost",
+    "distance_km": 5.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 30 degree cross kar gaya reefer unit fail ho gayi Neemrana se 5 km",
+    "confidence": 0.95
+  },
+  "prisma_aee9ffd31f9f2571": {
+    "transcript": "Temperature 30 degree cross kar gaya reefer unit fail ho gayi Neemrana se 5 km",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_7c59b6799177de4d": {
+    "transcript": "Temperature 30 degree cross kar gaya reefer unit fail ho gayi Neemrana se 5 km",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_be56fdc2e05c1090": {
+    "transcript": "Temperature 30 degree cross kar gaya reefer unit fail ho gayi Neemrana se 5 km",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_5615e64a4133401e": {
+    "transcript": "Bhaiya reefer temperature 13 degree hai aur diesel leak ho raha hai Manesar",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_b1856df7d31d5bed": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 13.0,
+    "location_text": "NH Highway Milepost",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer temperature 13 degree hai aur diesel leak ho raha hai Manesar",
+    "confidence": 0.95
+  },
+  "prisma_694ae76ecdd78a3b": {
+    "transcript": "Bhaiya reefer temperature 13 degree hai aur diesel leak ho raha hai Manesar",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_a6318597a81c6637": {
+    "transcript": "Bhaiya reefer temperature 13 degree hai aur diesel leak ho raha hai Manesar",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_07e3851b5b11f283": {
+    "transcript": "Bhaiya reefer temperature 13 degree hai aur diesel leak ho raha hai Manesar",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_a0eb72077567ada0": {
+    "transcript": "Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_2553e1dcf3f7d4db": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 19.0,
+    "location_text": "Ghaziabad Border",
+    "distance_km": 12.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage",
+    "confidence": 0.95
+  },
+  "prisma_b95608ef926b8ca7": {
+    "transcript": "Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_c4ed630a9dc396c3": {
+    "transcript": "Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_48916b96325168e8": {
+    "transcript": "Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_199270f6d1a2661c": {
+    "transcript": "Gaadi heat ho gayi engine band ho gaya NH 44 Milepost 94 pe",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_8a9be87b96787aaa": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 44.0,
+    "location_text": "NH Highway Milepost",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Gaadi heat ho gayi engine band ho gaya NH 44 Milepost 94 pe",
+    "confidence": 0.95
+  },
+  "prisma_4f40d2699dcb08da": {
+    "transcript": "Gaadi heat ho gayi engine band ho gaya NH 44 Milepost 94 pe",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_8bb7ff44231e4194": {
+    "transcript": "Gaadi heat ho gayi engine band ho gaya NH 44 Milepost 94 pe",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_cf1ca1e0b91a9ad7": {
+    "transcript": "Gaadi heat ho gayi engine band ho gaya NH 44 Milepost 94 pe",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_d07e53564a40c168": {
+    "transcript": "Reefer cooling drop ho gayi temp minus 16 degree se minus 6 ho gaya Panipat",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_beb661adb57e289d": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 16.0,
+    "location_text": "NH Highway Milepost",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer cooling drop ho gayi temp minus 16 degree se minus 6 ho gaya Panipat",
+    "confidence": 0.95
+  },
+  "prisma_93f0848afdd79bc3": {
+    "transcript": "Reefer cooling drop ho gayi temp minus 16 degree se minus 6 ho gaya Panipat",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_66262a2dfb10ce78": {
+    "transcript": "Reefer cooling drop ho gayi temp minus 16 degree se minus 6 ho gaya Panipat",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_1fa91c706a4340a6": {
+    "transcript": "Reefer cooling drop ho gayi temp  16 degree se  6 ho gaya Panipat",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_bd38177c02ac531d": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 16.0,
+    "location_text": "NH Highway Milepost",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer cooling drop ho gayi temp  16 degree se  6 ho gaya Panipat",
+    "confidence": 0.95
+  },
+  "prisma_963e4ab537391c0f": {
+    "transcript": "Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_17c8d83e82e4eceb": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 25.0,
+    "location_text": "Bypass",
+    "distance_km": 18.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km",
+    "confidence": 0.95
+  },
+  "prisma_64eb79f69cde1acd": {
+    "transcript": "Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_16772daedc8095fa": {
+    "transcript": "Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 80 km",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_9f791b1951de79e6": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 25.0,
+    "location_text": "Bypass",
+    "distance_km": 80.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 80 km",
+    "confidence": 0.95
+  },
+  "prisma_6f82f00f6117c14b": {
+    "transcript": "Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 28 km",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_051565abe7a11f9a": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 25.0,
+    "location_text": "Bypass",
+    "distance_km": 28.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 28 km",
+    "confidence": 0.95
+  },
+  "prisma_f41264068080cf01": {
+    "transcript": "Reefer alarm baj raha hai temperature 17 degree ho gaya Mathura Toll Plaza",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_7b43c3fa889885d2": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 17.0,
+    "location_text": "Toll Plaza",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer alarm baj raha hai temperature 17 degree ho gaya Mathura Toll Plaza",
+    "confidence": 0.95
+  },
+  "prisma_96b6efd02f0c9030": {
+    "transcript": "Reefer alarm baj raha hai temperature 17 degree ho gaya Mathura Toll Plaza",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_08c4c4d1cbb0d274": {
+    "transcript": "Reefer alarm baj raha hai temperature 17 degree ho gaya Mathura Toll Plaza",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_4fb7617a9194e012": {
+    "transcript": "Reefer alarm baj raha hai temperature 17 degree ho gaya Mathura Toll Plaza",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_bd044e3fd02b233b": {
+    "transcript": "Bhaiya fan belt toot gayi hai temperature 21 degree Agra Expressway km 110",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_7e4c53fc8d750c3a": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 21.0,
+    "location_text": "Expressway",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya fan belt toot gayi hai temperature 21 degree Agra Expressway km 110",
+    "confidence": 0.95
+  },
+  "prisma_f7cd7b83b492810c": {
+    "transcript": "Bhaiya fan belt toot gayi hai temperature 21 degree Agra Expressway km 110",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_1fd728c77d613507": {
+    "transcript": "Bhaiya fan belt toot gayi hai temperature 21 degree Agra Expressway km 110",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_5ea0111a389e3a71": {
+    "transcript": "Bhaiya fan belt toot gayi hai temperature 21 degree Agra Expressway km 110",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_8b40d14790786280": {
+    "transcript": "Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway",
+    "confidence": 0.96,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_b521184464a41465": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 18.0,
+    "location_text": "Expressway",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway",
+    "confidence": 0.95
+  },
+  "prisma_3f74dae2ff993013": {
+    "transcript": "Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway",
+    "confidence": 0.89,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "prisma_ca98ab093609b306": {
+    "transcript": "Emergency alert reefer temperature 2 degree se 80 degree ho gaya KMP Expressway",
+    "confidence": 0.82,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_7dc9eae3764197e4": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Expressway",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Emergency alert reefer temperature 2 degree se 80 degree ho gaya KMP Expressway",
+    "confidence": 0.95
+  },
+  "prisma_c4d0c1f665f0aea4": {
+    "transcript": "Emergency alert reefer temperature 2 degree se 28 degree ho gaya KMP Expressway",
+    "confidence": 0.68,
+    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+  },
+  "evon_bb4ddc33fd57443b": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 28.0,
+    "location_text": "Expressway",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Emergency alert reefer temperature 2 degree se 28 degree ho gaya KMP Expressway",
+    "confidence": 0.95
+  }
+}

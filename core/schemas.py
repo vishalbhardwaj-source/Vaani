@@ -1,0 +1,160 @@
+"""
+Saarthi: Core Schemas
+Pydantic schemas for structured extraction, vehicle telemetry, and dialogue control.
+Ensures strict validation before any action tool can be executed.
+"""
+
+from enum import Enum
+from typing import Optional, List, Dict, Any
+from pydantic import BaseModel, Field, field_validator
+
+
+class IncidentType(str, Enum):
+    REEFER_TEMPERATURE = "reefer_temperature"
+    BREAKDOWN = "breakdown"
+    DELAY = "delay"
+    ACCIDENT = "accident"
+    UNKNOWN = "unknown"
+
+
+class DispatchPriority(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
+
+
+class DialogueState(str, Enum):
+    LISTENING = "LISTENING"
+    EXTRACTING = "EXTRACTING"
+    ASKING = "ASKING"
+    CONFIRMING = "CONFIRMING"
+    CORRECTING = "CORRECTING"
+    ACTING = "ACTING"
+    ESCALATING = "ESCALATING"
+    DONE = "DONE"
+
+
+class ExtractionRecord(BaseModel):
+    """Structured extraction from driver utterance."""
+    incident_type: IncidentType = Field(
+        default=IncidentType.UNKNOWN,
+        description="Type of incident reported by the driver"
+    )
+    vehicle_id: Optional[str] = Field(
+        default=None,
+        description="Vehicle registration number if mentioned (e.g. HR-55-TC-1102)"
+    )
+    temperature_c: Optional[float] = Field(
+        default=None,
+        description="Reefer cabin temperature in Celsius (e.g. 18.0, -14.0)"
+    )
+    location_text: Optional[str] = Field(
+        default=None,
+        description="Landmark or highway description (e.g. toll plaza, Bilaspur Chowk)"
+    )
+    distance_km: Optional[float] = Field(
+        default=None,
+        description="Distance from landmark in km (e.g. 42.0)"
+    )
+    consignment_id: Optional[str] = Field(
+        default=None,
+        description="Cargo or consignment ID if provided"
+    )
+    missing_fields: List[str] = Field(
+        default_factory=list,
+        description="List of required fields missing for action execution"
+    )
+    raw_transcript: str = Field(
+        default="",
+        description="Raw ASR transcript from Prisma"
+    )
+    confidence: float = Field(
+        default=1.0,
+        description="Confidence score of extraction between 0.0 and 1.0"
+    )
+
+    @field_validator("temperature_c")
+    @classmethod
+    def validate_temperature(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None:
+            # Physical reefer range check (-40C to +50C)
+            if v < -40.0 or v > 50.0:
+                raise ValueError(f"Temperature {v}°C out of realistic reefer bounds (-40 to 50)")
+        return v
+
+    @field_validator("distance_km")
+    @classmethod
+    def validate_distance(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None:
+            if v < 0 or v > 2000:
+                raise ValueError(f"Distance {v} km out of realistic road bounds")
+        return v
+
+    def compute_missing_fields(self) -> List[str]:
+        missing = []
+        if self.incident_type == IncidentType.REEFER_TEMPERATURE:
+            if self.temperature_c is None:
+                missing.append("temperature_c")
+            if not self.location_text:
+                missing.append("location_text")
+        elif self.incident_type == IncidentType.BREAKDOWN:
+            if not self.location_text:
+                missing.append("location_text")
+        elif self.incident_type == IncidentType.UNKNOWN:
+            missing.append("incident_type")
+        self.missing_fields = missing
+        return missing
+
+    def is_actionable(self) -> bool:
+        """Determines if record has all required fields to proceed to confirmation."""
+        return len(self.compute_missing_fields()) == 0
+
+
+class DriverReply(BaseModel):
+    """Driver's response to spoken read-back confirmation."""
+    intent: str = Field(
+        ...,
+        description="'CONFIRM' (haan, sahi hai), 'CORRECT' (nahi, 28 nahi 18), 'REJECT' (galat hai), or 'UNCLEAR'"
+    )
+    corrected_temperature_c: Optional[float] = None
+    corrected_location: Optional[str] = None
+    corrected_distance_km: Optional[float] = None
+    raw_text: str = ""
+
+
+class VehicleRecord(BaseModel):
+    """Simulated vehicle metadata from fleet database."""
+    vehicle_id: str
+    driver_name: str
+    driver_phone: str
+    vehicle_type: str
+    cargo_type: str
+    target_temp_c: float
+    current_temp_c: float
+    route: str
+    last_known_location: str
+    status: str
+
+
+class AssistanceRequest(BaseModel):
+    """Simulated dispatch record."""
+    ticket_id: Optional[int] = None
+    vehicle_id: str
+    incident_type: str
+    priority: DispatchPriority
+    location_reported: str
+    distance_km: Optional[float] = None
+    reported_temp_c: Optional[float] = None
+    notes: Optional[str] = None
+    created_at: Optional[str] = None
+    status: str = "DISPATCHED"
+
+
+class StateTransitionLog(BaseModel):
+    """Audit log entry for state transitions."""
+    timestamp: str
+    from_state: DialogueState
+    to_state: DialogueState
+    trigger: str
+    payload: Dict[str, Any] = Field(default_factory=dict)
