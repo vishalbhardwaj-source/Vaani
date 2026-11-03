@@ -1,5 +1,5 @@
 """
-Saarthi Voice Dispatcher Root Entrypoint
+Vaani Voice Dispatcher Root Entrypoint
 """
 import sys
 from pathlib import Path

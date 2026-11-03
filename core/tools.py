@@ -1,5 +1,5 @@
 """
-Saarthi: Tool Layer (Simulated Fleet Operations)
+Vaani: Tool Layer (Simulated Fleet Operations)
 Interacts with data/fleet.sqlite to look up vehicles, trigger emergency assistance dispatches,
 and record delay notices.
 
@@ -171,7 +171,7 @@ def dispatch_assistance(
         location_reported,
         distance_km,
         reported_temp_c,
-        f"[Simulated fleet data] {notes or 'Spoken dispatch triggered via Saarthi'}"
+        f"[Simulated fleet data] {notes or 'Spoken dispatch triggered via Vaani'}"
     ))
 
     ticket_id = cursor.lastrowid

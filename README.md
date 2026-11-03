@@ -1,4 +1,4 @@
-# Saarthi (सारथी) 🎙️
+# Vaani (वाणी) 🎙️
 ### A Voice Dispatcher That Confirms Before It Acts
 **Built for the Great Indian AI Internship Challenge by Gnani AI**  
 **Target Award Category:** *Noisy Telephonic Audio*  
@@ -10,7 +10,7 @@
 
 Truck drivers and cold-chain ground crews operate in deafening cabin environments (diesel engine rumble, highway wind, horn reverberation) where typing on a mobile screen at 70 km/h is impossible and speech recognition inevitably makes acoustic mistakes (confusing *18°C* with *80°C* or *14 km* with *40 km*). A single misread number can spoil an entire refrigerated consignment or dispatch roadside mechanics to the wrong highway milestone.
 
-**Saarthi's Claim:**  
+**Vaani's Claim:**  
 > **Read-back confirmation catches speech-recognition errors that would otherwise cause a wrong dispatch. The safety gate is ordinary code, not the language model.**
 
 The language model proposes structured details. The Python state machine validates them against strict physical constraints, reads them aloud in natural Hinglish to the driver, and **only the driver's affirmative confirmation unlocks the dispatch action**.

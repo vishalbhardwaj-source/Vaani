@@ -1,5 +1,5 @@
 """
-Saarthi: Voice Dispatcher Dashboard
+Vaani: Voice Dispatcher Dashboard
 Built for the Great Indian AI Internship Challenge by Gnani AI
 Track: Noisy Telephonic Audio
 
@@ -40,7 +40,7 @@ import soundfile as sf
 # Streamlit Page Config & Custom Styling (Impeccable & UI/UX Pro Max)
 # -------------------------------------------------------------
 st.set_page_config(
-    page_title="Saarthi // Voice Dispatcher",
+    page_title="Vaani // Voice Dispatcher",
     page_icon="🎙️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -236,7 +236,7 @@ if "audio_to_play" not in st.session_state:
 st.markdown("""
 <div class="brand-header">
     <div>
-        <h1 class="brand-title">🎙️ SAARTHI // VOICE DISPATCHER</h1>
+        <h1 class="brand-title">🎙️ VAANI // VOICE DISPATCHER</h1>
         <div class="brand-subtitle">
             Gnani AI Challenge • Target Award: <strong>Noisy Telephonic Audio</strong> • Safety Gate Architecture
         </div>
@@ -619,11 +619,11 @@ with tab_benchmark:
             fig_comp.add_trace(go.Bar(
                 x=sum_df["Condition"],
                 y=sum_df["Final Dispatch Accuracy (%)"],
-                name="Saarthi Read-Back (Gated)",
+                name="Vaani Read-Back (Gated)",
                 marker_color="#10B981"
             ))
             fig_comp.update_layout(
-                title="Critical-Slot Accuracy: Raw Extraction vs Saarthi Gate",
+                title="Critical-Slot Accuracy: Raw Extraction vs Vaani Gate",
                 paper_bgcolor="#111827",
                 plot_bgcolor="#111827",
                 font=dict(color="#CBD5E1", family="Plus Jakarta Sans"),
@@ -702,7 +702,7 @@ with tab_benchmark:
 # =============================================================
 with tab_architecture:
     st.markdown("""
-    ### 🏛️ Saarthi System Architecture & Core Design Principle
+    ### 🏛️ Vaani System Architecture & Core Design Principle
     
     > **The most important design rule:**  
     > *The language model never decides whether a dispatch happens. The model proposes structured details. Your controller checks that they are valid, reads them back, and only the driver's confirmation unlocks the action.*

@@ -1,5 +1,5 @@
 """
-Saarthi: Telephony & SNR Noise Degradation Pipeline
+Vaani: Telephony & SNR Noise Degradation Pipeline
 Simulates realistic telephonic audio degradation:
 1. Resampling to 8 kHz (narrow-band telephony).
 2. Applying 300–3400 Hz Butterworth bandpass filter.

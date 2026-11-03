@@ -1,5 +1,5 @@
 """
-Core module for Saarthi dialogue controller, schemas, and simulated tools.
+Core module for Vaani dialogue controller, schemas, and simulated tools.
 """
 from core.schemas import DialogueState, ExtractionRecord, DriverReply, IncidentType
 from core.state_machine import DialogueController

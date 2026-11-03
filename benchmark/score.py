@@ -1,6 +1,6 @@
 """
-Saarthi: Benchmark Scoring Harness
-Computes official metrics specified in Section 8.2 of the Saarthi Project Guide:
+Vaani: Benchmark Scoring Harness
+Computes official metrics specified in Section 8.2 of the Project Guide:
 1. Word Error Rate (WER) via jiwer across each noise condition
 2. Critical-slot accuracy (% of temperature, distance, location correctly extracted)
 3. Errors caught by read-back (The Core Proof: X of Y errors prevented from causing wrong dispatches)
@@ -43,7 +43,7 @@ def compute_metrics() -> pd.DataFrame:
     conditions = ["clean", "telephony_8khz", "telephony_10db", "telephony_5db"]
 
     print("=" * 78)
-    print("SAARTHI BENCHMARK EVALUATION (Gnani AI Noisy Telephonic Audio Track)")
+    print("VAANI BENCHMARK EVALUATION (Gnani AI Noisy Telephonic Audio Track)")
     print("=" * 78)
 
     for cond in conditions:

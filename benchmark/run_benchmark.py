@@ -1,5 +1,5 @@
 """
-Saarthi: Benchmark Runner
+Vaani: Benchmark Runner
 Executes all 100 audio clips (25 utterances x 4 conditions) through:
 1. Prisma STT (with caching)
 2. Evon extraction
@@ -55,7 +55,7 @@ def run_single_benchmark_case(
     true_slots: Dict[str, Any],
     cache: Dict[str, Any]
 ) -> Dict[str, Any]:
-    """Runs one audio clip through the full Saarthi pipeline with scripted driver reply."""
+    """Runs one audio clip through the full Vaani pipeline with scripted driver reply."""
     cache_key = f"{utt_id}_{condition}"
     if cache_key in cache:
         return cache[cache_key]
@@ -185,7 +185,7 @@ def run_full_benchmark() -> pd.DataFrame:
     conditions = ["clean", "telephony_8khz", "telephony_10db", "telephony_5db"]
     all_results = []
 
-    print(f"Running Saarthi benchmark across {len(df)} utterances x {len(conditions)} conditions...")
+    print(f"Running Vaani benchmark across {len(df)} utterances x {len(conditions)} conditions...")
     for _, row in df.iterrows():
         utt_id = row["id"]
         ref_text = row["utterance"]

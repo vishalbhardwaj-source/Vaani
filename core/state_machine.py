@@ -1,5 +1,5 @@
 r"""
-Saarthi: Dialogue Controller & Finite State Machine
+Vaani: Dialogue Controller & Finite State Machine
 Guarantees the safety gate: Dispatch actions CAN NEVER run without explicit read-back confirmation.
 
 States:

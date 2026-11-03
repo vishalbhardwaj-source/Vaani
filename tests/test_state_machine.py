@@ -1,5 +1,5 @@
 """
-Tests for Saarthi Dialogue Controller State Machine.
+Tests for Vaani Dialogue Controller State Machine.
 Verifies the core safety guarantee: Dispatch actions CAN NEVER run without explicit driver confirmation.
 """
 
@@ -83,9 +83,9 @@ def test_readback_catches_misheard_number_and_corrects():
     """
     Simulate the core paper scenario:
     Prisma mishears 18 as 28.
-    Saarthi reads back 28.
+    Vaani reads back 28.
     Driver rejects and corrects to 18.
-    Saarthi verifies corrected 18 before dispatching.
+    Vaani verifies corrected 18 before dispatching.
     """
     controller = DialogueController(vehicle_id="HR-55-TC-1102")
     controller.receive_driver_utterance("Bhaiya reefer 18 degree...")

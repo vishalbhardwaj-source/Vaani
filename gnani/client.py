@@ -1,5 +1,5 @@
 """
-Saarthi: Gnani AI Client Module (Prisma STT, Evon LLM, Timbre TTS)
+Vaani: Gnani AI Client Module (Prisma STT, Evon LLM, Timbre TTS)
 Provides thin HTTP wrappers around Gnani AI endpoints with:
 1. Disk caching (so you never pay twice or waste 5,000 contest credits)
 2. Realistic offline/rule-based fallbacks for test harness and local development

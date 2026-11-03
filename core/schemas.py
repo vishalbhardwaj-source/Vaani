@@ -1,5 +1,5 @@
 """
-Saarthi: Core Schemas
+Vaani: Core Schemas
 Pydantic schemas for structured extraction, vehicle telemetry, and dialogue control.
 Ensures strict validation before any action tool can be executed.
 """
