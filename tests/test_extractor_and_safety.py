@@ -105,6 +105,20 @@ def test_hindi_spoken_number_word_parsing():
     assert parse_hindi_number("chalis") == 40.0
     assert parse_hindi_number("minus chaudha") == -14.0
 
+    # Adversarial spellings and variations
+    assert parse_hindi_number("athara") == 18.0
+    assert parse_hindi_number("assee") == 80.0
+    assert parse_hindi_number("atthais") == 28.0
+    assert parse_hindi_number("athais") == 28.0
+
+    # Devanagari script words and numerals
+    assert parse_hindi_number("अट्ठारह") == 18.0
+    assert parse_hindi_number("अस्सी") == 80.0
+    assert parse_hindi_number("अट्ठाइस") == 28.0
+    assert parse_hindi_number("चालीस") == 40.0
+    assert parse_hindi_number("१८") == 18.0
+    assert parse_hindi_number("८०") == 80.0
+
     reply = classify_driver_reply("Nahi bhaiya atharah degree hai")
     assert reply.intent == "CORRECT"
     assert reply.corrected_temperature_c == 18.0
@@ -123,16 +137,61 @@ def test_adaptive_rules_do_not_silently_rewrite_temperatures():
     # Must preserve 40.0, NOT silently rewrite to 14.0
     assert rec_40.temperature_c == 40.0
 
-    # For 80C (outside normal reefer bounds), it must set None so controller asks, never rewrite to 18
+    # Spoken read-back must speak 40 degree, never 14
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    prompt = ctrl.generate_readback_prompt(rec_40)
+    assert "40" in prompt
+    assert "14" not in prompt
+
+    # For 80C (outside normal reefer bounds), it must set None, record anomalous_reading, and generate specific prompt
     rec_80 = extract_incident_details("Temperature 80 degree dikha raha hai Bilaspur Chowk pe")
-    assert rec_80.temperature_c is None or rec_80.temperature_c == 80.0
+    assert rec_80.temperature_c is None
+    assert rec_80.anomalous_reading == 80.0
+
+    ctrl.current_record = rec_80
+    clarification_prompt = ctrl._generate_clarification_prompt(["temperature_c"])
+    assert "80 degree" in clarification_prompt
+    assert "unusual" in clarification_prompt
 
 
 # -------------------------------------------------------------
-# 5. Escalation State Consistency
+# 5. Telematics Plausibility Policy Test
 # -------------------------------------------------------------
-def test_escalation_state_consistency():
-    """Controller must stay in ESCALATING state when max correction rounds are exceeded."""
+def test_telematics_plausibility_forces_firm_confirmation():
+    """
+    If reported temperature wildly diverges from vehicle cargo target in fleet.sqlite
+    (e.g. reporting 25C when target is -20C for Ice Cream), simple 'haan' is rejected
+    with forced confirmation prompt requiring 'haan pakka'.
+    """
+    # HR-55-TC-1102 has target_temp_c = -20C (Ice Cream)
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.receive_driver_utterance("Temperature 25 degree ho gaya hai Toll Plaza pe")
+    rec = ExtractionRecord(
+        incident_type=IncidentType.REEFER_TEMPERATURE,
+        temperature_c=25.0,
+        location_text="Toll Plaza",
+        distance_km=42.0
+    )
+    ctrl.process_extraction(rec)
+    assert ctrl.state == DialogueState.CONFIRMING
+
+    # Divergence is |25 - (-20)| = 45C (>25C threshold)
+    # Simple 'haan' reflexively spoken by driver is challenged
+    state_retry, prompt_retry = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="haan"))
+    assert state_retry == DialogueState.CONFIRMING  # Did NOT dispatch yet!
+    assert "pakka" in prompt_retry.lower()
+
+    # Firm confirmation unlocks dispatch
+    state_final, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="haan pakka 25 degree hai"))
+    assert state_final == DialogueState.DONE
+    assert ctrl.last_action_result is not None
+
+
+# -------------------------------------------------------------
+# 6. Escalation Safety & Terminal Handover
+# -------------------------------------------------------------
+def test_escalation_safety_and_supervisor_handover():
+    """Controller in ESCALATING state must block dispatch and only terminate via supervisor handover."""
     ctrl = DialogueController(vehicle_id="HR-55-TC-1102", max_correction_rounds=2)
     ctrl.receive_driver_utterance("Reefer 18 degree toll plaza")
     ctrl.process_extraction(ExtractionRecord(
@@ -143,15 +202,20 @@ def test_escalation_state_consistency():
     ))
 
     # Round 1 correction
-    state1, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CORRECT", corrected_temperature_c=19.0))
-    assert state1 == DialogueState.CONFIRMING
-
+    ctrl.handle_confirmation_reply(DriverReply(intent="CORRECT", corrected_temperature_c=19.0))
     # Round 2 correction
-    state2, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CORRECT", corrected_temperature_c=20.0))
-    assert state2 == DialogueState.CONFIRMING
+    ctrl.handle_confirmation_reply(DriverReply(intent="CORRECT", corrected_temperature_c=20.0))
+    # Round 3 -> Escalate
+    state_esc, _ = ctrl.handle_confirmation_reply(DriverReply(intent="REJECT", raw_text="galat hai"))
+    assert state_esc == DialogueState.ESCALATING
 
-    # Round 3 (Exceeds max 2 rounds) -> Escalate
-    state3, prompt = ctrl.handle_confirmation_reply(DriverReply(intent="REJECT", raw_text="galat hai"))
-    assert state3 == DialogueState.ESCALATING
-    assert ctrl.state == DialogueState.ESCALATING
-    assert "supervisor" in prompt.lower()
+    # CRITICAL: _execute_dispatch_action MUST FAIL in ESCALATING state
+    with pytest.raises(PermissionError) as exc_info:
+        ctrl._execute_dispatch_action()
+    assert "SAFETY GATE VIOLATION" in str(exc_info.value)
+
+    # Clean supervisor resolution
+    state_done, msg = ctrl.resolve_escalation_by_supervisor(supervisor_id="SUPERVISOR_PRIYA", action_taken="CALL_DISPATCHED")
+    assert state_done == DialogueState.DONE
+    assert ctrl.state == DialogueState.DONE
+    assert "SUPERVISOR_PRIYA" in msg

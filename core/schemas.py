@@ -73,6 +73,14 @@ class ExtractionRecord(BaseModel):
         default=1.0,
         description="Confidence score of extraction between 0.0 and 1.0"
     )
+    anomalous_reading: Optional[float] = Field(
+        default=None,
+        description="Flagged out-of-bounds reading (e.g. 80C) held for explicit driver clarification"
+    )
+    acoustic_warning: Optional[str] = Field(
+        default=None,
+        description="Acoustic confusion warning (e.g. 18 vs 80 / 14 vs 40)"
+    )
 
     @field_validator("temperature_c")
     @classmethod

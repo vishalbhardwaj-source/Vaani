@@ -40,16 +40,31 @@ GNANI_EVON_URL = os.getenv("GNANI_EVON_URL", "https://api.gnani.ai/v1/evon/chat"
 GNANI_TIMBRE_URL = os.getenv("GNANI_TIMBRE_URL", "https://api.gnani.ai/v1/timbre/tts")
 ASR_ENGINE = os.getenv("ASR_ENGINE", "whisper_lora")  # 'whisper_lora', 'prisma', or 'simulated'
 
-# Hindi Number Word Translation Dictionary for Voice Correction Extraction
+# Comprehensive Hindi/Devanagari & Transliterated Number Dictionary
+# Includes adversarial phonetic confusions (18 vs 80, 14 vs 40, 28 vs 18)
 HINDI_NUMBER_WORDS = {
+    # Latin / Hinglish Transliterations
     "shunya": 0, "zero": 0, "ek": 1, "do": 2, "teen": 3, "chaar": 4, "char": 4,
     "paanch": 5, "panch": 5, "chhah": 6, "che": 6, "saat": 7, "aath": 8, "ath": 8,
     "nau": 9, "das": 10, "dus": 10, "gyarah": 11, "barah": 12, "terah": 13,
-    "chaudah": 14, "chaudha": 14, "pandrah": 15, "solah": 16, "satrah": 17,
-    "atharah": 18, "athara": 18, "unnis": 19, "bees": 20, "ikkis": 21,
-    "baais": 22, "teis": 23, "chaubees": 24, "pachchis": 25, "chabbis": 26,
-    "sattais": 27, "atthais": 28, "unatis": 29, "tees": 30, "chalis": 40,
-    "bayalis": 42, "pachas": 50, "saath": 60, "sattar": 70, "assi": 80, "nabbe": 90
+    "chaudah": 14, "chaudha": 14, "chawdah": 14, "pandrah": 15, "solah": 16, "satrah": 17,
+    "atharah": 18, "athara": 18, "atharaah": 18, "aathara": 18, "unnis": 19, "bees": 20,
+    "ikkis": 21, "baais": 22, "teis": 23, "chaubees": 24, "chaubis": 24, "pachchis": 25,
+    "chabbis": 26, "sattais": 27, "atthais": 28, "athais": 28, "atthayeas": 28, "unatis": 29,
+    "tees": 30, "chalis": 40, "chaalis": 40, "bayalis": 42, "pachas": 50,
+    "saath": 60, "sattar": 70, "assi": 80, "assee": 80, "aasi": 80, "nabbe": 90,
+
+    # Devanagari Words
+    "शून्य": 0, "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पांच": 5, "छह": 6, "सात": 7,
+    "आठ": 8, "नौ": 9, "दस": 10, "ग्यारह": 11, "बारह": 12, "तेरह": 13, "चौदह": 14,
+    "पंद्रह": 15, "सोलह": 16, "सत्रह": 17, "अट्ठारह": 18, "अठारह": 18, "उन्नीस": 19,
+    "बीस": 20, "इक्कीस": 21, "बाईस": 22, "तेईस": 23, "चौबीस": 24, "पच्चीस": 25,
+    "छब्बीस": 26, "सत्ताईस": 27, "अट्ठाइस": 28, "अट्ठाईस": 28, "उनतीस": 29, "तीस": 30,
+    "चालीस": 40, "बयालीस": 42, "पचास": 50, "साठ": 60, "सत्तर": 70, "अस्सी": 80, "नब्बे": 90,
+
+    # Devanagari Digits
+    "०": 0, "१": 1, "२": 2, "३": 3, "४": 4, "५": 5, "६": 6, "७": 7, "८": 8, "९": 9,
+    "१८": 18, "८०": 80, "१४": 14, "४०": 40, "२८": 28, "४२": 42
 }
 
 
@@ -208,7 +223,7 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
     """
     rules_hash = get_rules_version_hash()
     text_hash = hashlib.md5(transcript.strip().lower().encode("utf-8")).hexdigest()[:16]
-    cache_key = f"evon_{rules_hash}_{text_hash}"
+    cache_key = f"evon_v3_{rules_hash}_{text_hash}"
     cached = cache.get(cache_key)
     if cached:
         try:
@@ -350,9 +365,13 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
     if temp_val is not None:
         if -40.0 <= temp_val <= 50.0:
             record_dict["temperature_c"] = temp_val
+            if temp_val == 40.0:
+                record_dict["acoustic_warning"] = "40C reefer reading: verify carefully with driver (ensure not 14C)."
         else:
-            # Out of physical reefer bounds (e.g. 80C) -> flag acoustic warning and set None so system asks
+            # Out of physical reefer bounds (e.g. 80C) -> flag anomalous reading for explicit prompt
             record_dict["temperature_c"] = None
+            record_dict["anomalous_reading"] = temp_val
+            record_dict["acoustic_warning"] = f"Acoustic trap: Heard {temp_val}°C which is outside reefer bounds (-40 to 50°C)."
             logger.warning(f"Extracted temperature {temp_val}°C is out of reefer physical limits (-40 to 50°C)")
 
     # 3. Distance Extraction (e.g., "42 km aage", "10 km pehle", "km 68")
@@ -408,9 +427,10 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
 
 
 def parse_hindi_number(text: str) -> Optional[float]:
-    """Parse digits or Hindi/Hinglish spoken number words into a float."""
+    """Parse digits, Devanagari numerals, or Hindi spoken words into a float."""
     lower = text.lower().strip()
-    # Check for direct digits
+    
+    # 1. Direct ASCII digits
     digit_match = re.search(r"(-?\d+(?:\.\d+)?)", lower)
     if digit_match:
         try:
@@ -418,11 +438,15 @@ def parse_hindi_number(text: str) -> Optional[float]:
         except ValueError:
             pass
 
-    # Check Hindi number words
-    is_negative = ("minus" in lower) or ("negative" in lower)
-    for word, num in HINDI_NUMBER_WORDS.items():
-        if re.search(rf"\b{word}\b", lower):
-            return -float(num) if is_negative else float(num)
+    # 2. Check Hindi / Devanagari dictionary
+    is_negative = ("minus" in lower) or ("negative" in lower) or ("माइनस" in lower)
+    
+    # Check words sorted by length descending so compound words match first
+    sorted_words = sorted(HINDI_NUMBER_WORDS.keys(), key=len, reverse=True)
+    for word in sorted_words:
+        if word in lower:
+            val = float(HINDI_NUMBER_WORDS[word])
+            return -val if is_negative else val
 
     return None
 

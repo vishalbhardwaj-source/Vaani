@@ -6,6 +6,8 @@ Computes:
 3. Errors Caught by Spoken Read-Back Gate
 4. Silent Failures (Uncaught errors slipping through to dispatch)
 5. True Final Dispatch Accuracy (Non-circular calculation)
+6. Parametric Driver Sensitivity Sweep (Evaluating silent failure rate under varying driver attention: 0% to 20%)
+7. Engine Breakdown (Cloud Prisma, Local Whisper-LoRA, Acoustic Simulation)
 """
 
 import re
@@ -15,6 +17,7 @@ import jiwer
 
 RAW_RESULTS_CSV = Path(__file__).resolve().parent / "results" / "raw_benchmark_results.csv"
 SUMMARY_CSV = Path(__file__).resolve().parent / "results" / "summary_metrics.csv"
+SWEEP_CSV = Path(__file__).resolve().parent / "results" / "driver_sensitivity_sweep.csv"
 
 
 def clean_text_for_wer(text: str) -> str:
@@ -33,9 +36,9 @@ def compute_metrics() -> pd.DataFrame:
     summary_rows = []
     conditions = ["clean", "telephony_8khz", "telephony_10db", "telephony_5db"]
 
-    print("=" * 80)
+    print("=" * 85)
     print("VAANI EMPIRICAL BENCHMARK EVALUATION METRICS")
-    print("=" * 80)
+    print("=" * 85)
 
     for cond in conditions:
         sub = df[df["condition"] == cond]
@@ -62,12 +65,16 @@ def compute_metrics() -> pd.DataFrame:
         silent_fail_pct = (silent_fails / n_samples) * 100.0
 
         # 5. Non-Circular True Dispatch Accuracy
-        # Dispatch is accurate if raw extraction was correct OR error was caught & corrected
         true_dispatch_acc = ((n_samples - silent_fails) / n_samples) * 100.0
+
+        # Engine source primary
+        sources = sub["source"].unique() if "source" in sub.columns else ["Simulation"]
+        source_label = sources[0] if len(sources) == 1 else "Mixed"
 
         summary_rows.append({
             "Condition": cond,
             "Sample Size (N)": n_samples,
+            "Source Engine": source_label,
             "WER (%)": round(wer_val, 2),
             "Raw Slot Acc (%)": round(slot_acc_raw, 2),
             "Total Errors": total_errors,
@@ -81,9 +88,60 @@ def compute_metrics() -> pd.DataFrame:
     summary_df.to_csv(SUMMARY_CSV, index=False)
 
     print(summary_df.to_string(index=False))
-    print("=" * 80)
+    print("=" * 85)
     print(f"Summary metrics saved to: {SUMMARY_CSV}")
+
+    # Compute Sensitivity Sweep
+    compute_sensitivity_sweep(df)
+
     return summary_df
+
+
+def compute_sensitivity_sweep(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Parametric sensitivity analysis:
+    Evaluates final dispatch accuracy across assumed driver reflexive error rates (0% to 20%).
+    Shows how dispatch integrity varies as a function of driver attentiveness and cabin noise.
+    """
+    sweep_rates = [0.0, 0.05, 0.10, 0.15, 0.20]
+    sweep_rows = []
+    conditions = ["clean", "telephony_8khz", "telephony_10db", "telephony_5db"]
+
+    print("\n" + "=" * 85)
+    print("PARAMETRIC DRIVER ATTENTION SENSITIVITY SWEEP (0% to 20% Reflexive Agreement)")
+    print("=" * 85)
+
+    for rate in sweep_rates:
+        for cond in conditions:
+            sub = df[df["condition"] == cond]
+            total_clips = len(sub)
+            if total_clips == 0:
+                continue
+
+            extraction_errors = int(sub["has_extraction_error"].sum())
+            correct_raw = total_clips - extraction_errors
+
+            # Model expected silent failures under this driver error rate
+            expected_silent_fails = round(extraction_errors * rate, 2)
+            expected_caught = round(extraction_errors * (1.0 - rate), 2)
+            dispatch_acc = round(((total_clips - expected_silent_fails) / total_clips) * 100.0, 1)
+
+            sweep_rows.append({
+                "Assumed Driver Error Rate (%)": f"{int(rate * 100)}%",
+                "Condition": cond,
+                "Raw Slot Acc (%)": round((correct_raw / total_clips) * 100.0, 1),
+                "Total ASR Errors": extraction_errors,
+                "Expected Caught": expected_caught,
+                "Expected Silent Failures": expected_silent_fails,
+                "Modeled Dispatch Accuracy (%)": dispatch_acc
+            })
+
+    sweep_df = pd.DataFrame(sweep_rows)
+    SWEEP_CSV.parent.mkdir(parents=True, exist_ok=True)
+    sweep_df.to_csv(SWEEP_CSV, index=False)
+    print(sweep_df.to_string(index=False))
+    print(f"\nDriver sensitivity sweep saved to: {SWEEP_CSV}")
+    return sweep_df
 
 
 if __name__ == "__main__":

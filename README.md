@@ -28,16 +28,40 @@ Our empirical benchmark evaluates **100 audio clips** across 4 acoustic conditio
 ### Official Scorecard (Benchmark Evaluation: 25 Utterances x 4 Channels = 100 Clips)
 
 > **Evaluation Protocol & Transparency Note:**  
-> Utterances were synthesized using `gTTS` and mixed with calibrated synthetic diesel engine and cabin rumble. Evaluation incorporates calibrated human driver confirmation failure modes (reflecting reflexive driver agreement in loud noise) to guarantee non-circular scoring.
+> The scorecard below was generated directly by `benchmark/score.py` using `benchmark/results/raw_benchmark_results.csv`.
+> Audio was synthesized using `gTTS` and mixed with calibrated synthetic Indian truck diesel engine and cabin noise (Acoustic Simulation Track).
+> The benchmark models a non-circular human driver factor: in loud cabin noise, drivers have an assumed reflexive error probability ($0\%$ in clean up to $12\%$ in severe noise).
 
-| Acoustic Condition | N | WER (%) | Raw Slot Acc (%) | Total Extraction Errors | Errors Caught by Read-Back | Silent Failures | Final Dispatch Accuracy (%) |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Clean (16 kHz)** | 25 | 0.00% | 96.0% | 1 | **1 of 1 (100.0%)** | **0 (0.0%)** | **100.0%** |
-| **Telephony 8 kHz** | 25 | 0.00% | 96.0% | 1 | **1 of 1 (100.0%)** | **0 (0.0%)** | **100.0%** |
-| **Telephony + 10 dB SNR** | 25 | 1.72% | 72.0% | 7 | **6 of 7 (85.7%)** | **1 (4.0%)** | **96.0%** |
-| **Telephony + 5 dB SNR** | 25 | 3.16% | 64.0% | 9 | **9 of 9 (100.0%)** | **0 (0.0%)** | **100.0%** |
+| Acoustic Condition | N | Source Engine | WER (%) | Raw Slot Acc (%) | Total Errors | Errors Caught by Read-Back | Silent Failures | Final Dispatch Accuracy (%) |
+| :--- | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Clean (16 kHz)** | 25 | Acoustic Simulation (Calibrated SNR) | 0.00% | 96.0% | 1 | **1 of 1 (100.0%)** | **0 (0.0%)** | **100.0%** |
+| **Telephony 8 kHz** | 25 | Acoustic Simulation (Calibrated SNR) | 0.00% | 96.0% | 1 | **1 of 1 (100.0%)** | **0 (0.0%)** | **100.0%** |
+| **Telephony + 10 dB SNR** | 25 | Acoustic Simulation (Calibrated SNR) | 1.72% | 72.0% | 7 | **6 of 7 (85.7%)** | **1 (4.0%)** | **96.0%** |
+| **Telephony + 5 dB SNR** | 25 | Acoustic Simulation (Calibrated SNR) | 3.16% | 64.0% | 9 | **9 of 9 (100.0%)** | **0 (0.0%)** | **100.0%** |
 
-**Key Finding:** Spoken read-back confirmation with digit-by-digit verification catches the vast majority of acoustic confusions before any action is dispatched to the fleet database, maintaining 96–100% dispatch accuracy even under severe noise. Failures are transparently reported rather than assumed away.
+---
+
+### Parametric Driver Attention Sensitivity Sweep (0% to 20% Reflexive Error Rate)
+
+To address the reality that human driver attention under highway fatigue is a variable parameter rather than a single fixed constant, `benchmark/score.py` executes a parametric sweep across assumed driver mishearing/reflexive agreement rates:
+
+| Assumed Driver Error Rate | Clean (16 kHz) Dispatch Acc | Telephony 8 kHz Dispatch Acc | 10 dB SNR Dispatch Acc | 5 dB SNR Dispatch Acc |
+| :---: | :---: | :---: | :---: | :---: |
+| **0% (Attentive Driver)** | **100.0%** | **100.0%** | **100.0%** | **100.0%** |
+| **5% (Minor Distraction)** | **99.8%** | **99.8%** | **98.6%** | **98.2%** |
+| **10% (Moderate Noise)** | **99.6%** | **99.6%** | **97.2%** | **96.4%** |
+| **15% (Heavy Fatigue)** | **99.4%** | **99.4%** | **95.8%** | **94.6%** |
+| **20% (Severe Noise & Fatigue)** | **99.2%** | **99.2%** | **94.4%** | **92.8%** |
+
+*Raw data logged in `benchmark/results/driver_sensitivity_sweep.csv`.*
+
+---
+
+### Train vs. Held-Out Evaluation Protocol
+To avoid data contamination and memorization on small corpora:
+- **Training Set (N = 18 utterances x 4 variants = 72 clips):** `core/train_asr.py` and `core/train_nlu.py` strictly train only on the 18 training utterances.
+- **Held-Out Test Set (N = 7 utterances x 4 variants = 28 clips):** Utterances `utt_03, utt_07, utt_11, utt_15, utt_19, utt_22, utt_25` are strictly quarantined and never seen during gradient updates. Evaluated separately in `benchmark/evaluate_trained_models.py`.
+- **Dynamic Evon Cache Invalidation:** Evon extraction cache keys incorporate the MD5 hash of active phonetic rules (`get_rules_version_hash()`). Stored cache entries are automatically invalidated whenever continuous learning synthesizes new disambiguation rules.
 
 ---
 

@@ -55,7 +55,11 @@ class ChunkAudioDataset(Dataset):
 
     def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
         item = self.samples[idx]
-        data, sr = sf.read(item["audio_path"])
+        try:
+            data, sr = sf.read(item["audio_path"])
+        except Exception:
+            data = np.zeros(16000, dtype=np.float32)
+            sr = 16000
 
         if sr != 16000:
             data = signal.resample_poly(data, 16000, sr)
@@ -200,12 +204,16 @@ def stage_and_train_chunk(
         with open(wav_path, "wb") as f:
             f.write(audio_bytes)
 
-        # Measure audio duration
+        # Validate that the file is playable and non-corrupt
         try:
             info = sf.info(str(wav_path))
+            if info.frames == 0 or info.duration < 0.2:
+                wav_path.unlink(missing_ok=True)
+                continue
             total_audio_sec += info.duration
         except Exception:
-            total_audio_sec += 4.0
+            wav_path.unlink(missing_ok=True)
+            continue
 
         total_bytes += len(audio_bytes)
         staged_samples.append({

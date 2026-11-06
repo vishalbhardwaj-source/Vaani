@@ -33,11 +33,16 @@ OUTPUT_DIR = BASE_DIR / "models" / "whisper_hinglish_lora"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
+# Strict Held-Out Evaluation Set (Excluded from model training)
+HELD_OUT_UTT_IDS = {"utt_03", "utt_07", "utt_11", "utt_15", "utt_19", "utt_22", "utt_25"}
+
+
 class HinglishTelephonyASRDataset(Dataset):
     """
     Paired audio-text dataset constructed from:
     1. Benchmark Hinglish dispatch recordings (clean, 8 kHz, 10 dB SNR, 5 dB SNR)
     2. Utterance transcripts from benchmark/utterances.csv
+    Strictly excludes the 7 held-out evaluation utterances.
     """
     def __init__(self, processor: WhisperProcessor):
         self.processor = processor
@@ -53,6 +58,10 @@ class HinglishTelephonyASRDataset(Dataset):
 
         for _, row in df.iterrows():
             utt_id = row["id"]
+            # Enforce strict train / held-out split: skip test clips
+            if utt_id in HELD_OUT_UTT_IDS:
+                continue
+
             text = str(row["utterance"]).strip()
 
             for var in variants:
@@ -62,6 +71,7 @@ class HinglishTelephonyASRDataset(Dataset):
                         "audio_path": str(audio_file),
                         "text": text
                     })
+        print(f"Dataset Built: {len(self.samples)} training samples ({len(df) - len(HELD_OUT_UTT_IDS)} utterances). Excluded {len(HELD_OUT_UTT_IDS)} held-out utterances.")
 
         print(f"Loaded {len(self.samples)} paired audio-text samples across 4 acoustic conditions.")
 

@@ -25,8 +25,12 @@ OUTPUT_DIR = BASE_DIR / "models" / "nlu_slot_extractor"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
+# Strict Held-Out Evaluation Set (Excluded from NLU model training)
+HELD_OUT_UTT_IDS = {"utt_03", "utt_07", "utt_11", "utt_15", "utt_19", "utt_22", "utt_25"}
+
+
 def build_training_examples() -> List[Dict[str, str]]:
-    """Build dataset of Hinglish utterances paired with structured target JSON."""
+    """Build dataset of Hinglish utterances paired with structured target JSON. Excludes held-out test set."""
     csv_path = BASE_DIR / "benchmark" / "utterances.csv"
     df = pd.read_csv(csv_path)
 
@@ -34,6 +38,11 @@ def build_training_examples() -> List[Dict[str, str]]:
 
     # Format read-back template
     for _, row in df.iterrows():
+        utt_id = row["id"]
+        # Enforce strict train / held-out split
+        if utt_id in HELD_OUT_UTT_IDS:
+            continue
+
         utt = str(row["utterance"]).strip()
         inc_type = str(row["incident_type"]).strip()
         temp = None if pd.isna(row["true_temperature_c"]) else float(row["true_temperature_c"])

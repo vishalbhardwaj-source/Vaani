@@ -1,25 +1,26 @@
 # Core web & validation
-streamlit>=1.35.0,<=1.42.0
-pydantic>=2.7.0,<3.0.0
-python-dotenv>=1.0.0,<2.0.0
-httpx>=0.27.0,<1.0.0
+streamlit==1.66.1
+pydantic==2.14.1
+python-dotenv==1.2.4
+httpx==0.28.1
 
 # Scientific & data processing
-numpy>=1.26.0,<2.2.0
-scipy>=1.13.0,<1.15.0
-pandas>=2.2.0,<3.0.0
-soundfile>=0.12.0,<1.0.0
-jiwer>=3.0.0,<4.0.0
-plotly>=5.20.0,<6.0.0
+numpy==2.5.4
+scipy==1.18.1
+pandas==3.0.6
+soundfile==0.14.0
+jiwer==4.0.0
+plotly==7.1.0
 
 # Testing
-pytest>=8.0.0,<9.0.0
+pytest==9.1.1
 
 # Speech / ML (Torch & HuggingFace)
-torch>=2.0.0,<2.6.0
-torchaudio>=2.0.0,<2.6.0
-transformers>=4.40.0,<4.49.0
-peft>=0.10.0,<0.14.0
+torch==2.14.1+cu130
+torchaudio==2.11.0+cu130
+transformers==5.22.1
+peft==0.21.2
+tqdm==4.70.1
 
 # Optional fallbacks
-gTTS>=2.5.0,<3.0.0
+gTTS==2.5.4

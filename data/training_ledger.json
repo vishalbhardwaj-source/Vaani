@@ -1,7 +1,7 @@
 {
-  "cumulative_gb_processed": 2.4526,
-  "cumulative_hours_processed": 22.975,
-  "cumulative_samples_trained": 7550,
+  "cumulative_gb_processed": 2.6168,
+  "cumulative_hours_processed": 24.506,
+  "cumulative_samples_trained": 8050,
   "history": [
     {
       "chunk_id": "chunk_00_baseline",
@@ -132,6 +132,16 @@
       "post_loss": 0.0852,
       "status": "COMPLETED & PURGED",
       "timestamp": "2026-11-06T16:35:56.453817+00:00"
+    },
+    {
+      "chunk_id": "chunk_13_hinglish_500",
+      "source": "agarwalayushi/hinglish",
+      "samples": 500,
+      "size_gb": 0.1642,
+      "hours": 1.531,
+      "post_loss": 0.0695,
+      "status": "COMPLETED & PURGED",
+      "timestamp": "2026-11-06T16:40:47.447365+00:00"
     }
   ]
 }

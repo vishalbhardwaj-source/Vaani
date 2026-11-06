@@ -1,0 +1,21 @@
+Assumed Driver Error Rate (%),Condition,Raw Slot Acc (%),Total ASR Errors,Expected Caught,Expected Silent Failures,Modeled Dispatch Accuracy (%)
+0%,clean,96.0,1,1.0,0.0,100.0
+0%,telephony_8khz,96.0,1,1.0,0.0,100.0
+0%,telephony_10db,72.0,7,7.0,0.0,100.0
+0%,telephony_5db,64.0,9,9.0,0.0,100.0
+5%,clean,96.0,1,0.95,0.05,99.8
+5%,telephony_8khz,96.0,1,0.95,0.05,99.8
+5%,telephony_10db,72.0,7,6.65,0.35,98.6
+5%,telephony_5db,64.0,9,8.55,0.45,98.2
+10%,clean,96.0,1,0.9,0.1,99.6
+10%,telephony_8khz,96.0,1,0.9,0.1,99.6
+10%,telephony_10db,72.0,7,6.3,0.7,97.2
+10%,telephony_5db,64.0,9,8.1,0.9,96.4
+15%,clean,96.0,1,0.85,0.15,99.4
+15%,telephony_8khz,96.0,1,0.85,0.15,99.4
+15%,telephony_10db,72.0,7,5.95,1.05,95.8
+15%,telephony_5db,64.0,9,7.65,1.35,94.6
+20%,clean,96.0,1,0.8,0.2,99.2
+20%,telephony_8khz,96.0,1,0.8,0.2,99.2
+20%,telephony_10db,72.0,7,5.6,1.4,94.4
+20%,telephony_5db,64.0,9,7.2,1.8,92.8

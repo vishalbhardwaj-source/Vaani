@@ -32,6 +32,7 @@ class DialogueController:
         self.vehicle_id = vehicle_id
         self.max_correction_rounds = max_correction_rounds
         self.correction_rounds = 0
+        self.requires_forced_confirmation = False
         
         self.current_record: Optional[ExtractionRecord] = None
         self.last_driver_utterance: str = ""
@@ -146,12 +147,13 @@ class DialogueController:
         if record.incident_type == IncidentType.BREAKDOWN:
             parts.insert(0, f"Vehicle {self.vehicle_id} breakdown report")
 
-        # Telematics plausibility check against vehicle target in fleet.sqlite
+        # Telematics plausibility policy: Flag large deviation (>25C) from cargo target in fleet.sqlite
         veh_telemetry = lookup_vehicle(self.vehicle_id)
         if veh_telemetry and record.temperature_c is not None:
             temp_diff = abs(record.temperature_c - veh_telemetry.target_temp_c)
-            if temp_diff > 25.0 and record.temperature_c in (80.0, 40.0):
-                parts.append("Dhyan dein: yeh telematics target se kaafi alag hai, confirm karein")
+            if temp_diff > 25.0:
+                self.requires_forced_confirmation = True
+                parts.append(f"Dhyan dein: Target {int(veh_telemetry.target_temp_c)} degree tha aur report {int(record.temperature_c)} degree hai")
 
         details = ", ".join(parts) if parts else "Diya gaya report"
         return f"{details}. Sahi hai na Bhaiya?"
@@ -163,7 +165,7 @@ class DialogueController:
         - CONFIRM -> transitions to ACTING (and immediately executes dispatch) -> DONE
         - CORRECT -> transitions to CORRECTING -> CONFIRMING
         - REJECT / UNCLEAR -> treated as not confirmed; retries or escalates
-        - If correction_rounds exceeds max_correction_rounds -> ESCALATING -> DONE
+        - If correction_rounds exceeds max_correction_rounds -> ESCALATING
         """
         if self.state != DialogueState.CONFIRMING:
             raise RuntimeError(f"Confirmation replies can only be processed from CONFIRMING state, currently: {self.state}")
@@ -172,6 +174,15 @@ class DialogueController:
 
         # CASE 1: DRIVER CONFIRMS -> PROCEED TO ACTING
         if intent == "CONFIRM":
+            # Safety Gate: If telematics target diverged widely, require explicit 'pakka' confirmation
+            if getattr(self, "requires_forced_confirmation", False):
+                lower_reply = (reply.raw_text or "").lower()
+                if "pakka" not in lower_reply and "bilkul" not in lower_reply and "sahi hai" not in lower_reply:
+                    self.requires_forced_confirmation = False
+                    retry_prompt = "Dhyan dein: Telematics target se kaafi antar hai. Agar bilkul sure hain toh 'haan pakka' kahein."
+                    self.last_agent_prompt = retry_prompt
+                    return DialogueState.CONFIRMING, retry_prompt
+
             self._record_transition(
                 DialogueState.ACTING,
                 trigger="DRIVER_AFFIRMATIVE_CONFIRMATION",
@@ -312,6 +323,9 @@ class DialogueController:
         return DialogueState.DONE, spoken_confirmation
 
     def _generate_clarification_prompt(self, missing_fields: List[str]) -> str:
+        if self.current_record and getattr(self.current_record, "anomalous_reading", None) is not None:
+            val = int(self.current_record.anomalous_reading)
+            return f"Bhaiya, aapne {val} degree bola jo unusual hai. Kya sahi temperature 18 degree hai ya kuch aur?"
         if "temperature_c" in missing_fields and "location_text" in missing_fields:
             return "Bhaiya, reefer ka temperature kitna dikha raha hai aur gaadi abhi kahan par hai?"
         elif "temperature_c" in missing_fields:
@@ -319,6 +333,20 @@ class DialogueController:
         elif "location_text" in missing_fields:
             return "Bhaiya, aap abhi highway par kis landmark ya toll ke paas hain?"
         return "Bhaiya, kripya thoda aur detail batayein."
+
+    def resolve_escalation_by_supervisor(self, supervisor_id: str = "TOWER_SUP_01", action_taken: str = "MANUAL_DISPATCH") -> Tuple[DialogueState, str]:
+        """Supervisory takeover: transitions ESCALATING state to terminal DONE with audit trail."""
+        if self.state != DialogueState.ESCALATING:
+            raise RuntimeError(f"Can only resolve escalation from ESCALATING state, currently: {self.state}")
+
+        self._record_transition(
+            DialogueState.DONE,
+            trigger="SUPERVISOR_RESOLUTION",
+            payload={"supervisor_id": supervisor_id, "action": action_taken}
+        )
+        msg = f"Escalation successfully resolved by supervisor {supervisor_id}. Action: {action_taken}"
+        self.last_agent_prompt = msg
+        return DialogueState.DONE, msg
 
     def reset(self):
         """Reset session to LISTENING state for new conversation."""
