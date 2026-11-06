@@ -6,3 +6,8 @@ __pycache__/
 !benchmark/audio/*.wav
 benchmark/audio/tts_cache/
 .env
+.env.*
+!.env.example
+*.jpg
+models/*.pt
+benchmark/results/*cache.json

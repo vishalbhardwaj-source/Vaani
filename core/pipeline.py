@@ -19,12 +19,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
 from core.denoiser_model import TelephonyDenoiser
-from transformers import (
-    WhisperProcessor,
-    WhisperForConditionalGeneration,
-    AutoTokenizer,
-    AutoModelForSeq2SeqLM
-)
+from core.asr_model import get_asr_service
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from peft import PeftModel
 
 
@@ -41,12 +37,10 @@ class TrainedVaaniPipeline:
         self.denoiser.to(self.device).eval()
         print("Model 1 (8 kHz Denoiser) loaded.")
 
-        # 2. Load Model 2: Hinglish ASR
-        asr_dir = BASE_DIR / "models" / "whisper_hinglish_lora"
-        self.asr_processor = WhisperProcessor.from_pretrained(str(asr_dir))
-        base_asr = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny")
-        self.asr_model = PeftModel.from_pretrained(base_asr, str(asr_dir))
-        self.asr_model.to(self.device).eval()
+        # 2. Load Model 2: Hinglish ASR via singleton
+        self.asr_service = get_asr_service()
+        self.asr_processor = self.asr_service.processor
+        self.asr_model = self.asr_service.model
         print("Model 2 (Hinglish ASR Whisper+LoRA) loaded.")
 
         # 3. Load Model 3: NLU Slot Extractor

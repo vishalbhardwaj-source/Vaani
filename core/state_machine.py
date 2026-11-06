@@ -8,6 +8,7 @@ LISTENING -> EXTRACTING -> (ASKING) -> CONFIRMING -> (CORRECTING) -> ACTING -> D
 """
 
 import datetime
+import logging
 from typing import Optional, List, Dict, Any, Tuple
 from core.schemas import (
     DialogueState,
@@ -17,6 +18,8 @@ from core.schemas import (
     StateTransitionLog
 )
 from core.tools import dispatch_assistance, update_eta, lookup_vehicle
+
+logger = logging.getLogger("vaani.state_machine")
 
 
 class DialogueController:
@@ -123,20 +126,32 @@ class DialogueController:
     def generate_readback_prompt(self, record: ExtractionRecord) -> str:
         """
         Generate spoken Hinglish read-back string for Timbre TTS.
-        Example: 'Temperature 28 degree, toll plaza se 42 km aage. Sahi hai?'
+        Uses digit-by-digit spelling for critical numbers to defeat diesel acoustic noise.
+        Example: 'Temperature 18 (ek, aath) degree, toll plaza se 42 km aage. Sahi hai?'
         """
         parts = []
         if record.temperature_c is not None:
-            parts.append(f"Temperature {int(record.temperature_c) if record.temperature_c.is_integer() else record.temperature_c} degree")
-            
+            temp_num = int(record.temperature_c) if record.temperature_c.is_integer() else record.temperature_c
+            sign_word = "minus " if record.temperature_c < 0 else ""
+            # Digit-by-digit breakdown (e.g. 18 -> "1, 8", 80 -> "8, 0")
+            digits = ", ".join(list(str(abs(int(temp_num)))))
+            parts.append(f"Temperature {sign_word}{temp_num} degree ({sign_word}{digits})")
+
         if record.location_text:
             if record.distance_km is not None:
                 parts.append(f"{record.location_text} se {int(record.distance_km) if record.distance_km.is_integer() else record.distance_km} km aage")
             else:
                 parts.append(f"{record.location_text} ke paas")
-                
+
         if record.incident_type == IncidentType.BREAKDOWN:
-            parts.insert(0, "Breakdown report")
+            parts.insert(0, f"Vehicle {self.vehicle_id} breakdown report")
+
+        # Telematics plausibility check against vehicle target in fleet.sqlite
+        veh_telemetry = lookup_vehicle(self.vehicle_id)
+        if veh_telemetry and record.temperature_c is not None:
+            temp_diff = abs(record.temperature_c - veh_telemetry.target_temp_c)
+            if temp_diff > 25.0 and record.temperature_c in (80.0, 40.0):
+                parts.append("Dhyan dein: yeh telematics target se kaafi alag hai, confirm karein")
 
         details = ", ".join(parts) if parts else "Diya gaya report"
         return f"{details}. Sahi hai na Bhaiya?"
@@ -180,11 +195,6 @@ class DialogueController:
                 "connect kar raha hoon. Kripya line par bane rahein."
             )
             self.last_agent_prompt = prompt
-            self._record_transition(
-                DialogueState.DONE,
-                trigger="ESCALATION_COMPLETED",
-                payload={"escalated_to": "Human Control Tower"}
-            )
             return DialogueState.ESCALATING, prompt
 
         if intent == "CORRECT":
@@ -213,8 +223,8 @@ class DialogueController:
                     driver_correction=reply.raw_text,
                     corrected_slots=self.current_record.model_dump()
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to persist driver correction to learning DB: {e}")
 
             # Move back to CONFIRMING with updated values
             self._record_transition(
@@ -270,11 +280,18 @@ class DialogueController:
         )
         self.last_action_result = dispatch_result
 
-        # Update simulated ETA delay
+        # Dynamically compute destination and delay from vehicle telematics
+        veh = lookup_vehicle(rec.vehicle_id or self.vehicle_id)
+        destination_hub = "Delhi Central Depot"
+        if veh and " to " in veh.route:
+            destination_hub = f"{veh.route.split(' to ')[-1].strip()} Hub"
+
+        est_delay = max(30, int(dispatch_result.get("technician_eta_min", 45)) + 15)
+
         update_eta(
             vehicle_id=rec.vehicle_id or self.vehicle_id,
-            destination="Delhi Central Depot",
-            delay_minutes=60,
+            destination=destination_hub,
+            delay_minutes=est_delay,
             reason=f"Incident: {rec.incident_type.value} at {rec.location_text}"
         )
 

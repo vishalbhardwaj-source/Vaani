@@ -23,6 +23,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+import html
 
 # Setup python path
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -363,12 +364,12 @@ with tab_console:
         <div class="telematics-card">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span class="telematics-label">DRIVER</span>
-                <span style="font-size: 0.8rem; color: #38BDF8; font-family: monospace;">{v_data.driver_phone}</span>
+                <span style="font-size: 0.8rem; color: #38BDF8; font-family: monospace;">{html.escape(str(v_data.driver_phone))}</span>
             </div>
-            <div style="font-size: 1.1rem; font-weight: 700; color: #FFF; margin-top: 2px;">{v_data.driver_name}</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #FFF; margin-top: 2px;">{html.escape(str(v_data.driver_name))}</div>
             <div style="margin-top: 10px;" class="telematics-label">ROUTE & LOCATION</div>
-            <div style="font-size: 0.9rem; color: #CBD5E1;">{v_data.route}</div>
-            <div style="font-size: 0.8rem; color: #94A3B8; margin-top: 2px;">📍 {v_data.last_known_location}</div>
+            <div style="font-size: 0.9rem; color: #CBD5E1;">{html.escape(str(v_data.route))}</div>
+            <div style="font-size: 0.8rem; color: #94A3B8; margin-top: 2px;">📍 {html.escape(str(v_data.last_known_location))}</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -378,7 +379,7 @@ with tab_console:
             <div class="telematics-card">
                 <div class="telematics-label">TARGET TEMP</div>
                 <div class="telematics-value" style="color: #60A5FA;">{v_data.target_temp_c}°C</div>
-                <div style="font-size: 0.7rem; color: #64748B;">{v_data.cargo_type}</div>
+                <div style="font-size: 0.7rem; color: #64748B;">{html.escape(str(v_data.cargo_type))}</div>
             </div>
             """, unsafe_allow_html=True)
         with col_t2:
@@ -519,7 +520,7 @@ with tab_console:
                     <span style="font-size: 0.75rem; color: #34D399; font-family: monospace;">⚡ {latency}s latency • {int(conf*100)}% conf</span>
                 </div>
                 <div style="font-size: 1.05rem; font-weight: 600; color: #38BDF8; margin-top: 6px;">
-                    "{st.session_state.current_transcript}"
+                    "{html.escape(str(st.session_state.current_transcript))}"
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -529,7 +530,7 @@ with tab_console:
             st.markdown(f"""
             <div class="readback-box">
                 <div class="readback-title">🔊 GNANI TIMBRE READ-BACK PROMPT (Awaiting Driver Confirmation)</div>
-                <div class="readback-text">"{ctrl.last_agent_prompt}"</div>
+                <div class="readback-text">"{html.escape(str(ctrl.last_agent_prompt))}"</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -570,8 +571,8 @@ with tab_console:
                         DISPATCH GATE UNLOCKED & TICKET ISSUED
                     </div>
                     <div style="font-size: 0.85rem; color: #CBD5E1; margin-top: 2px;">
-                        Ticket <strong>{ctrl.last_action_result['ticket_id']}</strong> dispatched for vehicle 
-                        <strong>{ctrl.last_action_result['vehicle_id']}</strong>. Estimated technician arrival: {ctrl.last_action_result['technician_eta_min']} min.
+                        Ticket <strong>{html.escape(str(ctrl.last_action_result['ticket_id']))}</strong> dispatched for vehicle 
+                        <strong>{html.escape(str(ctrl.last_action_result['vehicle_id']))}</strong>. Estimated technician arrival: {ctrl.last_action_result['technician_eta_min']} min.
                     </div>
                 </div>
             </div>
@@ -599,9 +600,9 @@ with tab_console:
                     <span style="font-size: 0.75rem; color: #10B981; font-weight: 700;">SCHEMA VALIDATED</span>
                 </div>
                 <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; margin-top: 8px;">
-                    <div><strong>Incident:</strong> <span style="color: #FBBF24;">{rec.incident_type.value}</span></div>
+                    <div><strong>Incident:</strong> <span style="color: #FBBF24;">{html.escape(str(rec.incident_type.value))}</span></div>
                     <div><strong>Temperature:</strong> <span style="color: #60A5FA;">{rec.temperature_c if rec.temperature_c is not None else 'null'}°C</span></div>
-                    <div><strong>Location:</strong> <span style="color: #38BDF8;">{rec.location_text or 'null'}</span></div>
+                    <div><strong>Location:</strong> <span style="color: #38BDF8;">{html.escape(str(rec.location_text or 'null'))}</span></div>
                     <div><strong>Distance:</strong> <span style="color: #C084FC;">{rec.distance_km if rec.distance_km is not None else 'null'} km</span></div>
                     <div><strong>Correction Rounds:</strong> <span style="color: #F87171;">{ctrl.correction_rounds} / {ctrl.max_correction_rounds}</span></div>
                 </div>
@@ -624,13 +625,13 @@ with tab_console:
                 st.markdown(f"""
                 <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid #1F2937; border-radius: 6px; padding: 10px; margin-bottom: 8px; font-size: 0.8rem;">
                     <div style="display: flex; justify-content: space-between; font-weight: 700;">
-                        <span style="color: #38BDF8;">{l['ticket_id']} • {l['vehicle_id']}</span>
-                        <span style="color: #FBBF24;">{l['priority']}</span>
+                        <span style="color: #38BDF8;">{html.escape(str(l['ticket_id']))} • {html.escape(str(l['vehicle_id']))}</span>
+                        <span style="color: #FBBF24;">{html.escape(str(l['priority']))}</span>
                     </div>
-                    <div style="color: #E2E8F0; margin-top: 4px;">{l['incident_type']} at {l['location']} ({l['temp_c']})</div>
+                    <div style="color: #E2E8F0; margin-top: 4px;">{html.escape(str(l['incident_type']))} at {html.escape(str(l['location']))} ({html.escape(str(l['temp_c']))})</div>
                     <div style="display: flex; justify-content: space-between; color: #64748B; font-size: 0.7rem; margin-top: 4px;">
-                        <span>{l['created_at']}</span>
-                        <span style="color: #F59E0B;">{l['source']}</span>
+                        <span>{html.escape(str(l['created_at']))}</span>
+                        <span style="color: #F59E0B;">{html.escape(str(l['source']))}</span>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)

@@ -20,8 +20,8 @@ from typing import Dict, Any, List, Optional
 
 if sys.platform == "win32":
     try:
-        sys.stdout.reconfigure(encoding="utf-8")
-        sys.stderr.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
+        sys.stderr.reconfigure(encoding="utf-8", line_buffering=True)
     except Exception:
         pass
 import numpy as np
@@ -219,12 +219,12 @@ def stage_and_train_chunk(
             print(f"Reached chunk size limit: {cur_gb:.2f} GB")
             break
 
-        if len(staged_samples) % 50 == 0:
-            print(f"  Staged {len(staged_samples)}/{max_samples} clips ({cur_gb * 1024:.1f} MB, {total_audio_sec/60:.1f} mins audio)...")
+        if len(staged_samples) % 25 == 0:
+            print(f"  Staged {len(staged_samples)}/{max_samples} clips ({cur_gb * 1024:.1f} MB, {total_audio_sec/60:.1f} mins audio)...", flush=True)
 
     chunk_size_gb = round(total_bytes / (1024 ** 3), 4)
     chunk_hours = round(total_audio_sec / 3600.0, 3)
-    print(f"✅ Staged {len(staged_samples)} clips | Size: {chunk_size_gb * 1024:.1f} MB ({chunk_size_gb:.3f} GB) | Duration: {chunk_hours:.2f} hours")
+    print(f"✅ Staged {len(staged_samples)} clips | Size: {chunk_size_gb * 1024:.1f} MB ({chunk_size_gb:.3f} GB) | Duration: {chunk_hours:.2f} hours", flush=True)
 
     # --- Phase 2: Load Model and Train on Chunk ---
     print(f"\n🧠 [Phase 2/4] Training Whisper-LoRA on Chunk ({epochs} epochs on GPU)...")
@@ -261,15 +261,15 @@ def stage_and_train_chunk(
         scheduler.step()
         avg_loss = total_loss / max(1, batches)
         final_loss = avg_loss
-        print(f"  Epoch [{epoch:02d}/{epochs:02d}] - Loss: {avg_loss:.4f} - LR: {scheduler.get_last_lr()[0]:.6f}")
+        print(f"  Epoch [{epoch:02d}/{epochs:02d}] - Loss: {avg_loss:.4f} - LR: {scheduler.get_last_lr()[0]:.6f}", flush=True)
 
     # Save updated adapters
-    print(f"💾 Saving updated LoRA adapters to {MODEL_DIR}...")
+    print(f"💾 Saving updated LoRA adapters to {MODEL_DIR}...", flush=True)
     model.save_pretrained(str(MODEL_DIR))
     processor.save_pretrained(str(MODEL_DIR))
 
     # --- Phase 3: Purge & Delete Raw Audio Chunk ---
-    print(f"\n🗑️ [Phase 3/4] Purging temporary raw audio data ({chunk_size_gb * 1024:.1f} MB)...")
+    print(f"\n🗑️ [Phase 3/4] Purging temporary raw audio data ({chunk_size_gb * 1024:.1f} MB)...", flush=True)
     del model
     del base_model
     del dataset

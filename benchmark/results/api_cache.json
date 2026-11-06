@@ -939,5 +939,1859 @@
     "missing_fields": [],
     "raw_transcript": "Emergency alert reefer temperature 2 degree se 28 degree ho gaya KMP Expressway",
     "confidence": 0.95
+  },
+  "evon_0a4ff84d5e_691f153e795cbc1b": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 18.0,
+    "location_text": null,
+    "distance_km": 42.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "भायिया REFER का temperature 18 degree होग गया है total plus आसे 42 kilometers आगेश",
+    "confidence": 0.95
+  },
+  "evon_0a4ff84d5e_25719f2aa2df444f": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 18.0,
+    "location_text": null,
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "सर गारी का temperature 80 degree नहीं 18 degree है पानी पत चोल के पास",
+    "confidence": 0.95
+  },
+  "evon_0a4ff84d5e_32ae9988e56f9a28": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -14.0,
+    "location_text": null,
+    "distance_km": 10.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "तen pressure minus 14 degree चाल राखा है मूर्ध हम अर्वासे 10 km के लूमीतर स्पहले",
+    "confidence": 0.95
+  },
+  "evon_9b3de91cdd_f82b8913eb445399": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 40.0,
+    "location_text": null,
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reef her warning नाये तेर 40 degree शों का रूँ है भी लास्पुर चॉक पे",
+    "confidence": 0.95
+  },
+  "evon_9b3de91cdd_af9025ba2e43fcb8": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -20.0,
+    "location_text": null,
+    "distance_km": 15.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "काबन मी भी भी पो रही है minus 20 degree हो गया कुन्तली board दर से 15 kilometers",
+    "confidence": 0.95
+  },
+  "evon_913a7fec69_da3aa991c0d98b6d": {
+    "incident_type": "unknown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": null,
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "सर बृीक दाउन हो गया है ऐन्जुन हो गया है जुन्हुर देखा है करनाल टोल से इतकि लॉमीटर्था जब हैं",
+    "confidence": 0.95
+  },
+  "evon_913a7fec69_6c7d0152af98b615": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -14.0,
+    "location_text": "Murthal Dhaba",
+    "distance_km": 10.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.95
+  },
+  "evon_913a7fec69_8680f161fbca9c6f": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -20.0,
+    "location_text": "Kundli Border",
+    "distance_km": 15.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Cabin me beep ho rahi hai minus 20 degree ho gaya Kundli Border se 15 km",
+    "confidence": 0.95
+  },
+  "evon_913a7fec69_9eaa95e4d0ed5993": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -8.0,
+    "location_text": "Jaipur Highway",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Emergency hai ice cream melt ho rahi hai temp minus 8 degree ho gaya Jaipur Highway",
+    "confidence": 0.95
+  },
+  "evon_913a7fec69_175bb9268c47a258": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 18.0,
+    "location_text": null,
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya chiller ka temperature 18 degree ho gaya hai jaldi batao",
+    "confidence": 0.95
+  },
+  "evon_913a7fec69_29287650071c97fb": {
+    "incident_type": "unknown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Toll",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir papers check ho rahe hain toll pe",
+    "confidence": 0.95
+  },
+  "evon_913a7fec69_c57b94db1c8ced99": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Mumbai Pune Expressway",
+    "distance_km": 68.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68",
+    "confidence": 0.95
+  },
+  "evon_913a7fec69_8a9be87b96787aaa": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Nh 44 Milepost 94",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Gaadi heat ho gayi engine band ho gaya NH 44 Milepost 94 pe",
+    "confidence": 0.95
+  },
+  "evon_913a7fec69_5fadddc0a64dabfc": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 40.0,
+    "location_text": "Bilaspur Chowk",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer warning aayi hai 40 degree show kar raha hai Bilaspur Chowk pe",
+    "confidence": 0.95
+  },
+  "evon_913a7fec69_5f863ca16c4be2d5": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Bilaspur Chowk",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 80 degree dikha raha hai Bilaspur Chowk pe",
+    "confidence": 0.95
+  },
+  "prisma_20a0939b6830_clean": {
+    "transcript": "Bhaiya reefer ka temperature 18 degree ho gaya hai toll plaza se 42 km aage",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_913a7fec69_7508ea678d0273fb": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 18.0,
+    "location_text": "Toll Plaza",
+    "distance_km": 42.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer ka temperature 18 degree ho gaya hai toll plaza se 42 km aage",
+    "confidence": 0.95
+  },
+  "prisma_9fb273b53e25_clean": {
+    "transcript": "Sir gaadi ka temperature 80 degree nahi 18 degree hai Panipat toll ke paas",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_913a7fec69_24cc05778a52da67": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 18.0,
+    "location_text": "Panipat Toll",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir gaadi ka temperature 80 degree nahi 18 degree hai Panipat toll ke paas",
+    "confidence": 0.95
+  },
+  "prisma_38355eb1b41a_clean": {
+    "transcript": "Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "prisma_de9a40a24238_clean": {
+    "transcript": "Reefer warning aayi hai 40 degree show kar raha hai Bilaspur Chowk pe",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "prisma_b29ed6a657a0_clean": {
+    "transcript": "Cabin me beep ho rahi hai minus 20 degree ho gaya Kundli Border se 15 km",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "prisma_1c185a207f35_clean": {
+    "transcript": "Sir breakdown ho gaya hai engine dhuan de raha hai Karnal Toll se 8 km aage",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_913a7fec69_48f7fe9141762597": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Karnal Toll",
+    "distance_km": 8.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir breakdown ho gaya hai engine dhuan de raha hai Karnal Toll se 8 km aage",
+    "confidence": 0.95
+  },
+  "prisma_72e79becb625_clean": {
+    "transcript": "Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_913a7fec69_2ab3bc7ab188e592": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 15.0,
+    "location_text": "Shahbad",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas",
+    "confidence": 0.95
+  },
+  "prisma_aa428b9dcedc_clean": {
+    "transcript": "Bhaiya 14 degree ho gaya hai dairy consignment ka Dharuhera flyover pe",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_913a7fec69_cb70c75174127980": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 14.0,
+    "location_text": "Dharuhera Flyover",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya 14 degree ho gaya hai dairy consignment ka Dharuhera flyover pe",
+    "confidence": 0.95
+  },
+  "prisma_2cc1a5430ed9_clean": {
+    "transcript": "Reefer temp 22 degree chala gaya hai Shambhu Border se 25 km pehle",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_913a7fec69_861e5ebd03b1d67c": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 22.0,
+    "location_text": "Shambhu Border",
+    "distance_km": 25.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer temp 22 degree chala gaya hai Shambhu Border se 25 km pehle",
+    "confidence": 0.95
+  },
+  "prisma_4db2f05e8b84_clean": {
+    "transcript": "Compressor trip ho gaya hai temperature 4 degree se 12 degree ho gaya Ambala Cantt",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_913a7fec69_31d664cb4fdbfcee": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 12.0,
+    "location_text": "Ambala Cantt",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Compressor trip ho gaya hai temperature 4 degree se 12 degree ho gaya Ambala Cantt",
+    "confidence": 0.95
+  },
+  "prisma_04105f699eec_clean": {
+    "transcript": "Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_913a7fec69_d3fa4a34a6998751": {
+    "incident_type": "unknown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Vadodara Bypass",
+    "distance_km": 30.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km",
+    "confidence": 0.95
+  },
+  "prisma_da47fc3d574b_clean": {
+    "transcript": "Emergency hai ice cream melt ho rahi hai temp minus 8 degree ho gaya Jaipur Highway",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "prisma_bfbd76a15968_clean": {
+    "transcript": "Temperature 28 degree ho gaya hai Gurugram Toll se 16 km pe",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_913a7fec69_73b85a22c731cd9a": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 28.0,
+    "location_text": "Gurugram Toll",
+    "distance_km": 16.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 28 degree ho gaya hai Gurugram Toll se 16 km pe",
+    "confidence": 0.95
+  },
+  "prisma_819d9f2cd499_clean": {
+    "transcript": "Bhaiya reefer ka sensor minus 22 degree ki jagah minus 2 degree dikha raha hai Sonipat",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_913a7fec69_e624d5349b6ed630": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -2.0,
+    "location_text": "Sonipat",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer ka sensor minus 22 degree ki jagah minus 2 degree dikha raha hai Sonipat",
+    "confidence": 0.95
+  },
+  "prisma_0bdc1bff1a4b_clean": {
+    "transcript": "Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "prisma_e8624147b2b0_clean": {
+    "transcript": "Temp badh ke 16 degree ho gaya hai Bawal Industrial Area ke samne",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_913a7fec69_b0c8f0ed89eacfb7": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 16.0,
+    "location_text": "Bawal Industrial Area",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temp badh ke 16 degree ho gaya hai Bawal Industrial Area ke samne",
+    "confidence": 0.95
+  },
+  "prisma_2d93da5b136a_clean": {
+    "transcript": "Temperature 30 degree cross kar gaya reefer unit fail ho gayi Neemrana se 5 km",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_913a7fec69_3b261d1d9ebdaa80": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 30.0,
+    "location_text": "Neemrana",
+    "distance_km": 5.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 30 degree cross kar gaya reefer unit fail ho gayi Neemrana se 5 km",
+    "confidence": 0.95
+  },
+  "prisma_c2e951126951_clean": {
+    "transcript": "Bhaiya reefer temperature 13 degree hai aur diesel leak ho raha hai Manesar",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_913a7fec69_b1856df7d31d5bed": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 13.0,
+    "location_text": "Manesar",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer temperature 13 degree hai aur diesel leak ho raha hai Manesar",
+    "confidence": 0.95
+  },
+  "prisma_9c676b566d3b_clean": {
+    "transcript": "Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_913a7fec69_2553e1dcf3f7d4db": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 19.0,
+    "location_text": "Ghaziabad Border",
+    "distance_km": 12.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage",
+    "confidence": 0.95
+  },
+  "prisma_b0f5574b228e_clean": {
+    "transcript": "Gaadi heat ho gayi engine band ho gaya NH 44 Milepost 94 pe",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "prisma_e6dbc7a1f440_clean": {
+    "transcript": "Reefer cooling drop ho gayi temp minus 16 degree se minus 6 ho gaya Panipat",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_913a7fec69_beb661adb57e289d": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -16.0,
+    "location_text": "Panipat",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer cooling drop ho gayi temp minus 16 degree se minus 6 ho gaya Panipat",
+    "confidence": 0.95
+  },
+  "prisma_aac414ace7f4_clean": {
+    "transcript": "Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_17c8d83e82e4eceb": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 25.0,
+    "location_text": "Rewari Bypass",
+    "distance_km": 18.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km",
+    "confidence": 0.95
+  },
+  "prisma_93b39381b13a_clean": {
+    "transcript": "Reefer alarm baj raha hai temperature 17 degree ho gaya Mathura Toll Plaza",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_7b43c3fa889885d2": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 17.0,
+    "location_text": "Mathura Toll Plaza",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer alarm baj raha hai temperature 17 degree ho gaya Mathura Toll Plaza",
+    "confidence": 0.95
+  },
+  "prisma_c96aedff2732_clean": {
+    "transcript": "Bhaiya fan belt toot gayi hai temperature 21 degree Agra Expressway km 110",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_7e4c53fc8d750c3a": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 21.0,
+    "location_text": "Agra Expressway",
+    "distance_km": 110.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya fan belt toot gayi hai temperature 21 degree Agra Expressway km 110",
+    "confidence": 0.95
+  },
+  "prisma_d8ca1b768ad0_clean": {
+    "transcript": "Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway",
+    "confidence": 0.96,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_b521184464a41465": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 18.0,
+    "location_text": "Kmp Expressway",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway",
+    "confidence": 0.95
+  },
+  "prisma_31efc1f82ee4_telephony_8khz": {
+    "transcript": "Bhaiya reefer ka temperature 18 degree ho gaya hai toll plaza se 42 km aage",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_7508ea678d0273fb": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 18.0,
+    "location_text": "Toll Plaza",
+    "distance_km": 42.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer ka temperature 18 degree ho gaya hai toll plaza se 42 km aage",
+    "confidence": 0.95
+  },
+  "prisma_9ddec8eab552_telephony_8khz": {
+    "transcript": "Sir gaadi ka temperature 80 degree nahi 18 degree hai Panipat toll ke paas",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_24cc05778a52da67": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 18.0,
+    "location_text": "Panipat Toll",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir gaadi ka temperature 80 degree nahi 18 degree hai Panipat toll ke paas",
+    "confidence": 0.95
+  },
+  "prisma_3d06e0b467ce_telephony_8khz": {
+    "transcript": "Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_6c7d0152af98b615": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -14.0,
+    "location_text": "Murthal Dhaba",
+    "distance_km": 10.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.95
+  },
+  "prisma_f77af423d21b_telephony_8khz": {
+    "transcript": "Reefer warning aayi hai 40 degree show kar raha hai Bilaspur Chowk pe",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_5fadddc0a64dabfc": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 40.0,
+    "location_text": "Bilaspur Chowk",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer warning aayi hai 40 degree show kar raha hai Bilaspur Chowk pe",
+    "confidence": 0.95
+  },
+  "prisma_ada540d960d8_telephony_8khz": {
+    "transcript": "Cabin me beep ho rahi hai minus 20 degree ho gaya Kundli Border se 15 km",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_8680f161fbca9c6f": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -20.0,
+    "location_text": "Kundli Border",
+    "distance_km": 15.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Cabin me beep ho rahi hai minus 20 degree ho gaya Kundli Border se 15 km",
+    "confidence": 0.95
+  },
+  "prisma_fbb5f72acaf8_telephony_8khz": {
+    "transcript": "Sir breakdown ho gaya hai engine dhuan de raha hai Karnal Toll se 8 km aage",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_48f7fe9141762597": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Karnal Toll",
+    "distance_km": 8.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir breakdown ho gaya hai engine dhuan de raha hai Karnal Toll se 8 km aage",
+    "confidence": 0.95
+  },
+  "prisma_054f96b0b42a_telephony_8khz": {
+    "transcript": "Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_2ab3bc7ab188e592": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 15.0,
+    "location_text": "Shahbad",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas",
+    "confidence": 0.95
+  },
+  "prisma_d3adac4ccc9f_telephony_8khz": {
+    "transcript": "Bhaiya 14 degree ho gaya hai dairy consignment ka Dharuhera flyover pe",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_cb70c75174127980": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 14.0,
+    "location_text": "Dharuhera Flyover",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya 14 degree ho gaya hai dairy consignment ka Dharuhera flyover pe",
+    "confidence": 0.95
+  },
+  "prisma_00dfd09242cf_telephony_8khz": {
+    "transcript": "Reefer temp 22 degree chala gaya hai Shambhu Border se 25 km pehle",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_861e5ebd03b1d67c": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 22.0,
+    "location_text": "Shambhu Border",
+    "distance_km": 25.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer temp 22 degree chala gaya hai Shambhu Border se 25 km pehle",
+    "confidence": 0.95
+  },
+  "prisma_665d01bd54ee_telephony_8khz": {
+    "transcript": "Compressor trip ho gaya hai temperature 4 degree se 12 degree ho gaya Ambala Cantt",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_31d664cb4fdbfcee": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 12.0,
+    "location_text": "Ambala Cantt",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Compressor trip ho gaya hai temperature 4 degree se 12 degree ho gaya Ambala Cantt",
+    "confidence": 0.95
+  },
+  "prisma_edba8b7b3933_telephony_8khz": {
+    "transcript": "Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_d3fa4a34a6998751": {
+    "incident_type": "unknown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Vadodara Bypass",
+    "distance_km": 30.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km",
+    "confidence": 0.95
+  },
+  "prisma_b3ab30946dcd_telephony_8khz": {
+    "transcript": "Emergency hai ice cream melt ho rahi hai temp minus 8 degree ho gaya Jaipur Highway",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_9eaa95e4d0ed5993": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -8.0,
+    "location_text": "Jaipur Highway",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Emergency hai ice cream melt ho rahi hai temp minus 8 degree ho gaya Jaipur Highway",
+    "confidence": 0.95
+  },
+  "prisma_9ed3fa046f5b_telephony_8khz": {
+    "transcript": "Temperature 28 degree ho gaya hai Gurugram Toll se 16 km pe",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_73b85a22c731cd9a": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 28.0,
+    "location_text": "Gurugram Toll",
+    "distance_km": 16.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 28 degree ho gaya hai Gurugram Toll se 16 km pe",
+    "confidence": 0.95
+  },
+  "prisma_23416d797660_telephony_8khz": {
+    "transcript": "Bhaiya reefer ka sensor minus 22 degree ki jagah minus 2 degree dikha raha hai Sonipat",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_e624d5349b6ed630": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -2.0,
+    "location_text": "Sonipat",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer ka sensor minus 22 degree ki jagah minus 2 degree dikha raha hai Sonipat",
+    "confidence": 0.95
+  },
+  "prisma_1a1251ffa0f8_telephony_8khz": {
+    "transcript": "Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_c57b94db1c8ced99": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Mumbai Pune Expressway",
+    "distance_km": 68.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68",
+    "confidence": 0.95
+  },
+  "prisma_bbc44ca2ab36_telephony_8khz": {
+    "transcript": "Temp badh ke 16 degree ho gaya hai Bawal Industrial Area ke samne",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_b0c8f0ed89eacfb7": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 16.0,
+    "location_text": "Bawal Industrial Area",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temp badh ke 16 degree ho gaya hai Bawal Industrial Area ke samne",
+    "confidence": 0.95
+  },
+  "prisma_a838df669a27_telephony_8khz": {
+    "transcript": "Temperature 30 degree cross kar gaya reefer unit fail ho gayi Neemrana se 5 km",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_3b261d1d9ebdaa80": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 30.0,
+    "location_text": "Neemrana",
+    "distance_km": 5.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 30 degree cross kar gaya reefer unit fail ho gayi Neemrana se 5 km",
+    "confidence": 0.95
+  },
+  "prisma_bb1f351a6602_telephony_8khz": {
+    "transcript": "Bhaiya reefer temperature 13 degree hai aur diesel leak ho raha hai Manesar",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_b1856df7d31d5bed": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 13.0,
+    "location_text": "Manesar",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer temperature 13 degree hai aur diesel leak ho raha hai Manesar",
+    "confidence": 0.95
+  },
+  "prisma_37cd5edee18b_telephony_8khz": {
+    "transcript": "Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_2553e1dcf3f7d4db": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 19.0,
+    "location_text": "Ghaziabad Border",
+    "distance_km": 12.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage",
+    "confidence": 0.95
+  },
+  "prisma_6917e9bd00b1_telephony_8khz": {
+    "transcript": "Gaadi heat ho gayi engine band ho gaya NH 44 Milepost 94 pe",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_8a9be87b96787aaa": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Nh 44 Milepost 94",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Gaadi heat ho gayi engine band ho gaya NH 44 Milepost 94 pe",
+    "confidence": 0.95
+  },
+  "prisma_99f7852a03c9_telephony_8khz": {
+    "transcript": "Reefer cooling drop ho gayi temp minus 16 degree se minus 6 ho gaya Panipat",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_beb661adb57e289d": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -16.0,
+    "location_text": "Panipat",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer cooling drop ho gayi temp minus 16 degree se minus 6 ho gaya Panipat",
+    "confidence": 0.95
+  },
+  "prisma_966b6fd77165_telephony_8khz": {
+    "transcript": "Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "prisma_76e263b33b61_telephony_8khz": {
+    "transcript": "Reefer alarm baj raha hai temperature 17 degree ho gaya Mathura Toll Plaza",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "prisma_d0e2084e6804_telephony_8khz": {
+    "transcript": "Bhaiya fan belt toot gayi hai temperature 21 degree Agra Expressway km 110",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "prisma_6ad4522448b2_telephony_8khz": {
+    "transcript": "Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway",
+    "confidence": 0.89,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "prisma_00c8a9c12771_telephony_10db": {
+    "transcript": "Bhaiya reefer ka temperature 80 degree ho gaya hai toll plaza se 42 km aage",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_5d1028f8e618a5c9": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Toll Plaza",
+    "distance_km": 42.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer ka temperature 80 degree ho gaya hai toll plaza se 42 km aage",
+    "confidence": 0.95
+  },
+  "prisma_d9a788207a26_telephony_10db": {
+    "transcript": "Sir gaadi ka temperature 80 degree nahi 80 degree hai Panipat toll ke paas",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_ab3da50bd78651ed": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Panipat Toll",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir gaadi ka temperature 80 degree nahi 80 degree hai Panipat toll ke paas",
+    "confidence": 0.95
+  },
+  "prisma_657c48a7c5fb_telephony_10db": {
+    "transcript": "Temperature minus 40 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_c541baaa2c_06fc1b7a87515d2b": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -40.0,
+    "location_text": "Murthal Dhaba",
+    "distance_km": 10.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature minus 40 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.95
+  },
+  "prisma_f500f4c8fad9_telephony_10db": {
+    "transcript": "Reefer warning aayi hai 40 degree show kar raha hai Bilaspur Chowk pe",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_81b9857b53_5fadddc0a64dabfc": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 40.0,
+    "location_text": "Bilaspur Chowk",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer warning aayi hai 40 degree show kar raha hai Bilaspur Chowk pe",
+    "confidence": 0.95
+  },
+  "prisma_eb13fe853c85_telephony_10db": {
+    "transcript": "Cabin me beep ho rahi hai minus 20 degree ho gaya Kundli Border se 15 km",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_81b9857b53_8680f161fbca9c6f": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -20.0,
+    "location_text": "Kundli Border",
+    "distance_km": 15.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Cabin me beep ho rahi hai minus 20 degree ho gaya Kundli Border se 15 km",
+    "confidence": 0.95
+  },
+  "prisma_0ae628b7c813_telephony_10db": {
+    "transcript": "Sir breakdown ho gaya hai engine dhuan de raha hai Karnal Toll se 8 km aage",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_81b9857b53_48f7fe9141762597": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Karnal Toll",
+    "distance_km": 8.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir breakdown ho gaya hai engine dhuan de raha hai Karnal Toll se 8 km aage",
+    "confidence": 0.95
+  },
+  "prisma_b1e5119261d6_telephony_10db": {
+    "transcript": "Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_81b9857b53_2ab3bc7ab188e592": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 15.0,
+    "location_text": "Shahbad",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas",
+    "confidence": 0.95
+  },
+  "prisma_51cedb8f3b37_telephony_10db": {
+    "transcript": "Bhaiya 40 degree ho gaya hai dairy consignment ka Dharuhera flyover pe",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_81b9857b53_42a0fed659ce2422": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 40.0,
+    "location_text": "Dharuhera Flyover",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya 40 degree ho gaya hai dairy consignment ka Dharuhera flyover pe",
+    "confidence": 0.95
+  },
+  "prisma_f1b8006233e0_telephony_10db": {
+    "transcript": "Reefer temp 22 degree chala gaya hai Shambhu Border se 25 km pehle",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_3fd7eb5247_861e5ebd03b1d67c": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 22.0,
+    "location_text": "Shambhu Border",
+    "distance_km": 25.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer temp 22 degree chala gaya hai Shambhu Border se 25 km pehle",
+    "confidence": 0.95
+  },
+  "prisma_99335bb449e2_telephony_10db": {
+    "transcript": "Compressor trip ho gaya hai temperature 4 degree se 12 degree ho gaya Ambala Cantt",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_3fd7eb5247_31d664cb4fdbfcee": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 12.0,
+    "location_text": "Ambala Cantt",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Compressor trip ho gaya hai temperature 4 degree se 12 degree ho gaya Ambala Cantt",
+    "confidence": 0.95
+  },
+  "prisma_cd25853bb1d6_telephony_10db": {
+    "transcript": "Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_3fd7eb5247_d3fa4a34a6998751": {
+    "incident_type": "unknown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Vadodara Bypass",
+    "distance_km": 30.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km",
+    "confidence": 0.95
+  },
+  "prisma_89cdf8af04ca_telephony_10db": {
+    "transcript": "Emergency hai ice cream melt ho rahi hai temp minus 8 degree ho gaya Jaipur Highway",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_3fd7eb5247_9eaa95e4d0ed5993": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -8.0,
+    "location_text": "Jaipur Highway",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Emergency hai ice cream melt ho rahi hai temp minus 8 degree ho gaya Jaipur Highway",
+    "confidence": 0.95
+  },
+  "prisma_c4d5eb54da84_telephony_10db": {
+    "transcript": "Temperature 28 degree ho gaya hai Gurugram Toll se 16 km pe",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_3fd7eb5247_73b85a22c731cd9a": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 28.0,
+    "location_text": "Gurugram Toll",
+    "distance_km": 16.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 28 degree ho gaya hai Gurugram Toll se 16 km pe",
+    "confidence": 0.95
+  },
+  "prisma_08f528e9e9b4_telephony_10db": {
+    "transcript": "Bhaiya reefer ka sensor minus 22 degree ki jagah minus 2 degree dikha raha hai Sonipat",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_3fd7eb5247_e624d5349b6ed630": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -2.0,
+    "location_text": "Sonipat",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer ka sensor minus 22 degree ki jagah minus 2 degree dikha raha hai Sonipat",
+    "confidence": 0.95
+  },
+  "prisma_265224b23ce8_telephony_10db": {
+    "transcript": "Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_3fd7eb5247_c57b94db1c8ced99": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Mumbai Pune Expressway",
+    "distance_km": 68.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68",
+    "confidence": 0.95
+  },
+  "prisma_074841ede06e_telephony_10db": {
+    "transcript": "Temp badh ke 16 degree ho gaya hai Bawal Industrial Area ke samne",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_3fd7eb5247_b0c8f0ed89eacfb7": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 16.0,
+    "location_text": "Bawal Industrial Area",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temp badh ke 16 degree ho gaya hai Bawal Industrial Area ke samne",
+    "confidence": 0.95
+  },
+  "prisma_f5f6a6e00ed8_telephony_10db": {
+    "transcript": "Temperature 30 degree cross kar gaya reefer unit fail ho gayi Neemrana se 5 km",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_3fd7eb5247_3b261d1d9ebdaa80": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 30.0,
+    "location_text": "Neemrana",
+    "distance_km": 5.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 30 degree cross kar gaya reefer unit fail ho gayi Neemrana se 5 km",
+    "confidence": 0.95
+  },
+  "prisma_cf3d10078b4b_telephony_10db": {
+    "transcript": "Bhaiya reefer temperature 13 degree hai aur diesel leak ho raha hai Manesar",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_3fd7eb5247_b1856df7d31d5bed": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 13.0,
+    "location_text": "Manesar",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer temperature 13 degree hai aur diesel leak ho raha hai Manesar",
+    "confidence": 0.95
+  },
+  "prisma_5fa098a00682_telephony_10db": {
+    "transcript": "Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_3fd7eb5247_2553e1dcf3f7d4db": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 19.0,
+    "location_text": "Ghaziabad Border",
+    "distance_km": 12.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage",
+    "confidence": 0.95
+  },
+  "prisma_d03e5e92b899_telephony_10db": {
+    "transcript": "Gaadi heat ho gayi engine band ho gaya NH 44 Milepost 94 pe",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_3fd7eb5247_8a9be87b96787aaa": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Nh 44 Milepost 94",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Gaadi heat ho gayi engine band ho gaya NH 44 Milepost 94 pe",
+    "confidence": 0.95
+  },
+  "prisma_123bd2a36f77_telephony_10db": {
+    "transcript": "Reefer cooling drop ho gayi temp minus 16 degree se minus 6 ho gaya Panipat",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_3fd7eb5247_beb661adb57e289d": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -16.0,
+    "location_text": "Panipat",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer cooling drop ho gayi temp minus 16 degree se minus 6 ho gaya Panipat",
+    "confidence": 0.95
+  },
+  "prisma_83ab609f9b86_telephony_10db": {
+    "transcript": "Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 80 km",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_e6301f98f5_9f791b1951de79e6": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 25.0,
+    "location_text": "Rewari Bypass",
+    "distance_km": 80.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 80 km",
+    "confidence": 0.95
+  },
+  "prisma_3bbe47a7d5d8_telephony_10db": {
+    "transcript": "Reefer alarm baj raha hai temperature 17 degree ho gaya Mathura Toll Plaza",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_e6301f98f5_7b43c3fa889885d2": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 17.0,
+    "location_text": "Mathura Toll Plaza",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer alarm baj raha hai temperature 17 degree ho gaya Mathura Toll Plaza",
+    "confidence": 0.95
+  },
+  "prisma_8a6661792031_telephony_10db": {
+    "transcript": "Bhaiya fan belt toot gayi hai temperature 21 degree Agra Expressway km 110",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_e6301f98f5_7e4c53fc8d750c3a": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 21.0,
+    "location_text": "Agra Expressway",
+    "distance_km": 110.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya fan belt toot gayi hai temperature 21 degree Agra Expressway km 110",
+    "confidence": 0.95
+  },
+  "prisma_209e931ae7e9_telephony_10db": {
+    "transcript": "Emergency alert reefer temperature 2 degree se 80 degree ho gaya KMP Expressway",
+    "confidence": 0.82,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_e6301f98f5_7dc9eae3764197e4": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Kmp Expressway",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Emergency alert reefer temperature 2 degree se 80 degree ho gaya KMP Expressway",
+    "confidence": 0.95
+  },
+  "prisma_fc01ef512c76_telephony_5db": {
+    "transcript": "Bhaiya reefer ka temperature 28 degree ho gaya hai toll plaza se 42 km aage",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_e6301f98f5_452a3daf0c71c89b": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 28.0,
+    "location_text": "Toll Plaza",
+    "distance_km": 42.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer ka temperature 28 degree ho gaya hai toll plaza se 42 km aage",
+    "confidence": 0.95
+  },
+  "prisma_221f6957462d_telephony_5db": {
+    "transcript": "Sir gaadi ka temperature 80 degree nahi 28 degree hai Panipat toll ke paas",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_d9e9f0c6f4_e497c98e3abe82d1": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 28.0,
+    "location_text": "Panipat Toll",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir gaadi ka temperature 80 degree nahi 28 degree hai Panipat toll ke paas",
+    "confidence": 0.95
+  },
+  "prisma_89295f517308_telephony_5db": {
+    "transcript": "Temperature  14 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_ce5998e5e7_6590abe6ba7678ce": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 14.0,
+    "location_text": "Murthal Dhaba",
+    "distance_km": 10.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature  14 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.95
+  },
+  "prisma_8ae43f9135a3_telephony_5db": {
+    "transcript": "Reefer warning aayi hai 40 degree show kar raha hai Bilaspur Chowk pe",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_ce5998e5e7_5fadddc0a64dabfc": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 40.0,
+    "location_text": "Bilaspur Chowk",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer warning aayi hai 40 degree show kar raha hai Bilaspur Chowk pe",
+    "confidence": 0.95
+  },
+  "prisma_40b2e88afdd0_telephony_5db": {
+    "transcript": "Cabin me beep ho rahi hai  20 degree ho gaya Kundli Border se 15 km",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_ce5998e5e7_a522e1644ff9a008": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 20.0,
+    "location_text": "Kundli Border",
+    "distance_km": 15.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Cabin me beep ho rahi hai  20 degree ho gaya Kundli Border se 15 km",
+    "confidence": 0.95
+  },
+  "prisma_ed8871181f82_telephony_5db": {
+    "transcript": "Sir breakdown ho gaya hai engine dhuan de raha hai Karnal Toll se 8 km aage",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_ce5998e5e7_48f7fe9141762597": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Karnal Toll",
+    "distance_km": 8.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir breakdown ho gaya hai engine dhuan de raha hai Karnal Toll se 8 km aage",
+    "confidence": 0.95
+  },
+  "prisma_e029ca299ffe_telephony_5db": {
+    "transcript": "Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_ce5998e5e7_2ab3bc7ab188e592": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 15.0,
+    "location_text": "Shahbad",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas",
+    "confidence": 0.95
+  },
+  "prisma_140928acab95_telephony_5db": {
+    "transcript": "Bhaiya 14 degree ho gaya hai dairy consignment ka Dharuhera flyover pe",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_ce5998e5e7_cb70c75174127980": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 14.0,
+    "location_text": "Dharuhera Flyover",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya 14 degree ho gaya hai dairy consignment ka Dharuhera flyover pe",
+    "confidence": 0.95
+  },
+  "prisma_e187790b3d96_telephony_5db": {
+    "transcript": "Reefer temp 22 degree chala gaya hai Shambhu Border se 25 km pehle",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_ce5998e5e7_861e5ebd03b1d67c": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 22.0,
+    "location_text": "Shambhu Border",
+    "distance_km": 25.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer temp 22 degree chala gaya hai Shambhu Border se 25 km pehle",
+    "confidence": 0.95
+  },
+  "prisma_2d19a75b052a_telephony_5db": {
+    "transcript": "Compressor trip ho gaya hai temperature 4 degree se 12 degree ho gaya Ambala Cantt",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_ce5998e5e7_31d664cb4fdbfcee": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 12.0,
+    "location_text": "Ambala Cantt",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Compressor trip ho gaya hai temperature 4 degree se 12 degree ho gaya Ambala Cantt",
+    "confidence": 0.95
+  },
+  "prisma_3a518f83b4a9_telephony_5db": {
+    "transcript": "Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_ce5998e5e7_d3fa4a34a6998751": {
+    "incident_type": "unknown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Vadodara Bypass",
+    "distance_km": 30.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km",
+    "confidence": 0.95
+  },
+  "prisma_302afcb55bcb_telephony_5db": {
+    "transcript": "Emergency hai ice cream melt ho rahi hai temp  8 degree ho gaya Jaipur Highway",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_ce5998e5e7_9f55d3457840386c": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 8.0,
+    "location_text": "Jaipur Highway",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Emergency hai ice cream melt ho rahi hai temp  8 degree ho gaya Jaipur Highway",
+    "confidence": 0.95
+  },
+  "prisma_7ea0b231aeef_telephony_5db": {
+    "transcript": "Temperature 28 degree ho gaya hai Gurugram Toll se 16 km pe",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_ce5998e5e7_73b85a22c731cd9a": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 28.0,
+    "location_text": "Gurugram Toll",
+    "distance_km": 16.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 28 degree ho gaya hai Gurugram Toll se 16 km pe",
+    "confidence": 0.95
+  },
+  "prisma_5bf01887adf3_telephony_5db": {
+    "transcript": "Bhaiya reefer ka sensor  22 degree ki jagah  2 degree dikha raha hai Sonipat",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_ce5998e5e7_253c464e2b12018a": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 2.0,
+    "location_text": "Sonipat",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer ka sensor  22 degree ki jagah  2 degree dikha raha hai Sonipat",
+    "confidence": 0.95
+  },
+  "prisma_2c7e381a2012_telephony_5db": {
+    "transcript": "Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_126f72118a_c57b94db1c8ced99": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Mumbai Pune Expressway",
+    "distance_km": 68.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68",
+    "confidence": 0.95
+  },
+  "prisma_6fb36cdfd0c7_telephony_5db": {
+    "transcript": "Temp badh ke 16 degree ho gaya hai Bawal Industrial Area ke samne",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_126f72118a_b0c8f0ed89eacfb7": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 16.0,
+    "location_text": "Bawal Industrial Area",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temp badh ke 16 degree ho gaya hai Bawal Industrial Area ke samne",
+    "confidence": 0.95
+  },
+  "prisma_d1c73ec7dcc7_telephony_5db": {
+    "transcript": "Temperature 30 degree cross kar gaya reefer unit fail ho gayi Neemrana se 5 km",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_126f72118a_3b261d1d9ebdaa80": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 30.0,
+    "location_text": "Neemrana",
+    "distance_km": 5.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 30 degree cross kar gaya reefer unit fail ho gayi Neemrana se 5 km",
+    "confidence": 0.95
+  },
+  "prisma_571f694f30d5_telephony_5db": {
+    "transcript": "Bhaiya reefer temperature 13 degree hai aur diesel leak ho raha hai Manesar",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_126f72118a_b1856df7d31d5bed": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 13.0,
+    "location_text": "Manesar",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya reefer temperature 13 degree hai aur diesel leak ho raha hai Manesar",
+    "confidence": 0.95
+  },
+  "prisma_57b513617976_telephony_5db": {
+    "transcript": "Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_126f72118a_2553e1dcf3f7d4db": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 19.0,
+    "location_text": "Ghaziabad Border",
+    "distance_km": 12.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage",
+    "confidence": 0.95
+  },
+  "prisma_e3c29c54f39a_telephony_5db": {
+    "transcript": "Gaadi heat ho gayi engine band ho gaya NH 44 Milepost 94 pe",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_126f72118a_8a9be87b96787aaa": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Nh 44 Milepost 94",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Gaadi heat ho gayi engine band ho gaya NH 44 Milepost 94 pe",
+    "confidence": 0.95
+  },
+  "prisma_d7ec66a51272_telephony_5db": {
+    "transcript": "Reefer cooling drop ho gayi temp  16 degree se  6 ho gaya Panipat",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_126f72118a_bd38177c02ac531d": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 16.0,
+    "location_text": "Panipat",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer cooling drop ho gayi temp  16 degree se  6 ho gaya Panipat",
+    "confidence": 0.95
+  },
+  "prisma_6e6688efab1e_telephony_5db": {
+    "transcript": "Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 28 km",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_126f72118a_051565abe7a11f9a": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 25.0,
+    "location_text": "Rewari Bypass",
+    "distance_km": 28.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 28 km",
+    "confidence": 0.95
+  },
+  "prisma_ee6adc5a2d14_telephony_5db": {
+    "transcript": "Reefer alarm baj raha hai temperature 17 degree ho gaya Mathura Toll Plaza",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_126f72118a_7b43c3fa889885d2": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 17.0,
+    "location_text": "Mathura Toll Plaza",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer alarm baj raha hai temperature 17 degree ho gaya Mathura Toll Plaza",
+    "confidence": 0.95
+  },
+  "prisma_0127708b48f7_telephony_5db": {
+    "transcript": "Bhaiya fan belt toot gayi hai temperature 21 degree Agra Expressway km 110",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_126f72118a_7e4c53fc8d750c3a": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 21.0,
+    "location_text": "Agra Expressway",
+    "distance_km": 110.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya fan belt toot gayi hai temperature 21 degree Agra Expressway km 110",
+    "confidence": 0.95
+  },
+  "prisma_4da2ff6384cd_telephony_5db": {
+    "transcript": "Emergency alert reefer temperature 2 degree se 28 degree ho gaya KMP Expressway",
+    "confidence": 0.68,
+    "latency": 0.35,
+    "source": "Acoustic Noise Simulation (Calibrated SNR)"
+  },
+  "evon_126f72118a_bb4ddc33fd57443b": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 28.0,
+    "location_text": "Kmp Expressway",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Emergency alert reefer temperature 2 degree se 28 degree ho gaya KMP Expressway",
+    "confidence": 0.95
+  },
+  "evon_c2ae75a66e_6c7d0152af98b615": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -14.0,
+    "location_text": "Murthal Dhaba",
+    "distance_km": 10.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle",
+    "confidence": 0.95
+  },
+  "evon_c2ae75a66e_8680f161fbca9c6f": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -20.0,
+    "location_text": "Kundli Border",
+    "distance_km": 15.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Cabin me beep ho rahi hai minus 20 degree ho gaya Kundli Border se 15 km",
+    "confidence": 0.95
+  },
+  "evon_c2ae75a66e_9eaa95e4d0ed5993": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": -8.0,
+    "location_text": "Jaipur Highway",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Emergency hai ice cream melt ho rahi hai temp minus 8 degree ho gaya Jaipur Highway",
+    "confidence": 0.95
+  },
+  "evon_c2ae75a66e_175bb9268c47a258": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 18.0,
+    "location_text": null,
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya chiller ka temperature 18 degree ho gaya hai jaldi batao",
+    "confidence": 0.95
+  },
+  "evon_c2ae75a66e_29287650071c97fb": {
+    "incident_type": "unknown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Toll",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir papers check ho rahe hain toll pe",
+    "confidence": 0.95
+  },
+  "evon_c2ae75a66e_c57b94db1c8ced99": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Mumbai Pune Expressway",
+    "distance_km": 68.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68",
+    "confidence": 0.95
+  },
+  "evon_c2ae75a66e_8a9be87b96787aaa": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Nh 44 Milepost 94",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Gaadi heat ho gayi engine band ho gaya NH 44 Milepost 94 pe",
+    "confidence": 0.95
+  },
+  "evon_c2ae75a66e_5fadddc0a64dabfc": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 40.0,
+    "location_text": "Bilaspur Chowk",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Reefer warning aayi hai 40 degree show kar raha hai Bilaspur Chowk pe",
+    "confidence": 0.95
+  },
+  "evon_c2ae75a66e_5f863ca16c4be2d5": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Bilaspur Chowk",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 80 degree dikha raha hai Bilaspur Chowk pe",
+    "confidence": 0.95
   }
 }

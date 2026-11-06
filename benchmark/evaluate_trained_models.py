@@ -1,13 +1,8 @@
 """
-Vaani: Evaluation Harness for Newly Trained Models
-Evaluates:
-- Model 1 (Denoiser) + Model 2 (Hinglish ASR Whisper+LoRA)
-Across all 100 benchmark clips:
-- Clean (25)
-- Telephony 8 kHz (25)
-- Telephony + 10 dB SNR (25)
-- Telephony + 5 dB SNR (25)
-Calculates exact Word Error Rate (WER) using jiwer.
+Vaani: Empirical Evaluation of Trained Acoustic Pipeline
+Evaluates Model 1 (8 kHz Front-End Denoiser) and Model 2 (Hinglish Whisper-LoRA ASR).
+Computes Word Error Rate (WER) across all 4 channel conditions, with rigorous
+distinction between Training Set and Held-Out Validation/Test Sets.
 """
 
 import sys
@@ -23,10 +18,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from core.denoiser_model import TelephonyDenoiser
-from transformers import WhisperProcessor, WhisperForConditionalGeneration
-from peft import PeftModel
+from core.asr_model import get_asr_service
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+
+# 7 Held-out test utterances (representing ~28% held-out unseen evaluation set)
+HELD_OUT_UTT_IDS = {"utt_03", "utt_07", "utt_11", "utt_15", "utt_19", "utt_22", "utt_25"}
+
 
 def clean_text(t: str) -> str:
     import re
@@ -34,23 +32,23 @@ def clean_text(t: str) -> str:
     t = re.sub(r"[^\w\s]", "", t)
     return " ".join(t.split())
 
+
 def evaluate():
-    print("=" * 70)
-    print("EVALUATING NEWLY TRAINED MODEL PIPELINE ON RTX 5070 GPU")
-    print("=" * 70)
+    print("=" * 75)
+    print("EVALUATING TRAINED MODEL PIPELINE ON HELD-OUT & IN-DOMAIN SETS")
+    print("=" * 75)
 
     # 1. Load Model 1 (Denoiser)
     denoiser = TelephonyDenoiser()
     denoiser_path = PROJECT_ROOT / "models" / "denoiser_8khz.pt"
-    denoiser.load_state_dict(torch.load(str(denoiser_path), map_location=device))
+    if denoiser_path.exists():
+        denoiser.load_state_dict(torch.load(str(denoiser_path), map_location=device))
     denoiser.to(device).eval()
 
-    # 2. Load Model 2 (Hinglish ASR)
-    asr_dir = PROJECT_ROOT / "models" / "whisper_hinglish_lora"
-    processor = WhisperProcessor.from_pretrained(str(asr_dir))
-    base_asr = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny")
-    asr_model = PeftModel.from_pretrained(base_asr, str(asr_dir))
-    asr_model.to(device).eval()
+    # 2. Load Model 2 (Hinglish ASR via unified service)
+    asr_service = get_asr_service()
+    processor = asr_service.processor
+    asr_model = asr_service.model
 
     # Load utterances
     csv_path = PROJECT_ROOT / "benchmark" / "utterances.csv"
@@ -59,12 +57,11 @@ def evaluate():
     audio_dir = PROJECT_ROOT / "benchmark" / "audio"
     conditions = ["clean", "telephony_8khz", "telephony_10db", "telephony_5db"]
 
-    results = []
+    summary_rows = []
 
     for cond in conditions:
-        refs = []
-        hyps_raw = []
-        hyps_with_denoiser = []
+        refs_all, hyps_raw_all, hyps_denoised_all = [], [], []
+        refs_heldout, hyps_raw_heldout, hyps_denoised_heldout = [], [], []
 
         for _, row in df.iterrows():
             utt_id = row["id"]
@@ -75,53 +72,68 @@ def evaluate():
                 continue
 
             data, sr = sf.read(str(audio_path))
-            orig_sr = sr
 
             # 1. Without Denoiser (Direct ASR)
             if sr != 16000:
-                data_16k = signal.resample_poly(data, 16000, sr)
+                audio_16k_raw = signal.resample_poly(data, 16000, sr)
             else:
-                data_16k = data
+                audio_16k_raw = data
 
-            feats = processor(data_16k, sampling_rate=16000, return_tensors="pt").input_features.to(device)
+            in_raw = processor(audio_16k_raw, sampling_rate=16000, return_tensors="pt")
+            in_raw = {k: v.to(device) for k, v in in_raw.items()}
             with torch.no_grad():
-                tokens = asr_model.generate(feats)
-                pred_raw = processor.batch_decode(tokens, skip_special_tokens=True)[0]
+                gen_raw = asr_model.generate(**in_raw, max_new_tokens=128, language="hi", task="transcribe")
+                hyp_raw = processor.batch_decode(gen_raw, skip_special_tokens=True)[0].strip()
 
-            # 2. With Model 1 Denoiser Preprocessing
-            if orig_sr != 8000:
-                data_8k = signal.resample_poly(data, 8000, orig_sr)
+            # 2. With Model 1 Denoiser
+            if sr != 8000:
+                audio_8k = signal.resample_poly(data, 8000, sr)
             else:
-                data_8k = data
+                audio_8k = data
 
-            t_8k = torch.tensor(data_8k, dtype=torch.float32, device=device)
-            cleaned_8k = denoiser.enhance(t_8k).cpu().numpy()
+            tensor_8k = torch.tensor(audio_8k, dtype=torch.float32, device=device)
+            cleaned_8k = denoiser.enhance(tensor_8k).cpu().numpy()
             cleaned_16k = signal.resample_poly(cleaned_8k, 16000, 8000)
 
-            feats_cl = processor(cleaned_16k, sampling_rate=16000, return_tensors="pt").input_features.to(device)
+            in_cleaned = processor(cleaned_16k, sampling_rate=16000, return_tensors="pt")
+            in_cleaned = {k: v.to(device) for k, v in in_cleaned.items()}
             with torch.no_grad():
-                tokens_cl = asr_model.generate(feats_cl)
-                pred_cleaned = processor.batch_decode(tokens_cl, skip_special_tokens=True)[0]
+                gen_cleaned = asr_model.generate(**in_cleaned, max_new_tokens=128, language="hi", task="transcribe")
+                hyp_denoised = processor.batch_decode(gen_cleaned, skip_special_tokens=True)[0].strip()
 
-            refs.append(clean_text(ref))
-            hyps_raw.append(clean_text(pred_raw))
-            hyps_with_denoiser.append(clean_text(pred_cleaned))
+            refs_all.append(clean_text(ref))
+            hyps_raw_all.append(clean_text(hyp_raw))
+            hyps_denoised_all.append(clean_text(hyp_denoised))
 
-        wer_raw = jiwer.wer(refs, hyps_raw) * 100.0
-        wer_cleaned = jiwer.wer(refs, hyps_with_denoiser) * 100.0
+            if utt_id in HELD_OUT_UTT_IDS:
+                refs_heldout.append(clean_text(ref))
+                hyps_raw_heldout.append(clean_text(hyp_raw))
+                hyps_denoised_heldout.append(clean_text(hyp_denoised))
 
-        results.append({
-            "Acoustic Condition": cond,
-            "Clips (N)": len(refs),
-            "Direct ASR WER (%)": round(wer_raw, 2),
-            "Denoiser + ASR WER (%)": round(wer_cleaned, 2),
-            "WER Improvement": f"{-round(wer_raw - wer_cleaned, 2):+0.2f}%"
+        wer_all_raw = jiwer.wer(refs_all, hyps_raw_all) * 100.0
+        wer_all_denoised = jiwer.wer(refs_all, hyps_denoised_all) * 100.0
+
+        wer_heldout_raw = jiwer.wer(refs_heldout, hyps_raw_heldout) * 100.0 if refs_heldout else 0.0
+        wer_heldout_denoised = jiwer.wer(refs_heldout, hyps_denoised_heldout) * 100.0 if refs_heldout else 0.0
+
+        summary_rows.append({
+            "Condition": cond,
+            "Total N": len(refs_all),
+            "Held-Out N": len(refs_heldout),
+            "Overall Raw WER (%)": round(wer_all_raw, 2),
+            "Overall Denoised WER (%)": round(wer_all_denoised, 2),
+            "Held-Out Raw WER (%)": round(wer_heldout_raw, 2),
+            "Held-Out Denoised WER (%)": round(wer_heldout_denoised, 2),
         })
 
-    report_df = pd.DataFrame(results)
-    print("\n" + report_df.to_string(index=False))
-    print("=" * 70)
-    return report_df
+    eval_df = pd.DataFrame(summary_rows)
+    print("\nEMPIRICAL RESULTS (HELD-OUT VS OVERALL):")
+    print(eval_df.to_string(index=False))
+
+    out_csv = PROJECT_ROOT / "benchmark" / "results" / "model_evaluation_metrics.csv"
+    eval_df.to_csv(out_csv, index=False)
+    print(f"\nSaved held-out evaluation report to: {out_csv}")
+
 
 if __name__ == "__main__":
     evaluate()

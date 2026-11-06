@@ -9,10 +9,15 @@ Implements an In-Context Continuous Learning loop:
 
 import sqlite3
 import datetime
+import hashlib
+import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
+logger = logging.getLogger(__name__)
+
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "fleet.sqlite"
+_learning_db_initialized = False
 
 
 def get_db_connection() -> sqlite3.Connection:
@@ -22,7 +27,11 @@ def get_db_connection() -> sqlite3.Connection:
 
 
 def init_learning_db():
-    """Ensure continuous learning tables are initialized with domain-specific seed memories."""
+    """Ensure continuous learning tables are initialized once with domain-specific seed memories."""
+    global _learning_db_initialized
+    if _learning_db_initialized:
+        return
+
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -67,6 +76,19 @@ def init_learning_db():
 
     conn.commit()
     conn.close()
+    _learning_db_initialized = True
+
+
+def get_rules_version_hash() -> str:
+    """Return MD5 hash of current adaptive rules to invalidate stale LLM extraction caches."""
+    init_learning_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT pattern, updated_at FROM adaptive_rules ORDER BY id ASC")
+    rows = cursor.fetchall()
+    conn.close()
+    content = "|".join(f"{r['pattern']}_{r['updated_at']}" for r in rows)
+    return hashlib.md5(content.encode("utf-8")).hexdigest()[:10]
 
 
 def record_driver_correction(
