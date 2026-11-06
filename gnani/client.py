@@ -14,6 +14,10 @@ from pathlib import Path
 from typing import Optional, Dict, Any, Tuple
 import httpx
 from pydantic import ValidationError
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from core.schemas import ExtractionRecord, IncidentType, DriverReply
 from core.learning import get_few_shot_prompt_context, get_adaptive_rules
@@ -25,6 +29,7 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER", "Adaptive Few-Shot Engine")
 GNANI_PRISMA_URL = os.getenv("GNANI_PRISMA_URL", "https://api.gnani.ai/v1/prisma/stt")
 GNANI_EVON_URL = os.getenv("GNANI_EVON_URL", "https://api.gnani.ai/v1/evon/chat")
 GNANI_TIMBRE_URL = os.getenv("GNANI_TIMBRE_URL", "https://api.gnani.ai/v1/timbre/tts")
+ASR_ENGINE = os.getenv("ASR_ENGINE", "whisper_lora")  # 'whisper_lora', 'prisma', or 'simulated'
 
 
 class GnaniCache:
@@ -57,19 +62,31 @@ def _compute_audio_hash(audio_bytes: bytes, condition: str = "") -> str:
 
 
 # -------------------------------------------------------------
-# 1. Prisma (Speech-to-Text)
+# 1. Speech-to-Text (Fine-Tuned Whisper-LoRA or Prisma)
 # -------------------------------------------------------------
 def transcribe_audio(
     audio_path_or_bytes: bytes | str | Path,
     language: str = "hi-IN",
     condition: str = "clean",
-    reference_hint: Optional[str] = None
+    reference_hint: Optional[str] = None,
+    engine: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Transcribes audio using Gnani Prisma ASR or cached result.
-    If GNANI_API_KEY is not set or network fails, uses realistic acoustic modeling
-    based on the input condition and reference text.
+    Transcribes audio using:
+    1. Fine-Tuned Whisper-LoRA on local GPU (Default if engine='whisper_lora' or auto-detected)
+    2. Gnani Prisma STT (if engine='prisma' and GNANI_API_KEY is configured)
+    3. Realistic acoustic noise simulation (if offline / fallback)
     """
+    chosen_engine = engine or ASR_ENGINE
+
+    # Option 1: Fine-Tuned Whisper-LoRA on local RTX 5070 GPU
+    if chosen_engine in ("whisper_lora", "local_whisper"):
+        try:
+            from core.asr_model import transcribe_local_whisper
+            return transcribe_local_whisper(audio_path_or_bytes)
+        except Exception as e:
+            print(f"[ASR Warning] Local Whisper inference failed: {e}. Falling back...")
+
     if isinstance(audio_path_or_bytes, (str, Path)):
         p = Path(audio_path_or_bytes)
         if p.exists():
@@ -82,27 +99,32 @@ def transcribe_audio(
 
     cache_key = f"prisma_{_compute_audio_hash(audio_data, condition)}"
     cached = cache.get(cache_key)
-    if cached:
+    # If cached value is from a previous simulated offline run, upgrade it using real API if key is present
+    if cached and not (GNANI_API_KEY and "Simulated" in str(cached.get("source", ""))):
         return cached
 
     # Attempt live API call if key is configured
-    if GNANI_API_KEY:
+    if GNANI_API_KEY and chosen_engine == "prisma":
         try:
             headers = {
-                "Authorization": f"Bearer {GNANI_API_KEY}",
+                "X-API-Key-ID": GNANI_API_KEY,
                 "Accept": "application/json"
             }
-            files = {"file": ("audio.wav", audio_data, "audio/wav")}
-            data = {"language": language, "encoding": "WAV", "sample_rate": 8000 if "8k" in condition else 16000}
-            with httpx.Client(timeout=15.0) as client:
+            files = {"audio_file": ("audio.wav", audio_data, "audio/wav")}
+            data = {
+                "model": "prisma-v3.0",
+                "language_code": "hi-IN" if "hi" in language else "indic-auto"
+            }
+            with httpx.Client(timeout=25.0) as client:
                 res = client.post(GNANI_PRISMA_URL, headers=headers, files=files, data=data)
                 if res.status_code == 200:
                     resp_json = res.json()
                     transcript = resp_json.get("transcript", "")
                     result = {
                         "transcript": transcript,
-                        "confidence": resp_json.get("confidence", 0.92),
-                        "source": "Gnani Prisma API"
+                        "confidence": resp_json.get("confidence", 0.95),
+                        "latency": resp_json.get("end_to_end_latency", 0.4),
+                        "source": "Gnani Prisma API (prisma-v3.0)"
                     }
                     cache.set(cache_key, result)
                     return result
@@ -394,9 +416,16 @@ def speak_text(text: str, output_path: Optional[Path] = None) -> bytes:
     # Attempt live Timbre API if configured
     if GNANI_API_KEY:
         try:
-            headers = {"Authorization": f"Bearer {GNANI_API_KEY}", "Content-Type": "application/json"}
-            payload = {"text": text, "language": "hi", "gender": "female"}
-            with httpx.Client(timeout=10.0) as client:
+            headers = {
+                "X-API-Key-ID": GNANI_API_KEY,
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "text": text,
+                "model": "timbre-v2.5",
+                "voice": "Pranav"
+            }
+            with httpx.Client(timeout=20.0) as client:
                 res = client.post(GNANI_TIMBRE_URL, headers=headers, json=payload)
                 if res.status_code == 200 and len(res.content) > 100:
                     with open(tts_file, "wb") as f:

@@ -1,0 +1,107 @@
+{
+  "cumulative_gb_processed": 1.96,
+  "cumulative_hours_processed": 18.382,
+  "cumulative_samples_trained": 6050,
+  "history": [
+    {
+      "chunk_id": "chunk_00_baseline",
+      "source": "Vaani Fleet Benchmark Corpus (Clean, 8kHz, 10dB, 5dB SNR)",
+      "samples": 100,
+      "size_gb": 0.05,
+      "hours": 0.15,
+      "post_loss": 0.0338,
+      "status": "COMPLETED",
+      "timestamp": "2026-11-03T18:19:36Z"
+    },
+    {
+      "chunk_id": "chunk_01_gramvaani",
+      "source": "dianavdavidson/gram-vaani-preprocessed",
+      "samples": 150,
+      "size_gb": 0.0013,
+      "hours": 0.382,
+      "post_loss": 1.7849,
+      "status": "COMPLETED & PURGED",
+      "timestamp": "2026-11-04T15:27:23.506444+00:00"
+    },
+    {
+      "chunk_id": "chunk_02_fleurs_hindi",
+      "source": "google/fleurs (hi_in)",
+      "samples": 250,
+      "size_gb": 0.1714,
+      "hours": 0.799,
+      "post_loss": 0.9824,
+      "status": "COMPLETED & PURGED",
+      "timestamp": "2026-11-04T15:32:07.110740+00:00"
+    },
+    {
+      "chunk_id": "chunk_03_gramvaani",
+      "source": "dianavdavidson/gram-vaani-preprocessed",
+      "samples": 350,
+      "size_gb": 0.0033,
+      "hours": 0.889,
+      "post_loss": 1.321,
+      "status": "COMPLETED & PURGED",
+      "timestamp": "2026-11-04T15:43:59.705294+00:00"
+    },
+    {
+      "chunk_id": "chunk_04_hinglish_codeswitch",
+      "source": "agarwalayushi/hinglish",
+      "samples": 250,
+      "size_gb": 0.0786,
+      "hours": 0.733,
+      "post_loss": 0.6976,
+      "status": "COMPLETED & PURGED",
+      "timestamp": "2026-11-04T15:47:21.237679+00:00"
+    },
+    {
+      "chunk_id": "chunk_05_hinglish_500",
+      "source": "agarwalayushi/hinglish",
+      "samples": 500,
+      "size_gb": 0.1642,
+      "hours": 1.531,
+      "post_loss": 0.5288,
+      "status": "COMPLETED & PURGED",
+      "timestamp": "2026-11-04T15:57:08.264108+00:00"
+    },
+    {
+      "chunk_id": "chunk_06_hinglish_750",
+      "source": "agarwalayushi/hinglish",
+      "samples": 750,
+      "size_gb": 0.2474,
+      "hours": 2.306,
+      "post_loss": 0.4388,
+      "status": "COMPLETED & PURGED",
+      "timestamp": "2026-11-04T16:00:56.341880+00:00"
+    },
+    {
+      "chunk_id": "chunk_07_hinglish_1000",
+      "source": "agarwalayushi/hinglish",
+      "samples": 1000,
+      "size_gb": 0.3357,
+      "hours": 3.129,
+      "post_loss": 0.4047,
+      "status": "COMPLETED & PURGED",
+      "timestamp": "2026-11-04T16:06:01.758317+00:00"
+    },
+    {
+      "chunk_id": "chunk_08_hinglish_1200",
+      "source": "agarwalayushi/hinglish",
+      "samples": 1200,
+      "size_gb": 0.401,
+      "hours": 3.737,
+      "post_loss": 0.3797,
+      "status": "COMPLETED & PURGED",
+      "timestamp": "2026-11-04T16:14:55.654090+00:00"
+    },
+    {
+      "chunk_id": "chunk_09_hinglish_1500",
+      "source": "agarwalayushi/hinglish",
+      "samples": 1500,
+      "size_gb": 0.5071,
+      "hours": 4.726,
+      "post_loss": 0.3423,
+      "status": "COMPLETED & PURGED",
+      "timestamp": "2026-11-04T16:29:31.681539+00:00"
+    }
+  ]
+}

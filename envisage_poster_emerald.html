@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ENVISAGE - Sustainable Impact Edition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #021410;
+      --bg-deep: #05261E;
+      --mint-glow: #00FFA3;
+      --emerald-accent: #059669;
+      --solar-gold: #FBBF24;
+      --solar-amber: #F59E0B;
+      --text-main: #FFFFFF;
+      --text-muted: #94A3B8;
+      --card-bg: rgba(6, 38, 30, 0.6);
+      --card-border: rgba(0, 255, 163, 0.22);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #010D0A;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--text-main);
+      padding: 40px 20px;
+    }
+
+    .toolbar {
+      margin-bottom: 24px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .btn-download {
+      background: linear-gradient(135deg, #00FFA3 0%, #059669 100%);
+      color: #011C14;
+      font-weight: 800;
+      font-family: 'Space Grotesk', sans-serif;
+      padding: 12px 28px;
+      border: none;
+      border-radius: 9999px;
+      cursor: pointer;
+      font-size: 14px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      box-shadow: 0 0 25px rgba(0, 255, 163, 0.4);
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-download:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 35px rgba(0, 255, 163, 0.6);
+    }
+
+    /* Poster Frame (Vertical 9:16) */
+    .poster {
+      width: 600px;
+      min-height: 1060px;
+      background: radial-gradient(circle at 50% 25%, #0B3A2E 0%, #042018 55%, #010D0A 100%);
+      border-radius: 32px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 30px 100px rgba(0, 0, 0, 0.9), 0 0 70px rgba(0, 255, 163, 0.12);
+      border: 1px solid rgba(0, 255, 163, 0.18);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 46px 42px 42px;
+    }
+
+    /* Subtle geometric mesh background */
+    .geo-bg {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        radial-gradient(circle at 50% 20%, rgba(0, 255, 163, 0.15) 0%, transparent 60%),
+        radial-gradient(circle at 80% 80%, rgba(251, 191, 36, 0.08) 0%, transparent 50%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Center Faceted Geometric Globe / Crystal Core */
+    .crystal-core {
+      position: absolute;
+      top: 255px;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 380px;
+      height: 380px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .orbital-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1.5px dashed rgba(0, 255, 163, 0.3);
+      animation: spinOrbit 45s linear infinite;
+    }
+
+    .orbital-ring-tilt {
+      position: absolute;
+      inset: 20px;
+      border-radius: 50%;
+      border: 1.5px solid transparent;
+      border-top: 2px solid #00FFA3;
+      border-right: 2px solid #FBBF24;
+      transform: rotate(45deg);
+      filter: drop-shadow(0 0 15px rgba(0, 255, 163, 0.6));
+      animation: spinOrbitRev 30s linear infinite;
+    }
+
+    @keyframes spinOrbit {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes spinOrbitRev {
+      from { transform: rotate(360deg); }
+      to { transform: rotate(0deg); }
+    }
+
+    .content-container {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      gap: 26px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .collab-tag {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(3, 34, 27, 0.7);
+      border: 1px solid rgba(0, 255, 163, 0.25);
+      border-radius: 9999px;
+      padding: 8px 24px;
+      backdrop-filter: blur(12px);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #FFFFFF;
+    }
+
+    .brand-sub {
+      font-size: 9px;
+      color: #A7F3D0;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    .collab-x {
+      color: #FBBF24;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .presents-line {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 6px;
+      color: #6EE7B7;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .presents-line::before,
+    .presents-line::after {
+      content: '';
+      width: 30px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #00FFA3);
+    }
+    .presents-line::after {
+      background: linear-gradient(90deg, #00FFA3, transparent);
+    }
+
+    /* Hero Event Title */
+    .hero-box {
+      text-align: center;
+      margin-top: 10px;
+      margin-bottom: 8px;
+    }
+
+    .hero-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 64px;
+      font-weight: 800;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      line-height: 1.05;
+      background: linear-gradient(180deg, #FFFFFF 15%, #A7F3D0 60%, #00FFA3 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 25px rgba(0, 255, 163, 0.45));
+    }
+
+    .hero-sub {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 4px;
+      color: #FDE68A;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+
+    /* 3 Rounds Timeline */
+    .rounds-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .stage-card {
+      background: linear-gradient(180deg, rgba(6, 44, 34, 0.8) 0%, rgba(2, 22, 17, 0.9) 100%);
+      border: 1px solid rgba(0, 255, 163, 0.25);
+      border-radius: 16px;
+      padding: 14px 10px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .stage-card.featured {
+      border-color: rgba(251, 191, 36, 0.6);
+      box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
+    }
+
+    .stage-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #00FFA3;
+      margin-bottom: 4px;
+    }
+
+    .stage-card.featured .stage-tag {
+      color: #FBBF24;
+    }
+
+    .stage-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+
+    /* Date Coming Soon Section */
+    .date-strip {
+      background: linear-gradient(90deg, rgba(0, 255, 163, 0.05), rgba(251, 191, 36, 0.12), rgba(0, 255, 163, 0.05));
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      border-radius: 20px;
+      padding: 18px 24px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+      box-shadow: 0 0 25px rgba(251, 191, 36, 0.1);
+    }
+
+    .date-label-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      color: #FBBF24;
+      text-transform: uppercase;
+    }
+
+    .date-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      color: #FFFFFF;
+      text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+    }
+
+    .date-impact {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2.5px;
+      color: #A7F3D0;
+      text-transform: uppercase;
+    }
+
+    /* Key Information Pillars */
+    .stats-tray {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.3fr;
+      gap: 12px;
+      background: rgba(3, 30, 24, 0.75);
+      border: 1px solid rgba(0, 255, 163, 0.2);
+      border-radius: 20px;
+      padding: 18px 16px;
+      backdrop-filter: blur(14px);
+    }
+
+    .stat-col {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+
+    .stat-col:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: -6px;
+      top: 15%;
+      height: 70%;
+      width: 1px;
+      background: rgba(0, 255, 163, 0.15);
+    }
+
+    .col-title {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #34D399;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .col-main {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+      color: #FFFFFF;
+      line-height: 1.2;
+    }
+
+    .col-note {
+      font-size: 9px;
+      color: #6EE7B7;
+      margin-top: 3px;
+      letter-spacing: 0.3px;
+    }
+
+    .col-funding-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #FFFBEB 0%, #FBBF24 50%, #F59E0B 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.5));
+    }
+
+    /* CTA Section */
+    .cta-area {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .action-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 42px;
+      border-radius: 9999px;
+      border: 1.5px solid #00FFA3;
+      background: radial-gradient(circle, rgba(0, 255, 163, 0.15) 0%, transparent 80%);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #FFFFFF;
+      box-shadow: 0 0 25px rgba(0, 255, 163, 0.25);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .action-badge:hover {
+      box-shadow: 0 0 35px rgba(0, 255, 163, 0.5);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <button class="btn-download" id="downloadBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Export Poster (High-Res PNG)
+    </button>
+  </div>
+
+  <!-- Poster Area -->
+  <div class="poster" id="posterArea">
+    <div class="geo-bg"></div>
+
+    <!-- Center Prismatic Crystal Visual -->
+    <div class="crystal-core">
+      <div class="orbital-ring"></div>
+      <div class="orbital-ring-tilt"></div>
+      
+      <!-- Faceted Crystal Prism Origami Sphere -->
+      <svg style="position: absolute; inset: 40px; width: 300px; height: 300px; opacity: 0.85;" viewBox="0 0 200 200" fill="none">
+        <polygon points="100,20 160,65 140,140 100,180 60,140 40,65" stroke="#00FFA3" stroke-width="1.5" fill="rgba(0,255,163,0.06)"/>
+        <polygon points="100,20 140,140 100,180" stroke="rgba(251,191,36,0.5)" stroke-width="1" fill="rgba(251,191,36,0.08)"/>
+        <polygon points="100,20 60,140 100,180" stroke="#00FFA3" stroke-width="1" fill="rgba(0,255,163,0.08)"/>
+        <line x1="40" y1="65" x2="160" y2="65" stroke="#00FFA3" stroke-width="1"/>
+        <line x1="40" y1="65" x2="100" y2="105" stroke="#FBBF24" stroke-width="1"/>
+        <line x1="160" y1="65" x2="100" y2="105" stroke="#00FFA3" stroke-width="1"/>
+        <line x1="100" y1="105" x2="100" y2="180" stroke="#FBBF24" stroke-width="1.5"/>
+        <circle cx="100" cy="100" r="16" fill="url(#sunGlow)"/>
+        <defs>
+          <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFFBEB"/>
+            <stop offset="60%" stop-color="#FBBF24"/>
+            <stop offset="100%" stop-color="transparent"/>
+          </radialGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="content-container">
+      
+      <!-- Top Collab Bar -->
+      <div class="header">
+        <div class="collab-tag">
+          <div class="brand-group">
+            <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
+              <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" stroke="#00FFA3" stroke-width="3" fill="rgba(0,255,163,0.15)"/>
+              <circle cx="20" cy="20" r="10" stroke="#FBBF24" stroke-width="3"/>
+            </svg>
+            <span class="brand-name">eCell MSIT</span>
+          </div>
+
+          <span class="collab-x">✕</span>
+
+          <div class="brand-group">
+            <span class="brand-name" style="color: #FBBF24;">Hult Prize</span>
+            <span class="brand-sub">MSIT</span>
+          </div>
+        </div>
+
+        <div class="presents-line">P R E S E N T S</div>
+      </div>
+
+      <!-- Main Title -->
+      <div class="hero-box">
+        <h1 class="hero-title">ENVISAGE</h1>
+        <p class="hero-sub">Ideas For A Brighter Tomorrow</p>
+      </div>
+
+      <!-- 3 Stage Progression -->
+      <div class="rounds-grid">
+        <div class="stage-card">
+          <div class="stage-tag">Stage 01</div>
+          <div class="stage-name">Envisage</div>
+        </div>
+
+        <div class="stage-card">
+          <div class="stage-tag">Stage 02</div>
+          <div class="stage-name">National Qualifier</div>
+        </div>
+
+        <div class="stage-card featured">
+          <div class="stage-tag">★ Stage 03</div>
+          <div class="stage-name">Global Round</div>
+        </div>
+      </div>
+
+      <!-- Coming Soon Announcement -->
+      <div class="date-strip">
+        <div class="date-label-badge">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          DATE
+        </div>
+        <div class="date-title">COMING SOON</div>
+        <div class="date-impact">A Global Platform To Create Real Impact</div>
+      </div>
+
+      <!-- Key Details -->
+      <div class="stats-tray">
+        <div class="stat-col">
+          <div class="col-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18h6M10 22h4M12 2v1M12 7a5 5 0 0 1 5 5c0 2-1 3.5-2 4.5V17H9v-.5C8 15.5 7 14 7 12a5 5 0 0 1 5-5z"/>
+            </svg>
+            FORMAT
+          </div>
+          <div class="col-main">Pitch Your Idea</div>
+          <div class="col-note">Solve real world problems</div>
+        </div>
+
+        <div class="stat-col">
+          <div class="col-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            </svg>
+            TEAM SIZE
+          </div>
+          <div class="col-main">2 – 4 Students</div>
+          <div class="col-note">Interdisciplinary teams</div>
+        </div>
+
+        <div class="stat-col">
+          <div class="col-title" style="color: #FBBF24;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            FUNDING OF
+          </div>
+          <div class="col-funding-val">$1,000,000</div>
+          <div class="col-note" style="color: #FDE68A;">Seed capital prize</div>
+        </div>
+      </div>
+
+      <!-- Bottom CTA -->
+      <div class="cta-area">
+        <div class="action-badge">
+          <span>STAY TUNED</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('downloadBtn').addEventListener('click', function() {
+      const poster = document.getElementById('posterArea');
+      this.textContent = 'Generating Image...';
+      
+      html2canvas(poster, {
+        scale: 2.5,
+        useCORS: true,
+        backgroundColor: '#010D0A',
+        logging: false
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'ENVISAGE-sustainable-impact-poster.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        document.getElementById('downloadBtn').innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg> Downloaded Successfully!
+        `;
+        setTimeout(() => {
+          document.getElementById('downloadBtn').innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg> Export Poster (High-Res PNG)
+          `;
+        }, 3000);
+      });
+    });
+  </script>
+</body>
+</html>

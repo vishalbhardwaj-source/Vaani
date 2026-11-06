@@ -9,3 +9,7 @@ pandas>=2.2.0
 plotly>=5.20.0
 pytest>=8.0.0
 gTTS>=2.5.0
+torch>=2.0.0
+torchaudio>=2.0.0
+transformers>=4.40.0
+peft>=0.10.0

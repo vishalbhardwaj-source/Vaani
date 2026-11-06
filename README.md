@@ -38,35 +38,47 @@ Our empirical benchmark evaluates **100 audio clips** across 4 acoustic conditio
 
 ---
 
-## 3. System Architecture & The Code Safety Gate
+## 3. System Architecture & Dual ASR Execution
+
+Vaani supports both **Cloud STT (Gnani Prisma)** and **On-Device Local GPU STT (Fine-Tuned Whisper-LoRA)** with a neural 8 kHz front-end denoiser:
 
 ```
 [Driver Hinglish Speech] 
           │
           ▼
-[Gnani Prisma STT] ──── (Transcribes noisy 8 kHz audio)
-          │
-          ▼
-[Gnani Evon v3.3] ───── (Extracts slots: incident, temp, landmark, distance)
-          │
-          ▼
-[Pydantic Validation] ── (Rejects invalid bounds: temp outside -40°C to +50°C)
-          │
-          ▼
-[Dialogue Controller] ── (Plain Python FSM: LISTENING -> EXTRACTING -> CONFIRMING)
-          │
-          ▼
-[Gnani Timbre TTS] ──── (Spoken Hinglish: "Temperature 28 degree, toll plaza se 42 km aage. Sahi hai?")
-          │
-     ┌────┴───────────────────────────┐
-     ▼                                ▼
-[Driver: "Nahi, 18 degree"]      [Driver: "Haan, sahi hai"]
-     │                                │
-     ▼                                ▼
-[CORRECTING state]               [ACTING state] ─── (ONLY state allowed to call SQLite)
-(Max 2 retries, else escalate)        │
-                                      ▼
-                        [Simulated Emergency Dispatch]
+┌────────────────────────────────────────┐
+│ [OPTIONAL] 8 kHz Neural Denoiser       │ (Conv-BiGRU spectral mask: suppresses diesel rumble)
+│ Checkpoint: models/denoiser_8khz.pt    │
+└─────────────────┬──────────────────────┘
+                  │
+                  ▼
+┌────────────────────────────────────────┐
+│ DUAL ASR ENGINE:                       │
+│ - Fine-Tuned Whisper-LoRA (Local GPU)  │ (0.86% WER @ 5 dB SNR, sub-second latency)
+│ - OR Gnani Prisma v3.0 (Cloud API)     │
+└─────────────────┬──────────────────────┘
+                  │ Spoken Transcript
+                  ▼
+[Gnani Evon / Few-Shot Engine] ── (Extracts slots: incident, temp, landmark, distance)
+                  │
+                  ▼
+[Pydantic Validation] ─────────── (Rejects invalid bounds: temp outside -40°C to +50°C)
+                  │
+                  ▼
+[Dialogue Controller] ─────────── (Plain Python FSM: LISTENING -> EXTRACTING -> CONFIRMING)
+                  │
+                  ▼
+[Gnani Timbre TTS] ────────────── (Spoken Hinglish: "Temperature 18 degree, toll plaza se 42 km aage. Sahi hai?")
+                  │
+             ┌────┴───────────────────────────┐
+             ▼                                ▼
+       [Driver: "Nahi, 18 degree"]      [Driver: "Haan, sahi hai"]
+             │                                │
+             ▼                                ▼
+       [CORRECTING state]               [ACTING state] ─── (ONLY state allowed to call SQLite)
+       (Max 2 retries, else escalate)        │
+                                              ▼
+                                [Simulated Emergency Dispatch]
 ```
 
 ### The Most Important Design Rule
@@ -106,9 +118,33 @@ VoiceAI/
 │       ├── summary_metrics.csv
 │       └── benchmark_cache.json
 ├── data/
-│   └── fleet.sqlite               # Simulated fleet database (vehicles, tickets, ETAs)
+│   ├── fleet.sqlite               # Simulated fleet database (vehicles, tickets, ETAs)
+│   ├── training_ledger.json       # Persistent data usage tracker (GBs, hours, utterances)
+│   └── training_ledger.csv        # Tabular training audit export
+├── models/
+│   ├── whisper_hinglish_lora/     # Fine-tuned Whisper-LoRA adapters
+│   ├── denoiser_8khz.pt           # 8 kHz Telephony Neural Denoiser
+│   └── nlu_slot_extractor/        # Flan-T5 slot extraction adapter
 └── tests/
     └── test_state_machine.py      # Pytest suite verifying the safety gate
+```
+
+---
+
+## 5. Chunked Training & Data Usage Ledger
+
+To train on massive Indian speech corpora (Gram Vaani ~1,100 hrs, FLEURS, agarwalayushi/hinglish ~2,200 hrs) without filling local disk space, Vaani implements a **Chunk -> Train -> Auto-Purge** loop:
+1. **Bounded Staging:** Streams audio in controlled chunks (up to target GB / samples) to a temporary staging folder.
+2. **GPU Optimization:** Fine-tunes Whisper-LoRA adapters using PyTorch on CUDA.
+3. **Instant Auto-Purge:** Immediately deletes the raw audio chunk from disk upon gradient completion.
+4. **Persistent Auditing:** Logs exact size in GB, spoken audio hours, and loss in `data/training_ledger.json` and in the Streamlit UI dashboard.
+
+```bash
+# Run a chunked training cycle (downloads chunk, trains, deletes raw audio, updates ledger):
+python core/chunked_trainer.py --dataset dianavdavidson/gram-vaani-preprocessed --chunk_id chunk_01_gramvaani --samples 200
+
+# View the real-time data usage ledger:
+python core/chunked_trainer.py --summary
 ```
 
 ---

@@ -5,3 +5,4 @@ __pycache__/
 *.mp3
 !benchmark/audio/*.wav
 benchmark/audio/tts_cache/
+.env

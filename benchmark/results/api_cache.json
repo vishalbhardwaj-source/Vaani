@@ -1,8 +1,9 @@
 {
   "prisma_3debd14146257c75": {
-    "transcript": "Bhaiya reefer ka temperature 18 degree ho gaya hai toll plaza se 42 km aage",
-    "confidence": 0.96,
-    "source": "Prisma Simulated Acoustic Model (Realistic Noise Injected)"
+    "transcript": "भैया रीफर का टेम्प्रेचर 18 degree हो गया है toll plaza से 42 kilometers आगे।",
+    "confidence": 0.95,
+    "latency": 0.45945239067077637,
+    "source": "Gnani Prisma API (prisma-v3.0)"
   },
   "evon_7508ea678d0273fb": {
     "incident_type": "reefer_temperature",
