@@ -4,10 +4,10 @@
 
 To avoid misleading claims, Vaani evaluates speech recognition and dialogue action on two clearly decoupled tracks:
 
-- **Track 1: Dialogue-Gate Stress Test with Injected ASR Errors (Synthetic / Unit Stress)**  
-  Isolates the state machine and confirmation gate from acoustic model variance. Injects calibrated phonetic traps (18↔80, 14↔40, sign drops) and models driver reflexive confirmation (0% to 20%) to verify that code catches injected errors.
-- **Track 2: Empirical Acoustic Generalization (Real Held-Out Audio & Real Phone Cohort)**  
-  Measures true acoustic performance on 28 held-out audio clips (7 unseen test utterances across 4 acoustic conditions) and 40 mobile phone clips recorded with 8 commercial truck drivers (N=80 numeric slots).
+- **Track 1: Dialogue-Gate Stress Test with Injected ASR Errors (Simulated / Unit Stress)**  
+  Isolates the state machine and confirmation gate from acoustic model variance. Injects calibrated phonetic traps (18↔80, 14↔40, sign drops) and models driver reflexive confirmation (0% to 20%) in software simulation to verify that deterministic code catches injected errors.
+- **Track 2: Empirical Acoustic Generalization (Held-Out Audio Clips & Noisy Phone Telephony)**  
+  Measures true acoustic performance on 28 held-out audio clips (7 unseen test utterances across 4 acoustic conditions) and mobile phone telephony calls evaluated across 5 diverse acoustic environments (Roadside Two-Wheeler, Enclosed Idle Cabin, Kitchen Exhaust Fan, Market Street Background, and Quiet Handset baseline).
 
 ---
 
@@ -28,7 +28,7 @@ Ablation evaluation of the 8 kHz neural denoiser (`models/denoiser_8khz.pt`) acr
 
 ## 3. Parametric Driver Reflexive Agreement Sweep
 
-In loud vehicle cabs, drivers occasionally say *"haan"* reflexively without listening attentively to readback details. We model this via Monte Carlo sensitivity sweep (0% to 20% driver reflexive error rate):
+In loud vehicle cabs, drivers occasionally say *"haan"* reflexively without listening attentively to readback details. We model this via Monte Carlo sensitivity sweep (0% to 20% driver reflexive error rate in simulation):
 
 | Assumed Reflexive Rate | Total Injected Errors | Gate Gated (IoT) | Expected Driver Caught | Expected Silent Failures | Final Dispatch Accuracy |
 | :---: | :---: | :---: | :---: | :---: | :---: |

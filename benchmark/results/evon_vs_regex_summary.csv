@@ -1,0 +1,5 @@
+Slot,Evon Accuracy (%),Regex Accuracy (%),Behavior & Trade-offs
+Incident Type,100.0% (7/7),100.0% (7/7),Evon handles diverse paraphrasing; Regex matches keyword patterns.
+Temperature (°C),85.7% (6/7),100.0% (7/7),Evon can miss dropped minus polarity; Regex enforces strict physical bounds (-40 to 50°C).
+Distance (km),100.0% (7/7),100.0% (7/7),Both extract distances accurately; Regex strips highway marker prefixes (NH-44).
+Location / Landmark,100.0% (7/7),85.7% (6/7),Evon excels at open-vocabulary landmarks; Regex checks confusable phonetic pairs.
