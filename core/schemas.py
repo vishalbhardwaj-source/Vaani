@@ -45,6 +45,45 @@ CARGO_TOLERANCE_MAP = {
 # probe calibration offset (±0.5°C), and compartment micro-climatic thermal stratification.
 SENSOR_MATCH_TOLERANCE_C: float = 2.0
 
+# Spoken Hindi digit words for noise-resilient digit-by-digit read-backs over 8 kHz telephony
+HINDI_DIGIT_MAP: Dict[str, str] = {
+    "0": "shunya",
+    "1": "ek",
+    "2": "do",
+    "3": "teen",
+    "4": "chaar",
+    "5": "paanch",
+    "6": "chhah",
+    "7": "saat",
+    "8": "aath",
+    "9": "nau"
+}
+
+
+def spell_number_in_hindi_digits(num: Optional[float]) -> str:
+    """
+    Spells out individual digits using spoken Hindi colloquial words.
+    Crucial over noisy 8 kHz telephony to eliminate confusion between 18 and 80:
+    - 18 -> 'ek, aath'
+    - 80 -> 'aath, shunya'
+    - -14 -> 'minus ek, chaar'
+    - 4.5 -> 'chaar point paanch'
+    """
+    if num is None:
+        return ""
+    sign_word = "minus " if num < 0 else ""
+    abs_val = abs(num)
+    if isinstance(num, float) and not num.is_integer():
+        # Decimal numbers
+        parts = f"{abs_val:g}".split(".")
+        int_digits = [HINDI_DIGIT_MAP.get(d, d) for d in parts[0]]
+        dec_digits = [HINDI_DIGIT_MAP.get(d, d) for d in parts[1]]
+        return f"{sign_word}{', '.join(int_digits)} point {' '.join(dec_digits)}"
+    abs_int = abs(int(round(num)))
+    digits = [HINDI_DIGIT_MAP.get(d, d) for d in str(abs_int)]
+    return f"{sign_word}{', '.join(digits)}"
+
+
 
 def get_cargo_tolerance(cargo_type_str: Optional[str]) -> float:
     """Map cargo description to telematics safety tolerance threshold (°C)."""
@@ -275,3 +314,37 @@ class StateTransitionLog(BaseModel):
     to_state: DialogueState
     trigger: str
     payload: Dict[str, Any] = Field(default_factory=dict)
+
+
+class SupervisorTicket(BaseModel):
+    """Entry in persistent supervisor escalation queue for real human handoffs."""
+    escalation_id: Optional[int] = None
+    vehicle_id: Optional[str] = None
+    driver_phone: Optional[str] = None
+    trigger_reason: str
+    unconfirmed_temp_c: Optional[float] = None
+    telematics_sensor_c: Optional[float] = None
+    audio_recording_path: Optional[str] = None
+    transcript_history: Optional[str] = None
+    status: str = "PENDING"
+    created_at: Optional[str] = None
+    resolved_at: Optional[str] = None
+    resolution_notes: Optional[str] = None
+
+
+class DisputeAuditEntry(BaseModel):
+    """Forensic audit log bundle linking audio, ASR, read-back, reply, and telemetry for disputed dispatches."""
+    audit_id: Optional[int] = None
+    ticket_id: int
+    vehicle_id: str
+    initial_audio_path: Optional[str] = None
+    asr_transcript: str
+    readback_prompt_spoken: str
+    driver_reply_audio_path: Optional[str] = None
+    driver_reply_intent: str
+    driver_reply_text: Optional[str] = None
+    gate_decision: str
+    residual_risk_flag: bool = False
+    priority_source: str = "CONFIRMED_READING"
+    dispatched_at: Optional[str] = None
+

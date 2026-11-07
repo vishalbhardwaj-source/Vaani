@@ -22,12 +22,20 @@ from core.schemas import (
     CargoClass,
     CARGO_TOLERANCE_MAP,
     SENSOR_MATCH_TOLERANCE_C,
+    spell_number_in_hindi_digits,
     get_cargo_tolerance,
     GateDecision,
     GateResult,
     DispatchPriority
 )
-from core.tools import dispatch_assistance, update_eta, lookup_vehicle, lookup_vehicle_by_phone
+from core.tools import (
+    dispatch_assistance,
+    update_eta,
+    lookup_vehicle,
+    lookup_vehicle_by_phone,
+    enqueue_supervisor_escalation,
+    record_dispute_audit
+)
 
 logger = logging.getLogger("vaani.state_machine")
 
@@ -265,6 +273,12 @@ class DialogueController:
         self.last_gate_residual_risk = False
         self.registration_retries = 0
         self.max_registration_retries = 2
+        self.silence_timeout_count = 0
+        self.max_silence_timeouts = 2
+        self.last_audio_path: Optional[str] = None
+        self.last_reply_audio_path: Optional[str] = None
+        self.last_reply_obj: Optional[DriverReply] = None
+        self.asr_confidence: float = 1.0
         self.unconfirmed_excursion: Optional[Tuple[bool, str, DispatchPriority]] = None
         self.confirmed_excursion: Optional[Tuple[bool, str, DispatchPriority]] = None
         self.priority_source: str = "NONE"
@@ -309,22 +323,99 @@ class DialogueController:
         )
         self.history.append(entry)
 
-    def receive_driver_utterance(self, transcript: str) -> Tuple[DialogueState, str]:
+    def handle_silence_or_timeout(self) -> Tuple[DialogueState, str]:
+        """
+        Models voice activity timeout: driver stays silent, background road noise dominates,
+        or telephony packet loss occurs.
+        Enforces a 2-retry schedule before escalating to a human supervisor queue.
+        """
+        self.silence_timeout_count += 1
+        if self.silence_timeout_count > self.max_silence_timeouts:
+            self._record_transition(
+                DialogueState.ESCALATING,
+                trigger="SILENCE_TIMEOUT_EXCEEDED",
+                payload={"silence_count": self.silence_timeout_count}
+            )
+            ticket_id = enqueue_supervisor_escalation(
+                vehicle_id=self.vehicle_id,
+                trigger_reason="SILENCE_TIMEOUT_LIMIT_EXCEEDED",
+                driver_phone=self.caller_phone,
+                unconfirmed_temp_c=self.current_record.temperature_c if self.current_record else None,
+                telematics_sensor_c=getattr(self.veh_telemetry, "current_temp_c", None),
+                audio_recording_path=self.last_audio_path,
+                transcript_history="; ".join([f"{h.from_state}->{h.to_state}: {h.trigger}" for h in self.history[-5:]])
+            )
+            self.last_ticket_id = f"TICK-{ticket_id}" if isinstance(ticket_id, int) else str(ticket_id)
+            prompt = (
+                "Bhaiya, aawaz nahi aa rahi hai. Main call turant human fleet supervisor ko "
+                "connect kar raha hoon. Kripya line par bane rahein."
+            )
+            self.last_agent_prompt = prompt
+            return DialogueState.ESCALATING, prompt
+
+        if self.state == DialogueState.CONFIRMING and self.current_record:
+            temp_desc = f"{self.current_record.temperature_c:g} degree" if self.current_record.temperature_c is not None else "report"
+            if self.silence_timeout_count == 1:
+                prompt = f"Bhaiya, aapki aawaz nahi aa rahi hai. Kya temperature {temp_desc} confirm hai? Haan ya naa bole."
+            else:
+                prompt = f"Kya aap line par hain? Kripya confirm karein: kya {temp_desc} sahi hai?"
+            self.last_agent_prompt = prompt
+            return DialogueState.CONFIRMING, prompt
+        else:
+            self._record_transition(
+                DialogueState.ASKING,
+                trigger="SILENCE_TIMEOUT_REPROMPT",
+                payload={"silence_count": self.silence_timeout_count}
+            )
+            if self.silence_timeout_count == 1:
+                prompt = "Aapki aawaz nahi aa rahi hai. Kripya batayein kya pareshani hai?"
+            else:
+                prompt = "Kya aap line par hain? Kripya gaadi ki problem ya temperature batayein."
+            self.last_agent_prompt = prompt
+            return DialogueState.ASKING, prompt
+
+    def receive_driver_utterance(
+        self,
+        transcript: str,
+        asr_confidence: float = 1.0,
+        audio_path: Optional[str] = None
+    ) -> Tuple[DialogueState, str]:
         """
         Step 1: Driver speaks in LISTENING state.
         Transitions: LISTENING -> EXTRACTING
+        Handles silence/timeout and low-confidence ASR gating.
         """
-        if self.state not in (DialogueState.LISTENING, DialogueState.DONE):
+        if self.state not in (DialogueState.LISTENING, DialogueState.DONE, DialogueState.ASKING):
             raise RuntimeError(f"Cannot receive initial utterance while in state {self.state}")
 
-        self.last_driver_utterance = transcript.strip()
+        self.last_audio_path = audio_path
+        self.asr_confidence = asr_confidence
+
+        raw = (transcript or "").strip()
+        # Silence / timeout detection
+        if not raw or raw in ("[SILENCE]", "[NO_SPEECH]"):
+            return self.handle_silence_or_timeout()
+
+        self.silence_timeout_count = 0  # Reset on valid driver speech
+        self.last_driver_utterance = raw
         self.correction_rounds = 0
         self.last_action_result = None
+
+        # Low-Confidence / Out-of-Vocabulary Acoustic Safety Check
+        if asr_confidence < 0.65:
+            self._record_transition(
+                DialogueState.ASKING,
+                trigger="LOW_ASR_CONFIDENCE",
+                payload={"raw_transcript": raw, "confidence": asr_confidence}
+            )
+            prompt = "Aapki aawaz saaf nahi aayi. Kripya display par dikh raha temperature number saaf batayein (jaise minus 14 ya 18)."
+            self.last_agent_prompt = prompt
+            return self.state, prompt
         
         self._record_transition(
             DialogueState.EXTRACTING,
             trigger="DRIVER_INITIAL_REPORT",
-            payload={"raw_transcript": self.last_driver_utterance}
+            payload={"raw_transcript": self.last_driver_utterance, "confidence": asr_confidence}
         )
         return self.state, f"Processing report: '{self.last_driver_utterance}'"
 
@@ -359,6 +450,17 @@ class DialogueController:
         if not record.location_text:
             if self.veh_telemetry and getattr(self.veh_telemetry, "last_known_location", None):
                 record.location_text = f"GPS: {self.veh_telemetry.last_known_location}"
+
+        # Out-of-Vocabulary / Missing Numeric Reading Gate for Reefer Temperature Incidents:
+        if record.incident_type == IncidentType.REEFER_TEMPERATURE and record.temperature_c is None:
+            self._record_transition(
+                DialogueState.ASKING,
+                trigger="NO_NUMERIC_READING_DETECTED",
+                payload={"raw_transcript": self.last_driver_utterance}
+            )
+            prompt = "Bhaiya, reefer display par temperature kitna degree dikh raha hai? Saaf batayein."
+            self.last_agent_prompt = prompt
+            return self.state, prompt
 
         # Preliminary physical excursion check on unconfirmed initial reading
         veh = self.veh_telemetry or lookup_vehicle(record.vehicle_id or self.vehicle_id)
@@ -454,45 +556,23 @@ class DialogueController:
         )
         return self.process_extraction(updated_record)
 
-    def generate_readback_prompt(self, record: ExtractionRecord, force_digit_spelling: bool = False) -> str:
+    def generate_readback_prompt(
+        self,
+        record: ExtractionRecord,
+        force_digit_spelling: bool = False,
+        use_hindi_digits: bool = True
+    ) -> str:
         """
         Generate spoken Hinglish read-back string for Timbre TTS.
         Normal read-back is concise (~3.5 s). Digit-by-digit spelling is reserved for
         when the telematics gate challenges an anomalous reading or in extreme noise conditions.
+        Supports Hindi-first digit spelling ('ek, aath' vs 'aath, shunya') to resolve 18/80 confusions.
         Supports full barge-in / interruptibility during playback.
         Example normal: 'Temperature 18 degree, toll plaza se 42 km aage. Sahi hai na Bhaiya?'
-        Example challenged: 'Temperature 80 degree (8, 0), toll plaza se 42 (4, 2) km aage. Dhyan dein: ...'
+        Example challenged: 'Temperature 80 degree (aath, shunya), toll plaza se 42 (chaar, do km) aage. Dhyan dein: ...'
         """
-        use_spelling = force_digit_spelling or getattr(self, "requires_forced_confirmation", False)
-
-        parts = []
-        if record.temperature_c is not None:
-            temp_num = int(record.temperature_c) if record.temperature_c.is_integer() else record.temperature_c
-            sign_word = "minus " if record.temperature_c < 0 else ""
-            if use_spelling:
-                digits = ", ".join(list(str(abs(int(temp_num)))))
-                parts.append(f"Temperature {sign_word}{temp_num} degree ({sign_word}{digits})")
-            else:
-                parts.append(f"Temperature {sign_word}{temp_num} degree")
-
-        if record.location_text:
-            if record.location_text.startswith("GPS: "):
-                age_str = f" ({self.veh_telemetry.gps_fix_age_minutes} minute purana)" if (self.veh_telemetry and getattr(self.veh_telemetry, "gps_fix_age_minutes", None)) else ""
-                parts.append(f"GPS telemetry{age_str} ke mutabik {record.location_text[5:]}")
-            elif record.distance_km is not None:
-                dist_num = int(record.distance_km) if record.distance_km.is_integer() else record.distance_km
-                if use_spelling:
-                    dist_digits = ", ".join(list(str(abs(int(dist_num)))))
-                    parts.append(f"{record.location_text} se {dist_num} ({dist_digits}) km aage")
-                else:
-                    parts.append(f"{record.location_text} se {dist_num} km aage")
-            else:
-                parts.append(f"{record.location_text} ke paas")
-
-        if record.incident_type == IncidentType.BREAKDOWN:
-            parts.insert(0, f"Vehicle {self.vehicle_id} breakdown report")
-
-        # Telematics plausibility policy: Flag deviation beyond per-cargo class tolerance
+        # Telematics plausibility policy: Flag deviation beyond per-cargo class tolerance upfront
+        telematics_note = None
         if self.veh_telemetry and record.temperature_c is not None:
             tolerance = get_cargo_tolerance(self.veh_telemetry.cargo_type)
             sensor_c = getattr(self.veh_telemetry, "current_temp_c", None)
@@ -503,12 +583,57 @@ class DialogueController:
             if temp_diff > tolerance:
                 self.requires_forced_confirmation = True
                 comp = f"Target {int(target_c)} degree tha" if sensor_c is None else f"Sensor {int(sensor_c)} degree aur target {int(target_c)} degree tha"
-                parts.append(f"Dhyan dein: {comp} aur report {int(record.temperature_c)} degree hai")
+                telematics_note = f"Dhyan dein: {comp} aur report {int(record.temperature_c)} degree hai"
+
+        use_spelling = force_digit_spelling or getattr(self, "requires_forced_confirmation", False)
+
+        parts = []
+        if record.temperature_c is not None:
+            temp_num = int(record.temperature_c) if record.temperature_c.is_integer() else record.temperature_c
+            sign_word = "minus " if record.temperature_c < 0 else ""
+            if use_spelling:
+                if use_hindi_digits:
+                    hindi_spelled = spell_number_in_hindi_digits(record.temperature_c)
+                    parts.append(f"Temperature {sign_word}{abs(temp_num)} degree ({hindi_spelled})")
+                else:
+                    digits = ", ".join(list(str(abs(int(temp_num)))))
+                    parts.append(f"Temperature {sign_word}{temp_num} degree ({sign_word}{digits})")
+            else:
+                parts.append(f"Temperature {sign_word}{temp_num} degree")
+
+        if record.location_text:
+            if record.location_text.startswith("GPS: "):
+                age_str = f" ({self.veh_telemetry.gps_fix_age_minutes} minute purana)" if (self.veh_telemetry and getattr(self.veh_telemetry, "gps_fix_age_minutes", None)) else ""
+                parts.append(f"GPS telemetry{age_str} ke mutabik {record.location_text[5:]}")
+            elif record.distance_km is not None:
+                dist_num = int(record.distance_km) if record.distance_km.is_integer() else record.distance_km
+                if use_spelling:
+                    if use_hindi_digits:
+                        dist_spelled = spell_number_in_hindi_digits(record.distance_km)
+                        parts.append(f"{record.location_text} se {dist_num} ({dist_spelled} km) aage")
+                    else:
+                        dist_digits = ", ".join(list(str(abs(int(dist_num)))))
+                        parts.append(f"{record.location_text} se {dist_num} ({dist_digits}) km aage")
+                else:
+                    parts.append(f"{record.location_text} se {dist_num} km aage")
+            else:
+                parts.append(f"{record.location_text} ke paas")
+
+        if record.incident_type == IncidentType.BREAKDOWN:
+            parts.insert(0, f"Vehicle {self.vehicle_id} breakdown report")
+
+        if telematics_note:
+            parts.append(telematics_note)
 
         details = ", ".join(parts) if parts else "Diya gaya report"
         return f"{details}. Sahi hai na Bhaiya?"
 
-    def handle_confirmation_reply(self, reply: DriverReply) -> Tuple[DialogueState, str]:
+    def handle_confirmation_reply(
+        self,
+        reply: DriverReply,
+        reply_audio_path: Optional[str] = None,
+        audio_path: Optional[str] = None
+    ) -> Tuple[DialogueState, str]:
         """
         Step 3: Evaluate driver reply to read-back using pure confirmation gate.
         Rules:
@@ -517,11 +642,22 @@ class DialogueController:
             - If CHALLENGE -> prompts for explicit number repetition
         - CORRECT -> transitions to CORRECTING -> CONFIRMING
         - REJECT / UNCLEAR -> treated as not confirmed; retries or escalates
-        - If correction_rounds exceeds max_correction_rounds -> ESCALATING
+        - If correction_rounds exceeds max_correction_rounds -> ESCALATING to persistent supervisor queue
         """
         if self.state != DialogueState.CONFIRMING:
             raise RuntimeError(f"Confirmation replies can only be processed from CONFIRMING state, currently: {self.state}")
 
+        self.last_reply_audio_path = reply_audio_path or audio_path
+        self.last_reply_obj = reply
+
+        raw_reply = (reply.raw_text or "").strip()
+        is_silence = (raw_reply in ("[SILENCE]", "[NO_SPEECH]")) or (
+            not raw_reply and (reply.intent is None or reply.intent.upper() in ("", "UNCLEAR", "SILENCE"))
+        )
+        if is_silence:
+            return self.handle_silence_or_timeout()
+
+        self.silence_timeout_count = 0  # Reset on valid driver response
         intent = reply.intent.upper()
 
         # CASE 1: DRIVER CONFIRMS -> EVALUATE VIA PURE GATE
@@ -558,12 +694,21 @@ class DialogueController:
         self.correction_rounds += 1
         
         if self.correction_rounds > self.max_correction_rounds:
-            # Exceeded safety retry threshold -> Escalate to human control tower
+            # Exceeded safety retry threshold -> Escalate to persistent supervisor queue
             self.requires_forced_confirmation = False
             self._record_transition(
                 DialogueState.ESCALATING,
                 trigger="EXCEEDED_MAX_CORRECTION_ROUNDS",
                 payload={"rounds": self.correction_rounds, "last_reply": reply.model_dump()}
+            )
+            enqueue_supervisor_escalation(
+                vehicle_id=self.vehicle_id,
+                driver_phone=self.caller_phone,
+                trigger_reason="EXCEEDED_MAX_CORRECTION_ROUNDS",
+                unconfirmed_temp_c=self.current_record.temperature_c if self.current_record else None,
+                telematics_sensor_c=getattr(self.veh_telemetry, "current_temp_c", None),
+                audio_recording_path=self.last_audio_path,
+                transcript_history="; ".join([f"{h.from_state}->{h.to_state}: {h.trigger}" for h in self.history[-5:]])
             )
             prompt = (
                 "Bhaiya, do baar confusion hua hai. Main call turant human fleet supervisor ko "
@@ -709,6 +854,24 @@ class DialogueController:
             priority_source="CONFIRMED_READING"
         )
         self.last_action_result = dispatch_result
+
+        # Store persistent forensic dispute audit bundle
+        try:
+            record_dispute_audit(
+                ticket_id=dispatch_result["ticket_id"],
+                vehicle_id=rec.vehicle_id or self.vehicle_id or "UNKNOWN",
+                initial_audio_path=getattr(self, "last_audio_path", None),
+                asr_transcript=self.last_driver_utterance,
+                readback_prompt_spoken=self.last_agent_prompt,
+                driver_reply_audio_path=getattr(self, "last_reply_audio_path", None),
+                driver_reply_intent=getattr(self.last_reply_obj, "intent", "CONFIRM"),
+                driver_reply_text=getattr(self.last_reply_obj, "raw_text", ""),
+                gate_decision="ALLOW",
+                residual_risk_flag=residual,
+                priority_source="CONFIRMED_READING"
+            )
+        except Exception as e:
+            logger.warning(f"Could not write dispute audit record: {e}")
 
         # Dynamically compute destination and delay from vehicle telematics
         destination_hub = "Delhi Central Depot"

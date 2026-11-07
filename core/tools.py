@@ -75,6 +75,41 @@ def init_db():
     )
     """)
 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS supervisor_queue (
+        escalation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        vehicle_id TEXT,
+        driver_phone TEXT,
+        trigger_reason TEXT NOT NULL,
+        unconfirmed_temp_c REAL,
+        telematics_sensor_c REAL,
+        audio_recording_path TEXT,
+        transcript_history TEXT,
+        status TEXT DEFAULT 'PENDING',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        resolved_at TIMESTAMP,
+        resolution_notes TEXT
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS dispute_audit_log (
+        audit_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ticket_id INTEGER NOT NULL,
+        vehicle_id TEXT NOT NULL,
+        initial_audio_path TEXT,
+        asr_transcript TEXT,
+        readback_prompt_spoken TEXT,
+        driver_reply_audio_path TEXT,
+        driver_reply_intent TEXT,
+        driver_reply_text TEXT,
+        gate_decision TEXT,
+        residual_risk_flag INTEGER DEFAULT 0,
+        priority_source TEXT DEFAULT 'CONFIRMED_READING',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
     # Migration checks for columns in existing DB
     cursor.execute("PRAGMA table_info(vehicles)")
     veh_cols = {row["name"] for row in cursor.fetchall()}
@@ -434,3 +469,122 @@ def get_action_log(limit: int = 15) -> List[Dict[str, Any]]:
         }
         for r in rows
     ]
+
+
+def enqueue_supervisor_escalation(
+    vehicle_id: Optional[str],
+    trigger_reason: str,
+    driver_phone: Optional[str] = None,
+    unconfirmed_temp_c: Optional[float] = None,
+    telematics_sensor_c: Optional[float] = None,
+    audio_recording_path: Optional[str] = None,
+    transcript_history: Optional[str] = None
+) -> int:
+    """
+    Pushes an unresolved or safety-escalated call into the real supervisor dispatch queue.
+    Returns: escalation_id
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT INTO supervisor_queue (
+        vehicle_id, driver_phone, trigger_reason, unconfirmed_temp_c,
+        telematics_sensor_c, audio_recording_path, transcript_history, status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING')
+    """, (
+        vehicle_id,
+        driver_phone,
+        trigger_reason,
+        unconfirmed_temp_c,
+        telematics_sensor_c,
+        audio_recording_path,
+        transcript_history
+    ))
+    esc_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return esc_id
+
+
+def list_supervisor_queue(status: Optional[str] = "PENDING") -> List[Dict[str, Any]]:
+    """Fetches tickets from the live supervisor escalation queue."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    if status:
+        cursor.execute("SELECT * FROM supervisor_queue WHERE status = ? ORDER BY escalation_id DESC", (status,))
+    else:
+        cursor.execute("SELECT * FROM supervisor_queue ORDER BY escalation_id DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def resolve_supervisor_escalation(escalation_id: int, resolution_notes: str) -> bool:
+    """Marks an escalation ticket as resolved by human fleet supervisor."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    cursor.execute("""
+    UPDATE supervisor_queue 
+    SET status = 'RESOLVED', resolved_at = ?, resolution_notes = ?
+    WHERE escalation_id = ?
+    """, (now_iso, resolution_notes, escalation_id))
+    rows_affected = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return rows_affected > 0
+
+
+def record_dispute_audit(
+    ticket_id: int,
+    vehicle_id: str,
+    asr_transcript: str,
+    readback_prompt_spoken: str,
+    driver_reply_intent: str,
+    driver_reply_text: Optional[str] = None,
+    initial_audio_path: Optional[str] = None,
+    driver_reply_audio_path: Optional[str] = None,
+    gate_decision: str = "ALLOW",
+    residual_risk_flag: bool = False,
+    priority_source: str = "CONFIRMED_READING"
+) -> int:
+    """
+    Stores an immutable forensic audit bundle for every dispatch.
+    Links raw audio path, transcript, spoken read-back, and driver reply.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT INTO dispute_audit_log (
+        ticket_id, vehicle_id, initial_audio_path, asr_transcript,
+        readback_prompt_spoken, driver_reply_audio_path, driver_reply_intent,
+        driver_reply_text, gate_decision, residual_risk_flag, priority_source
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        ticket_id,
+        vehicle_id,
+        initial_audio_path,
+        asr_transcript,
+        readback_prompt_spoken,
+        driver_reply_audio_path,
+        driver_reply_intent,
+        driver_reply_text,
+        gate_decision,
+        1 if residual_risk_flag else 0,
+        priority_source
+    ))
+    audit_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return audit_id
+
+
+def get_dispute_audit(ticket_id: int) -> Optional[Dict[str, Any]]:
+    """Retrieves full forensic dispute bundle by dispatch ticket ID."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM dispute_audit_log WHERE ticket_id = ? ORDER BY audit_id DESC LIMIT 1", (ticket_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
+

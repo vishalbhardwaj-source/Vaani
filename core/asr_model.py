@@ -80,19 +80,41 @@ class HinglishWhisperASR:
 
         with torch.no_grad():
             # Generate with language="en" & task="transcribe" (aligns with Roman Hinglish fine-tuning)
-            gen_tokens = self.model.generate(
+            outputs = self.model.generate(
                 input_features,
                 max_new_tokens=128,
                 language="en",
-                task="transcribe"
+                task="transcribe",
+                return_dict_in_generate=True,
+                output_scores=True
             )
+            gen_tokens = outputs.sequences
             transcript = self.processor.batch_decode(gen_tokens, skip_special_tokens=True)[0].strip()
+
+            # Compute empirical sequence confidence from decoder token log-probabilities
+            confidence = 0.95
+            token_confidences = []
+            if outputs.scores and len(outputs.scores) > 0:
+                num_gen = len(outputs.scores)
+                for step_idx, step_score in enumerate(outputs.scores):
+                    # token index in sequence corresponding to this decoding step
+                    tok_pos = gen_tokens.shape[1] - num_gen + step_idx
+                    if tok_pos < gen_tokens.shape[1]:
+                        tok_id = gen_tokens[0, tok_pos]
+                        log_probs = torch.log_softmax(step_score[0], dim=-1)
+                        prob = float(torch.exp(log_probs[tok_id]).item())
+                        token_confidences.append(prob)
+
+                if token_confidences:
+                    # Geometric mean or trimmed mean of token probabilities
+                    confidence = round(float(np.mean(token_confidences)), 3)
 
         latency = round(time.time() - t0, 3)
 
         return {
             "transcript": transcript,
-            "confidence": 0.97,
+            "confidence": confidence,
+            "min_token_confidence": round(float(np.min(token_confidences)), 3) if token_confidences else confidence,
             "latency": latency,
             "source": f"Fine-Tuned Whisper-LoRA ({self.device.upper()})"
         }

@@ -777,4 +777,202 @@ def test_pinned_adapter_and_model_hashes_match_committed_files():
     assert verify_denoiser(enforce_hash=True) is True
 
 
+def test_silence_timeout_handling_reprompts_and_escalates_to_supervisor_queue():
+    """Verify that silence/timeout prompts up to 2 times, and on 3rd timeout enqueues supervisor ticket and escalates."""
+    from core.state_machine import DialogueController, DialogueState
+    from core.tools import list_supervisor_queue
+
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102", caller_phone="+91-9876543210")
+
+    # Turn 1: Driver says nothing (timeout)
+    s1, p1 = ctrl.receive_driver_utterance("", asr_confidence=0.0)
+    assert s1 == DialogueState.ASKING
+    assert "aawaz nahi aa rahi hai" in p1
+    assert ctrl.silence_timeout_count == 1
+
+    # Turn 2: Driver still silent
+    s2, p2 = ctrl.handle_silence_or_timeout()
+    assert s2 == DialogueState.ASKING
+    assert "line par hain" in p2
+    assert ctrl.silence_timeout_count == 2
+
+    # Turn 3: 3rd consecutive timeout -> escalation to persistent supervisor queue
+    s3, p3 = ctrl.handle_silence_or_timeout()
+    assert s3 == DialogueState.ESCALATING
+    assert "supervisor ko connect kar rahe hain" in p3 or "supervisor" in p3
+    assert ctrl.silence_timeout_count == 3
+    assert ctrl.last_ticket_id is not None
+
+    # Check persistence in supervisor_queue
+    tickets = list_supervisor_queue(status="PENDING")
+    ticket = next((t for t in tickets if str(t["escalation_id"]) in ctrl.last_ticket_id), None)
+    assert ticket is not None
+    assert ticket["vehicle_id"] == "HR-55-TC-1102"
+    assert ticket["driver_phone"] == "+91-9876543210"
+    assert "SILENCE_TIMEOUT_LIMIT" in ticket["trigger_reason"]
+
+
+def test_low_asr_confidence_gates_to_asking_reading_upfront():
+    """Verify that when Whisper ASR confidence < 0.65, system enters ASKING upfront rather than dispatching."""
+    from core.state_machine import DialogueController, DialogueState
+    from core.schemas import ExtractionRecord, IncidentType
+
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    # Low confidence transcription (e.g. 0.42 on noisy 5 dB line)
+    s, p = ctrl.receive_driver_utterance("reefer temperature shyd atharah hai", asr_confidence=0.42)
+    assert s == DialogueState.ASKING
+    assert "saaf nahi aayi" in p
+    assert ctrl.state == DialogueState.ASKING
+
+    # Attempting extraction from ASKING without clarifying is guarded and raises RuntimeError
+    rec = ExtractionRecord(incident_type=IncidentType.REEFER_TEMPERATURE, temperature_c=18.0, location_text="Panipat")
+    with pytest.raises(RuntimeError):
+        ctrl.process_extraction(rec)
+
+    # Driver repeats clearly with high confidence
+    s2, p2 = ctrl.receive_missing_slot_reply("Haan bhaiya 18 degree hai", rec)
+    assert s2 == DialogueState.CONFIRMING
+
+
+def test_missing_numeric_reading_in_reefer_incident_gates_to_asking():
+    """Verify that reefer temperature incident missing a numeric reading prompts directly for the meter display."""
+    from core.state_machine import DialogueController, DialogueState
+    from core.schemas import ExtractionRecord, IncidentType
+
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.receive_driver_utterance("Bhaiya reefer ka temp kharab lag raha hai", asr_confidence=0.95)
+    rec = ExtractionRecord(incident_type=IncidentType.REEFER_TEMPERATURE, temperature_c=None, location_text="Panipat")
+    state, prompt = ctrl.process_extraction(rec)
+
+    assert state == DialogueState.ASKING
+    assert "reefer display par temperature" in prompt
+
+
+def test_hindi_first_spoken_digit_spelling():
+    """Verify colloquial Hindi digit spelling for disambiguating 18/80 and positive/negative values."""
+    from core.schemas import spell_number_in_hindi_digits
+    from core.state_machine import DialogueController, DialogueState
+    from core.schemas import ExtractionRecord, IncidentType
+
+    assert spell_number_in_hindi_digits(18.0) == "ek, aath"
+    assert spell_number_in_hindi_digits(80.0) == "aath, shunya"
+    assert spell_number_in_hindi_digits(-14.0) == "minus ek, chaar"
+    assert spell_number_in_hindi_digits(40.0) == "chaar, shunya"
+    assert spell_number_in_hindi_digits(4.5) == "chaar point paanch"
+    assert spell_number_in_hindi_digits(None) == ""
+
+    # Test in DialogueController readback prompt
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.receive_driver_utterance("Temperature 18 degree hai", asr_confidence=0.92)
+    rec = ExtractionRecord(incident_type=IncidentType.REEFER_TEMPERATURE, temperature_c=18.0, location_text="Karnal")
+    state, prompt = ctrl.process_extraction(rec)
+
+    assert state == DialogueState.CONFIRMING
+    assert "(ek, aath)" in prompt
+    assert "18 degree" in prompt
+
+
+def test_dispute_audit_bundle_recorded_on_dispatch():
+    """Verify that every final dispatch writes an end-to-end forensic audit bundle to dispute_audit_log."""
+    from core.state_machine import DialogueController, DialogueState
+    from core.schemas import ExtractionRecord, DriverReply, IncidentType
+    from core.tools import get_dispute_audit
+
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102", caller_phone="+91-9876543210")
+    ctrl.veh_telemetry.current_temp_c = -21.0
+    ctrl.receive_driver_utterance("Temperature minus chaudah degree ho gaya", asr_confidence=0.94, audio_path="audio/driver_turn1.wav")
+    rec = ExtractionRecord(incident_type=IncidentType.REEFER_TEMPERATURE, temperature_c=-14.0, location_text="Karnal Bypass")
+    ctrl.process_extraction(rec)
+
+    # Driver confirms
+    reply = DriverReply(intent="CONFIRM", raw_text="haan bhai minus chaudah sahi hai")
+    state, prompt = ctrl.handle_confirmation_reply(reply, audio_path="audio/driver_reply.wav")
+    assert state == DialogueState.DONE
+    assert ctrl.last_action_result is not None
+    assert "ticket_id" in ctrl.last_action_result
+
+    ticket_id = ctrl.last_action_result["ticket_id"]
+    audit = get_dispute_audit(ticket_id)
+    assert audit is not None
+    assert audit["ticket_id"] == ticket_id
+    assert audit["initial_audio_path"] == "audio/driver_turn1.wav"
+    assert audit["driver_reply_audio_path"] == "audio/driver_reply.wav"
+    assert "minus chaudah" in audit["asr_transcript"]
+    assert "minus" in audit["readback_prompt_spoken"].lower()
+    assert audit["driver_reply_intent"] == "CONFIRM"
+
+
+def test_supervisor_queue_lifecycle():
+    """Verify that tickets can be enqueued, listed, and resolved with notes in supervisor_queue."""
+    from core.tools import enqueue_supervisor_escalation, list_supervisor_queue, resolve_supervisor_escalation
+
+    esc_id = enqueue_supervisor_escalation(
+        vehicle_id="HR-55-TC-9999",
+        trigger_reason="RETRY_CAP_EXCEEDED",
+        driver_phone="+91-9123456789",
+        audio_recording_path="recordings/call_9999.wav",
+        transcript_history="Main bol raha hoon"
+    )
+    assert isinstance(esc_id, int)
+
+    # List pending
+    pending = list_supervisor_queue(status="PENDING")
+    ticket = next((t for t in pending if t["escalation_id"] == esc_id), None)
+    assert ticket is not None
+    assert ticket["status"] == "PENDING"
+    assert ticket["trigger_reason"] == "RETRY_CAP_EXCEEDED"
+
+    # Resolve
+    success = resolve_supervisor_escalation(
+        escalation_id=esc_id,
+        resolution_notes="Verified driver manually via national fleet registry"
+    )
+    assert success is True
+
+    # Check updated status
+    all_tickets = list_supervisor_queue(status=None)
+    resolved = next((t for t in all_tickets if t["escalation_id"] == esc_id), None)
+    assert resolved is not None
+    assert resolved["status"] == "RESOLVED"
+    assert resolved["resolution_notes"] == "Verified driver manually via national fleet registry"
+
+
+def test_telephony_server_rest_endpoints():
+    """Verify FastAPI telephony server health, queue, resolve, and dispute audit endpoints."""
+    from fastapi.testclient import TestClient
+    from app.telephony_server import app
+    from core.tools import enqueue_supervisor_escalation
+
+    client = TestClient(app)
+
+    # Health check
+    resp = client.get("/api/health")
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "ONLINE"
+    assert resp.json()["streaming"] == "active"
+
+    # Enqueue a ticket
+    esc_id = enqueue_supervisor_escalation(
+        vehicle_id="HR-55-TC-1102",
+        trigger_reason="ASR_TELEPHONY_DISPUTE",
+        driver_phone="+91-9876500000"
+    )
+
+    # Fetch supervisor queue
+    q_resp = client.get("/api/supervisor/queue?status=PENDING")
+    assert q_resp.status_code == 200
+    q_data = q_resp.json()
+    assert any(t["escalation_id"] == esc_id for t in q_data["tickets"])
+
+    # Resolve ticket
+    res_resp = client.post("/api/supervisor/resolve", json={
+        "escalation_id": esc_id,
+        "supervisor_name": "Ops Manager",
+        "resolution_notes": "Driver instructed to proceed to cold store hub"
+    })
+    assert res_resp.status_code == 200
+    assert res_resp.json()["status"] == "RESOLVED"
+
+
+
 
