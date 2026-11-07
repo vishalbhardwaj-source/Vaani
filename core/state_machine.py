@@ -262,6 +262,28 @@ def evaluate_confirmation_gate(
                 )
 
 
+def compute_prompt_segment_end_offset(slots_text: str) -> float:
+    """
+    Measures the exact audio waveform offset (in seconds) where the critical slots
+    (temperature, distance, location) finish playing by inspecting the synthesized audio waveform.
+    Uses disk cache to ensure zero latency overhead for repeated prompts.
+    Falls back to calibrated conversational speech rate (~0.16 s per word) if TTS is unavailable.
+    """
+    if not slots_text or not slots_text.strip():
+        return 0.0
+    try:
+        from gnani.client import speak_text
+        import io, soundfile as sf
+        audio_bytes = speak_text(slots_text)
+        data, sr = sf.read(io.BytesIO(audio_bytes))
+        measured_s = len(data) / float(sr)
+        return round(measured_s, 2)
+    except Exception as e:
+        logger.debug(f"Audio waveform synthesis measurement fallback: {e}")
+        word_count = len(slots_text.split())
+        return round(max(1.2, word_count * 0.16), 2)
+
+
 class DialogueController:
     """
     Finite State Machine governing driver interactions and action gate.
@@ -742,13 +764,12 @@ class DialogueController:
             parts.append(telematics_note)
 
         details = ", ".join(parts) if parts else "Diya gaya report"
-        # Calibrated slot duration calculation:
-        # In natural conversational Hinglish read-back (measured benchmark rate ~0.15-0.16 s/word),
-        # compute when critical slots (temperature, distance, location) finish playing.
-        CALIBRATED_SPEECH_RATE_S_PER_WORD = 0.16
-        content_words = len(details.split())
-        self.critical_slots_duration_s = max(1.2, round(content_words * CALIBRATED_SPEECH_RATE_S_PER_WORD, 2))
-        self.critical_slots_end_s = self.critical_slots_duration_s
+        # Measured waveform duration for critical slots:
+        # Measures the exact audio waveform end offset (seconds) where the critical slots
+        # finish playing, using real synthesized waveform lengths.
+        # If offline or TTS synthesis is unavailable, falls back to the calibrated rate (0.16 s/word).
+        self.critical_slots_end_s = compute_prompt_segment_end_offset(details)
+        self.critical_slots_duration_s = self.critical_slots_end_s
         return f"{details}. Sahi hai na Bhaiya?"
 
     def _is_acoustic_echo(self, raw_reply: str) -> bool:

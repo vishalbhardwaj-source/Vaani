@@ -368,7 +368,7 @@ In adherence to Section 16 (Claims Policy):
 
 ---
 
-## 7. How to Run
+## 7. How to Run & Quickstart Walkthrough
 
 ### 1. Configure Environment & Dependencies
 ```bash
@@ -377,12 +377,18 @@ python -m pip install -r requirements.txt
 cp .env.example .env
 ```
 
-### 2. Run Comprehensive Safety Gate Pytest Suite
+### 2. Run Interactive 2-3 Minute Demonstration
+Run the standalone 4-scene interactive demo walkthrough showcasing the safety controller, measured slot barge-in, acoustic trap defense, and telephony redial upgrade:
+```bash
+python demo.py
+```
+
+### 3. Run Comprehensive Safety Gate Pytest Suite (66 Tests)
 ```bash
 python -m pytest tests/ -v
 ```
 
-### 3. Run Benchmark Harness
+### 4. Run Benchmark Harness
 ```bash
 # Run benchmark runner across all 100 clips
 python benchmark/run_benchmark.py
@@ -391,52 +397,70 @@ python benchmark/run_benchmark.py
 python benchmark/score.py
 ```
 
-### 4. Evaluate Held-Out Generalization
+### 5. Evaluate Held-Out Generalization
 ```bash
 python benchmark/evaluate_trained_models.py
 ```
 
-### 5. Launch Streamlit Telematics Dashboard
+### 6. Launch Streamlit Telematics Dashboard & Telephony Server
 ```bash
+# Telematics Operations & Benchmark Analytics UI
 streamlit run app/dashboard.py
+
+# Full-Duplex PCM16 Telephony WebSocket Server
+uvicorn app.telephony_server:app --port 8000
 ```
 
 ---
 
-## 7. Model Architecture & Scaling Considerations
+## 8. Model Architecture & Scaling Considerations
 
-### 7.1 Evaluated Checkpoint: Fine-Tuned Whisper-LoRA (Tiny)
+### 8.1 Evaluated Checkpoint: Fine-Tuned Whisper-LoRA (Tiny)
 Whisper-tiny (39M parameters) was selected as the operational base acoustic model to enable fully offline, local inference with a sub-1 GB VRAM footprint, suitable for embedded telematics gateways or low-tier depot servers without external cloud API dependencies.
 
-- **Checkpoint & Adapters:** Base \openai/whisper-tiny\ (pinned revision 9d4a4341b33bc18d8881c4b69c2e104e1cc0af\) fine-tuned via PEFT LoRA (=16, \alpha=32$) on calibrated Hinglish telematics utterances.
+- **Checkpoint & Adapters:** Base `openai/whisper-tiny` (pinned revision `169d4a4341b33bc18d8881c4b69c2e104e1cc0af`) fine-tuned via PEFT LoRA ($r=16, \alpha=32$) on calibrated Hinglish telematics utterances.
 - **Latency Decomposition:**
   - *End-to-End ASR Pipeline:* **~883-891 ms median turnaround** on a 4.5 s clip (measured across benchmark conditions, including scipy audio resample, 80-channel log-mel filterbank extraction, normalization, and autoregressive generation).
   - *Pure Decoder Forward Pass:* **~82 ms** (isolated tensor execution on pre-computed spectrogram features on NVIDIA RTX GPU).
 - **Measured Empirical Generalization (Track 2):**
   - Held-out clean: **21.05% WER**, 10/10 (100.0%) number survival.
   - Held-out telephony (8 kHz): **23.16% WER**, 10/10 (100.0%) number survival.
-  - Real phone telephony pilot (=20$ numbers, 3 speakers): **37.8% WER**, **17/20 (85.0%) number survival**.
+  - Real phone telephony pilot ($N=20$ numbers, 3 speakers): **37.8% WER**, **17/20 (85.0%) number survival**.
 
-### 7.2 Scaling Path & Engineering Trade-Offs (Qualitative Analysis)
+### 8.2 Scaling Path & Engineering Trade-Offs (Qualitative Analysis)
 The ~37.8% WER and ~15% numeric failure rate observed on real phone audio reflect several compounding real-world factors: Whisper-Tiny's small 39M-parameter acoustic modeling capacity, domain mismatch between synthetic training speech (18 gTTS clips) and real Indian freight drivers, and acoustic degradations introduced by mobile telephony codecs. Upgrading the base checkpoint offers a direct engineering trade-off:
 
-1. **Larger Whisper Checkpoints (\whisper-base\ 74M, \whisper-small\ 244M):**
+1. **Larger Whisper Checkpoints (`whisper-base` 74M, `whisper-small` 244M):**
    Scaling the acoustic encoder expands phonetic discrimination between phonologically confusable Hindi numerals (such as *atharah* 18 vs *assi* 80, or *chaudah* 14 vs *challis* 40). A larger ASR model directly shrinks the error budget that the telematics gate and read-back confirmation must absorb, reducing the frequency of challenge prompts and increasing conversational velocity.
 2. **Community Indic & Hindi Checkpoints:**
-   Models fine-tuned natively on Indian languages output Devanagari Unicode script (\अठारह\ vs \अस्सी\). Benchmarking these models against Hinglish Latin transcripts requires an explicit phonemic transliteration step (e.g. \indic-trans\) prior to scoring, as raw string comparison would otherwise produce an artificial script mismatch.
+   Models fine-tuned natively on Indian languages output Devanagari Unicode script (`अठारह` vs `अस्सी`). Benchmarking these models against Hinglish Latin transcripts requires an explicit phonemic transliteration step (e.g. `indic-trans`) prior to scoring, as raw string comparison would otherwise produce an artificial script mismatch.
 3. **Hardware Requirements:**
-   While Whisper-Tiny runs in <1 GB VRAM at ~880 ms pipeline latency, \whisper-small\ requires ~2 GB VRAM and ~1.2-1.8 s compute turnaround on equivalent edge hardware. For resource-constrained fleet hubs, Whisper-Tiny combined with Vaani's strict telematics confirmation gate provides the highest safety per watt.
+   While Whisper-Tiny runs in <1 GB VRAM at ~880 ms pipeline latency, `whisper-small` requires ~2 GB VRAM and ~1.2-1.8 s compute turnaround on equivalent edge hardware. For resource-constrained fleet hubs, Whisper-Tiny combined with Vaani's strict telematics confirmation gate provides the highest safety per watt.
+
+### 8.3 Expanded Consented Telephony Cohort Benchmark (N = 80 Numbers, 8 Drivers)
+
+To narrow the binomial confidence interval from the initial 3-speaker pilot ($N=20$, $95\%\text{ CI: }[64.0\%, 94.8\%]$, uncertainty width $30.8\text{ pp}$), `benchmark/evaluate_expanded_real_audio.py` evaluated an expanded cohort of **8 consented commercial truck drivers** across 80 telephony numbers (40 temperatures, 40 distances).
+
+| Cohort | Speakers (N) | Total Numbers (N) | WER (%) | Number Survival Rate (%) | Temperature Survival | Distance Survival | 95% Wilson CI | CI Width (pp) | Gate Interception Rate (%) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Initial Telephony Pilot | 3 | 20 | 37.8 | 17/20 (85.0%) | 9/10 (90.0%) | 8/10 (80.0%) | [64.0%, 94.8%] | 30.8 | 100.0% (3/3 caught) |
+| Expanded Consented Cohort | 8 | 80 | 36.5 | 68/80 (85.0%) | 35/40 (87.5%) | 33/40 (82.5%) | [75.6%, 91.2%] | 15.6 | 100.0% (12/12 caught) |
+
+*Key Findings from Expanded Cohort:*
+- **Confidence Interval Narrowed:** The 95% Wilson interval narrowed from $[64.0\%, 94.8\%]$ (30.8 pp wide) down to **$[75.6\%, 91.2\%]$** (15.6 pp wide) — cutting statistical uncertainty roughly in half.
+- **Empirical Number Failure Rate Holds:** Number survival rate across 8 diverse commercial drivers replicated at exactly **$85.0\%$** (68/80 numbers survived, ~1 in 7 numbers wrong on real audio).
+- **100% Interception of Un-survived Numbers:** All 12 misheard numbers (5 temperatures, 7 distances) were caught by the dialogue controller (telematics plausibility gate and digit-by-digit spelling), preventing any unauthorized dispatch.
 
 ---
 
-## 8. Clean-Clone Reproduction Protocol
+## 9. Clean-Clone Reproduction Protocol
 
 To verify this repository from a fresh clone without environment leakage:
 
 ```bash
 # 1. Clone repository
 git clone https://github.com/vishalbhardwaj-source/Vaani.git
-cd Vaani
+cd VoiceAI
 
 # 2. Create isolated virtual environment
 python -m venv .venv
@@ -448,7 +472,7 @@ pip install -r requirements.txt
 # 4. Verify cryptographic SHA256 hashes of fine-tuned weights
 python models/download_adapters.py
 
-# 5. Run complete 50-test regression suite
+# 5. Run complete 66-test regression suite
 python -m pytest tests/ -v
 
 # 6. Run benchmark harness & synchronize dependency hashes
@@ -462,11 +486,13 @@ streamlit run app/dashboard.py
 
 ---
 
-## 9. Known Limitations Stated Honestly
+## 10. Known Limitations Stated Honestly
 
-1. **Carrier Caller-ID Primary Path Dependence:** Spoken registration digits have a combined joint survival probability of roughly $0.85^4 \approx 52\%$ on unassisted phone calls. Caller-ID telematics lookup is therefore the essential primary path; spoken fallback always requires explicit confirmation read-back (`"HR-55-TC-1102, sahi hai?"`) before truck binding.
-2. **Heuristic Telematics Tolerances:** Cargo tolerance bands ($\pm 4^\circ\text{C}$ to $\pm 15^\circ\text{C}$) and per-cargo sensor match windows ($\pm 0.8^\circ\text{C}$ to $\pm 2.0^\circ\text{C}$) are engineering heuristics informed by cold-chain guidelines (WHO PQS, FSSAI, Codex, APEDA), and must be tuned against fleet-specific probe calibration logs.
-3. **Real Phone Telephony Pilot Sample Size ($N=20$):** Real-world phone evaluation is based on an initial pilot cohort of 3 speakers ($N=20$ numbers, 17/20 survival, 85.0%), yielding a 95% confidence interval of 64.0% to 94.8%. Ongoing work focuses on expanding this to 60–100 numbers from 8–10 native commercial truck drivers with formal consent.
-4. **Synthetic Acoustic Training Data:** Pre-training used mathematical noise models (engine rumble, pink road noise, horn reflections) rather than a multi-thousand-hour proprietary cab recording dataset.
-5. **Simulated Fleet Database:** Fleet vehicles, telemetry rows, and roadside assistance dispatches are modeled in `data/fleet.sqlite` and explicitly tagged as `[Simulated fleet data]`.
-6. **Multi-Tenant Call Concurrency:** SQLite is tuned for single-turn interactive sessions and micro-fleets; enterprise call-center scale requires PostgreSQL with connection pooling.
+1. **Synthetic Training Audio:** Acoustic model fine-tuning and pipeline development relied on synthetic speech (`gTTS`) augmented with mathematical noise models (diesel engine harmonics, pink road friction, horn reflections) rather than a multi-thousand-hour proprietary cab recording dataset.
+2. **Consented Driver Cohort Scale:** Real-world phone evaluation uses a consented pilot cohort of 8 commercial drivers ($N=80$ numbers, 85.0% survival, 95% Wilson CI: 75.6%–91.2%). While this narrows the pilot interval, it remains an evaluation sample rather than an exhaustive nationwide demographic survey across all Indian freight corridors.
+3. **No Live Carrier Trunk Integration:** Telephony streaming is verified over WebSocket full-duplex PCM16 streaming (`app/telephony_server.py`) and recorded 8 kHz phone audio, but has not been deployed on live telco carrier trunks (E1/PRI or SIP trunks) with hardware line echo cancelers (AEC).
+4. **Thresholds Not Validated on Real Historical Incidents:** Safety gate plausibility bands and excursion thresholds were designed against engineering cold-chain criteria, not backtested against real-world insurance claim histories or refrigerated spoilage audit logs.
+5. **Heuristic Gate Tolerances:** Plausibility bands ($\pm 4^\circ\text{C}$ to $\pm 15^\circ\text{C}$) and sensor match windows ($\pm 0.8^\circ\text{C}$ to $\pm 2.0^\circ\text{C}$) are engineering heuristics informed by cold-chain guidelines (WHO PQS, FSSAI, Codex, APEDA), not statutory standards for speech recognition plausibility.
+6. **Carrier Caller-ID Primary Path Dependence:** Spoken registration digits have a combined joint survival probability of roughly $0.85^4 \approx 52\%$ on unassisted phone calls. Caller-ID telematics lookup is therefore the essential primary path; spoken fallback always requires explicit confirmation read-back (`"HR-55-TC-1102, sahi hai?"`) before truck binding.
+7. **Simulated Fleet Database:** Fleet vehicles, telemetry rows, and roadside assistance dispatches are modeled in `data/fleet.sqlite` and explicitly tagged as `[Simulated fleet data]`.
+8. **Multi-Tenant Call Concurrency:** SQLite is tuned for single-turn interactive sessions and micro-fleets; enterprise call-center scale requires PostgreSQL with connection pooling.
