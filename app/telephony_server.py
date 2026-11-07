@@ -109,6 +109,8 @@ async def telephony_audio_stream(
     speech_buffer = bytearray()
     last_speech_time = time.time()
     agent_is_playing_tts = False
+    tts_playback_started_at = None
+    barge_in_elapsed_s = None
 
     # Send initial greeting
     greeting_text = (
@@ -144,10 +146,13 @@ async def telephony_audio_stream(
                 # BARGE-IN INTERRUPTION: If agent is speaking and driver interrupts
                 if agent_is_playing_tts and energy > (VAD_ENERGY_THRESHOLD * 1.5):
                     logger.info("[Telephony] Barge-in detected: Driver interrupted agent playback.")
+                    if tts_playback_started_at:
+                        barge_in_elapsed_s = time.time() - tts_playback_started_at
                     agent_is_playing_tts = False
                     await websocket.send_json({
                         "event": "playback_cancelled",
-                        "reason": "DRIVER_BARGE_IN"
+                        "reason": "DRIVER_BARGE_IN",
+                        "elapsed_s": barge_in_elapsed_s
                     })
 
                 # VAD SPEECH ONSET
@@ -196,7 +201,11 @@ async def telephony_audio_stream(
                                 state, agent_msg = controller.process_extraction(rec)
                         elif controller.state == DialogueState.CONFIRMING:
                             reply = classify_driver_reply(transcript)
-                            state, agent_msg = controller.handle_confirmation_reply(reply)
+                            state, agent_msg = controller.handle_confirmation_reply(
+                                reply,
+                                playback_elapsed_s=barge_in_elapsed_s
+                            )
+                            barge_in_elapsed_s = None
                         elif controller.state == DialogueState.ASKING:
                             if controller.is_unverified_vehicle:
                                 state, agent_msg = controller.receive_vehicle_identification_reply(transcript)
@@ -209,6 +218,8 @@ async def telephony_audio_stream(
 
                         # Synthesize response audio
                         agent_is_playing_tts = True
+                        tts_playback_started_at = time.time()
+                        barge_in_elapsed_s = None
                         tts_bytes = speak_text(agent_msg)
                         await websocket.send_json({
                             "event": "agent_prompt",
@@ -245,6 +256,11 @@ async def telephony_audio_stream(
         logger.info("[Telephony] Client disconnected from WebSocket stream.")
     except Exception as e:
         logger.error(f"[Telephony] Error during stream processing: {e}")
+    finally:
+        # Check if call was dropped with an unconfirmed sensor-corroborated excursion
+        if controller.state not in (DialogueState.DONE, DialogueState.ESCALATING):
+            logger.info("[Telephony] Remote call dropped before completion. Running fail-safe check.")
+            controller._check_and_enqueue_escalation(trigger_reason="TELEPHONY_CALL_DROPPED_BEFORE_CONFIRMATION")
 
 
 # -------------------------------------------------------------

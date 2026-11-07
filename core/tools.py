@@ -493,6 +493,37 @@ def enqueue_supervisor_escalation(
     """
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # Deduplicate pending tickets per vehicle to prevent redial flooding:
+    if vehicle_id:
+        cursor.execute("""
+        SELECT escalation_id FROM supervisor_queue 
+        WHERE vehicle_id = ? AND status = 'PENDING'
+        ORDER BY escalation_id DESC LIMIT 1
+        """, (vehicle_id,))
+        existing = cursor.fetchone()
+        if existing:
+            esc_id = existing["escalation_id"]
+            cursor.execute("""
+            UPDATE supervisor_queue
+            SET trigger_reason = ?, unconfirmed_temp_c = COALESCE(?, unconfirmed_temp_c),
+                telematics_sensor_c = COALESCE(?, telematics_sensor_c),
+                audio_recording_path = COALESCE(?, audio_recording_path),
+                transcript_history = ?, alert_level = ?
+            WHERE escalation_id = ?
+            """, (
+                trigger_reason,
+                unconfirmed_temp_c,
+                telematics_sensor_c,
+                audio_recording_path,
+                transcript_history,
+                alert_level,
+                esc_id
+            ))
+            conn.commit()
+            conn.close()
+            return esc_id
+
     cursor.execute("""
     INSERT INTO supervisor_queue (
         vehicle_id, driver_phone, trigger_reason, unconfirmed_temp_c,

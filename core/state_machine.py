@@ -741,7 +741,8 @@ class DialogueController:
         self,
         reply: DriverReply,
         reply_audio_path: Optional[str] = None,
-        audio_path: Optional[str] = None
+        audio_path: Optional[str] = None,
+        playback_elapsed_s: Optional[float] = None
     ) -> Tuple[DialogueState, str]:
         """
         Step 3: Evaluate driver reply to read-back using pure confirmation gate.
@@ -752,6 +753,8 @@ class DialogueController:
         - CORRECT -> transitions to CORRECTING -> CONFIRMING
         - REJECT / UNCLEAR -> treated as not confirmed; retries or escalates
         - If correction_rounds exceeds max_correction_rounds -> ESCALATING to persistent supervisor queue
+        - Early Barge-in Guardrail: If driver cut in before numbers finished playing (<2.2s),
+          a reflexive 'haan' is rejected unless the driver explicitly repeats the number.
         """
         if self.state != DialogueState.CONFIRMING:
             raise RuntimeError(f"Confirmation replies can only be processed from CONFIRMING state, currently: {self.state}")
@@ -768,6 +771,30 @@ class DialogueController:
 
         self.silence_timeout_count = 0  # Reset on valid driver response
         intent = reply.intent.upper()
+
+        # BARGE-IN SAFETY GUARDRAIL:
+        # If driver interrupts via VAD before critical slots have finished playing (default 2.2 s),
+        # a reflexive confirmation ("haan", "sahi hai") CANNOT be accepted because the driver
+        # has not yet heard the temperature or distance.
+        # Only an explicit number repeat (e.g. "haan 18 confirm") is accepted on early barge-in!
+        min_listen_time = getattr(self, "minimum_readback_listen_time_s", 2.2)
+        if intent == "CONFIRM" and playback_elapsed_s is not None and playback_elapsed_s < min_listen_time:
+            from gnani.client import parse_hindi_number
+            parsed_num = parse_hindi_number(reply.raw_text or "")
+            expected_temp = self.current_record.temperature_c if self.current_record else None
+            has_explicit_number = bool(
+                parsed_num is not None and expected_temp is not None and abs(parsed_num - expected_temp) < 0.1
+            )
+            if not has_explicit_number:
+                self._record_transition(
+                    DialogueState.CONFIRMING,
+                    trigger="EARLY_BARGE_IN_REJECTED",
+                    payload={"elapsed_s": playback_elapsed_s, "raw_reply": reply.raw_text}
+                )
+                temp_str = f"{expected_temp:g} degree" if expected_temp is not None else "report"
+                prompt = f"Bhaiya poora suniye: Temperature {temp_str} bataya tha. Kya yeh sahi hai? Haan ya naa saaf bole."
+                self.last_agent_prompt = prompt
+                return DialogueState.CONFIRMING, prompt
 
         # CASE 1: DRIVER CONFIRMS -> EVALUATE VIA PURE GATE
         if intent == "CONFIRM":

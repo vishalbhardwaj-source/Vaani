@@ -31,9 +31,9 @@ Our empirical benchmark evaluates **100 audio clips** across 4 acoustic conditio
 > Track 1 isolates the finite state machine and dialogue safety layer from ASR variation by using calibrated acoustic degradation and scripted driver replies.
 > Audio was synthesized using `gTTS` and mixed with calibrated synthetic Indian truck diesel engine and cabin noise.
 > **Fleet Telemetry Stand-in (Oracle Mapping):** Each utterance is mapped to its matching fleet cargo vehicle (`HR-55-TC-1102` for sub-zero ice cream target −22°C, `DL-01-AA-4092` for dairy target +4°C, `GJ-01-BX-7201` for fresh produce target +6°C, `MH-12-RN-8819` for vaccine target -20°C). In production, cargo targets come from fleet telematics data, independent of driver utterances.
-> **Heuristic Tolerance Bands vs. Storage Standards:** Tolerance bands (Pharma/Vaccines: ±4°C, Chilled Dairy: ±8°C, Deep Freeze: ±12°C, Produce: ±15°C) are configurable engineering heuristics chosen by the author, informed by storage ranges in cold-chain guidelines (WHO PQS E003/001, FSSAI Schedule 4, Codex Stan 92-1981, APEDA). They are NOT statutory standards for speech recognition plausibility.
-> **Decoupled Physical Cargo Excursion Monitoring:** The ASR gate answers: *'Was this transcribed correctly?'*. Physical cargo degradation risk is evaluated independently by `check_cargo_temperature_excursion` (which answers: *'Is the cargo at active risk?'*). For instance, with ice cream target at −22°C and a ±12°C ASR plausibility band, a spoken −10°C is verified as correctly transcribed, but immediately triggers a `CRITICAL` dispatch priority alarm because −10°C breaches the −18°C Codex physical storage ceiling.
-> **Sensor Match Tolerance (±2.0°C):** Rule 1 verifies spoken readings against the live IoT sensor (`current_temp_c`) with an empirical tolerance of `±2.0°C` (`SENSOR_MATCH_TOLERANCE_C`). This accommodates reefer cab display integer rounding (e.g., −21.6°C displayed as −21°C), probe sensor calibration variance (±0.5°C), and micro-climatic thermal stratification within the compartment. In contrast, target tolerances are wider (±4°C to ±15°C) to allow for legitimate refrigeration setpoint drift.
+> **Heuristic Tolerance Bands vs. Storage Standards:** Tolerance bands (Pharma/Vaccines: ±4°C, Chilled Dairy: ±8°C, Deep Freeze: ±12°C, Produce: ±15°C) are configurable engineering heuristics chosen by the author, informed by storage ranges in cold-chain guidelines (WHO PQS E003/001, FSSAI Schedule 4, Codex CXC 8-1976, APEDA). They are NOT statutory standards for speech recognition plausibility.
+> **Decoupled Physical Cargo Excursion Monitoring:** The ASR gate answers: *'Was this transcribed correctly?'*. Physical cargo degradation risk is evaluated independently by `check_cargo_temperature_excursion` (which answers: *'Is the cargo at active risk?'*). For instance, with ice cream target at −22°C and a ±12°C ASR plausibility band, a spoken −10°C is verified as correctly transcribed, but immediately triggers a `CRITICAL` dispatch priority alarm because −10°C breaches the configured −18°C deep freeze ceiling.
+> **Per-Cargo Sensor Match Tolerance:** Rule 1 verifies spoken readings against the live IoT sensor (`current_temp_c`) with an empirical per-cargo tolerance (±0.8°C for vaccines, ±1.2°C for dairy, ±1.5°C for deep freeze, ±2.0°C for produce). This accommodates cab display integer rounding while enforcing tight checks on narrow-margin cargo.
 > **Rule 1 with Active Cargo Excursion:** If a driver reports a true cooling unit failure that matches the live sensor (e.g., reported −10°C matches sensor −10.0°C on a −22°C ice cream truck), the gate ALLOWs the report without an unnecessary repeat challenge, and upon confirmation `check_cargo_temperature_excursion` immediately flags `CRITICAL` priority with `priority_source = 'CONFIRMED_READING'`. This is the central operational scenario the system is built to handle.
 > **Bi-Directional Sign-Flip & Dropped-Minus Protection:** The gate checks: (a) sub-zero target with positive spoken value, (b) positive target with negative spoken value, and (c) sensor magnitude match with opposite sign (e.g., spoken +14°C vs sensor −14.0°C, the exact dropped-minus failure measured on real audio). In all cases, un-repeated confirmations trigger an immediate challenge prompt.
 > **Confirmed vs. Unconfirmed Priority Tracking:** To prevent control tower alert fatigue from unconfirmed ASR noise (such as 18→80 slips), excursion priority is logged as `priority_source = 'UNCONFIRMED_INITIAL'` during preliminary extraction, and evaluated on the confirmed reading upon dispatch with `priority_source = 'CONFIRMED_READING'`.
@@ -403,18 +403,29 @@ streamlit run app/dashboard.py
 
 ---
 
-## 7. ASR Model Architecture & Scaling Analysis
+## 7. Model Architecture & Scaling Considerations
 
-Whisper-tiny (39M parameters) was selected as the base acoustic model to enable sub-100 ms local inference on edge hardware without external cloud API dependencies. However, in low-bandwidth 8 kHz AMR-WB telephony audio, acoustic feature resolution is constrained. The table below compares the compute footprint and empirical performance scaling across Whisper model checkpoints and community Hindi-tuned models:
+### 7.1 Evaluated Checkpoint: Fine-Tuned Whisper-LoRA (Tiny)
+Whisper-tiny (39M parameters) was selected as the operational base acoustic model to enable fully offline, local inference with a sub-1 GB VRAM footprint, suitable for embedded telematics gateways or low-tier depot servers without external cloud API dependencies.
 
-| Model Checkpoint | Parameters | FP16 Size | Inference Latency (RTX 5070) | Clean WER | Telephony 8 kHz WER | Real Telephony WER | Number Survival | Target Deployment Profile |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **Whisper-Tiny (Vaani Default)** | **39M** | **78 MB** | **~82 ms** | **21.05%** | **23.16%** | **37.8%** | **85.0% (17/20)** | **Edge Gateway / In-Cab Reefer Unit (Low VRAM, Real-Time)** |
-| Whisper-Base | 74M | 148 MB | ~142 ms | 16.40% | 18.20% | ~28.2% | ~92.5% | Fleet Depot Server / Micro-K8s Node |
-| Whisper-Small | 244M | 488 MB | ~310 ms | 11.20% | 13.50% | ~19.4% | ~96.2% | Cloud Centralized Telematics Hub |
-| Community Hindi ASR (`whisper-hindi-small`) | 244M | 488 MB | ~315 ms | 10.80% | 12.90% | ~18.6% | ~97.0% | Specialized Indic Call-Center Trunk |
+- **Checkpoint & Adapters:** Base \openai/whisper-tiny\ (pinned revision 9d4a4341b33bc18d8881c4b69c2e104e1cc0af\) fine-tuned via PEFT LoRA (=16, \alpha=32$) on calibrated Hinglish telematics utterances.
+- **Latency Decomposition:**
+  - *End-to-End ASR Pipeline:* **~883-891 ms median turnaround** on a 4.5 s clip (measured across benchmark conditions, including scipy audio resample, 80-channel log-mel filterbank extraction, normalization, and autoregressive generation).
+  - *Pure Decoder Forward Pass:* **~82 ms** (isolated tensor execution on pre-computed spectrogram features on NVIDIA RTX GPU).
+- **Measured Empirical Generalization (Track 2):**
+  - Held-out clean: **21.05% WER**, 10/10 (100.0%) number survival.
+  - Held-out telephony (8 kHz): **23.16% WER**, 10/10 (100.0%) number survival.
+  - Real phone telephony pilot (=20$ numbers, 3 speakers): **37.8% WER**, **17/20 (85.0%) number survival**.
 
-> **Key Takeaway for Safety Architecture:** Larger models shrink the raw acoustic error budget that the dialogue layer and telematics safety gate must absorb. While Whisper-Tiny requires the safety gate to challenge ~15% of real-world numeric slots, scaling to Whisper-Small reduces acoustic number drop to <4%, allowing the dialogue layer to operate with higher conversational velocity.
+### 7.2 Scaling Path & Engineering Trade-Offs (Qualitative Analysis)
+The ~37.8% WER and 15% numeric failure rate observed on real phone audio are fundamentally constrained by Whisper-Tiny's 39M-parameter acoustic modeling capacity under bandwidth-limited 8 kHz AMR-WB compression. Upgrading the base checkpoint offers a direct engineering trade-off:
+
+1. **Larger Whisper Checkpoints (\whisper-base\ 74M, \whisper-small\ 244M):**
+   Scaling the acoustic encoder expands phonetic discrimination between phonologically confusable Hindi numerals (such as *atharah* 18 vs *assi* 80, or *chaudah* 14 vs *challis* 40). A larger ASR model directly shrinks the error budget that the telematics gate and read-back confirmation must absorb, reducing the frequency of challenge prompts and increasing conversational velocity.
+2. **Community Indic & Hindi Checkpoints:**
+   Models fine-tuned natively on Indian languages output Devanagari Unicode script (\अठारह\ vs \अस्सी\). Benchmarking these models against Hinglish Latin transcripts requires an explicit phonemic transliteration step (e.g. \indic-trans\) prior to scoring, as raw string comparison would otherwise produce an artificial script mismatch.
+3. **Hardware Requirements:**
+   While Whisper-Tiny runs in <1 GB VRAM at ~880 ms pipeline latency, \whisper-small\ requires ~2 GB VRAM and ~1.2-1.8 s compute turnaround on equivalent edge hardware. For resource-constrained fleet hubs, Whisper-Tiny combined with Vaani's strict telematics confirmation gate provides the highest safety per watt.
 
 ---
 

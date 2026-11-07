@@ -32,7 +32,7 @@ CARGO_TOLERANCE_MAP = {
     CargoClass.PHARMA_VACCINE: 4.0,
     # 2. Dairy & Milk (informed by FSSAI Schedule 4 / HACCP storage norm <= 8°C): ±8°C heuristic
     CargoClass.DAIRY_CHILLER: 8.0,
-    # 3. Deep Freeze / Ice Cream (informed by Codex Stan 92-1981 quick frozen food ceiling <= -18°C): ±12°C heuristic
+    # 3. Deep Freeze / Ice Cream (informed by Codex CXC 8-1976 quick frozen food ceiling <= -18°C): ±12°C heuristic
     CargoClass.DEEP_FREEZE: 12.0,
     # 4. Horticultural Produce (informed by APEDA Cold Chain Guidelines 0°C to 15°C): ±15°C heuristic
     CargoClass.PERISHABLE_PRODUCE: 15.0,
@@ -142,30 +142,31 @@ def check_cargo_temperature_excursion(cargo_type_str: Optional[str], temp_c: Opt
     Answers: 'Is the cargo at active spoilage/degradation risk?'
     (The ASR Gate answers separately: 'Was this transcribed correctly?').
 
-    Storage thresholds informing excursion detection:
-    - Vaccine: safe range +2°C to +8°C (WHO PQS E003/001). Any reading < 0°C (freeze damage) or > 8°C is CRITICAL excursion.
-    - Deep Freeze / Ice Cream: critical storage ceiling -18°C (Codex Stan 92-1981, Clause 5.2). Any reading > -18°C is CRITICAL excursion (e.g. -10°C is an excursion!).
-    - Dairy & Milk: safe storage <= 8°C (FSSAI Schedule 4, Part II). Reading > 8°C is HIGH excursion; > 12°C is CRITICAL.
-    - Fresh Produce: safe storage <= 12°C (APEDA Guidelines). Reading > 15°C is HIGH excursion.
+    Configured threshold limits (informed by cold-chain guidelines):
+    - Vaccine: safe range +2°C to +8°C (informed by WHO PQS). Any reading < +2°C (freeze risk) or > +8°C (heat spoil risk) is CRITICAL.
+    - Deep Freeze / Ice Cream: critical storage ceiling -18°C (informed by Codex CXC 8-1976). Any reading > -18°C is CRITICAL.
+    - Dairy & Milk: storage <= 8°C (FSSAI Schedule 4). Reading > 8°C is HIGH excursion; > 12°C is CRITICAL.
+    - Fresh Produce: storage <= 12°C (APEDA Guidelines). Reading > 15°C is HIGH excursion.
     """
     if temp_c is None:
         return False, "No temperature reported", DispatchPriority.MEDIUM
 
     cargo = (cargo_type_str or "").lower()
     if "vaccine" in cargo or "pharma" in cargo or "medicine" in cargo:
-        if temp_c < 0.0 or temp_c > 8.0:
-            return True, f"Vaccine excursion: {temp_c:g}°C outside safe +2°C to +8°C range (WHO PQS E003/001)", DispatchPriority.CRITICAL
+        if temp_c < 2.0 or temp_c > 8.0:
+            risk_label = "freeze damage risk" if temp_c < 2.0 else "heat spoil risk"
+            return True, f"Vaccine excursion: {temp_c:g}°C outside configured safe +2°C to +8°C range ({risk_label})", DispatchPriority.CRITICAL
     elif "ice cream" in cargo or "frozen" in cargo or "meat" in cargo or "deep freeze" in cargo:
         if temp_c > -18.0:
-            return True, f"Deep freeze excursion: {temp_c:g}°C exceeds -18°C storage ceiling (Codex Stan 92-1981)", DispatchPriority.CRITICAL
+            return True, f"Deep freeze excursion: {temp_c:g}°C exceeds configured -18°C ceiling", DispatchPriority.CRITICAL
     elif "dairy" in cargo or "milk" in cargo or "chiller" in cargo:
         if temp_c > 12.0:
-            return True, f"Dairy severe excursion: {temp_c:g}°C exceeds 12°C spoil threshold (FSSAI Schedule 4)", DispatchPriority.CRITICAL
+            return True, f"Dairy severe excursion: {temp_c:g}°C exceeds configured 12°C spoil ceiling", DispatchPriority.CRITICAL
         elif temp_c > 8.0:
-            return True, f"Dairy moderate excursion: {temp_c:g}°C exceeds 8°C storage ceiling (FSSAI Schedule 4)", DispatchPriority.HIGH
+            return True, f"Dairy moderate excursion: {temp_c:g}°C exceeds configured 8°C storage ceiling", DispatchPriority.HIGH
     elif "fruit" in cargo or "vegetable" in cargo or "perishable" in cargo:
         if temp_c > 15.0:
-            return True, f"Perishable produce excursion: {temp_c:g}°C exceeds 15°C APEDA ceiling", DispatchPriority.HIGH
+            return True, f"Perishable produce excursion: {temp_c:g}°C exceeds configured 15°C ceiling", DispatchPriority.HIGH
 
     return False, "Temperature within safe storage range", DispatchPriority.HIGH
 
