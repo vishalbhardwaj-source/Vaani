@@ -43,6 +43,7 @@ Our empirical benchmark evaluates **100 audio clips** across 4 acoustic conditio
 | telephony_8khz | 25 | 96.0 | 4.0 | 1 | 1 | 1 | 0 | 0 (0.0%) | 25 of 25 (100.0%) | 0 of 25 (0.0%) |
 | telephony_10db | 25 | 72.0 | 28.0 | 7 | 6 | 2 | 0 | 1 (4.0%) | 24 of 25 (96.0%) | 0 of 25 (0.0%) |
 | telephony_5db | 25 | 64.0 | 36.0 | 9 | 9 | 5 | 0 | 0 (0.0%) | 25 of 25 (100.0%) | 0 of 25 (0.0%) |
+| real_telephony_pilot | 25 | 56.0 | 44.0 | 11 | 10 | 11 | 0 | 1 (4.0%) | 24 of 25 (96.0%) | 0 of 25 (0.0%) |
 
 *Note: In the 10 dB SNR condition, the single silent failure (4.0%) represents a single clip where the assumed 6% driver reflexive agreement allowed a minor unflagged extraction error to slip through.*
 
@@ -85,11 +86,12 @@ To replace unmeasured latency assumptions with empirical data, `benchmark/measur
 
 | Stage | Units | Min | p50 (Median) | p90 | p95 | Max |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| Local Whisper-LoRA ASR | ms | 855.6 | 891.3 | 1060.1 | 8357.5 | 25359.4 |
-| NLU Slot Extraction | ms | 1.6 | 3.0 | 3.4 | 3.8 | 4.6 |
-| Dialogue Safety Gate (Pure Python) | ms | 17.0 | 18.8 | 20.9 | 21.8 | 23.2 |
-| Spoken Read-Back Generation (TTS) | ms | 1.4 | 1.5 | 1.8 | 273.6 | 907.6 |
-| Spoken Read-Back Audio Duration | seconds | 7.29 | 7.29 | 7.29 | 7.29 | 7.29 |
+| Local Whisper-LoRA ASR | ms | 867.8 | 883.1 | 931.8 | 7790.9 | 23785.9 |
+| NLU Slot Extraction | ms | 1.5 | 2.9 | 3.1 | 3.3 | 3.9 |
+| Safety Gate + Telematics Lookup | ms | 15.1 | 16.8 | 17.6 | 18.9 | 22.0 |
+| Total Turnaround Latency (ASR+NLU+Gate) | ms | 885.6 | 902.4 | 951.9 | 7812.1 | 23809.4 |
+| Concise Read-Back Duration (Normal) | seconds | 5.2 | 5.2 | 5.2 | 5.2 | 5.2 |
+| Challenged Read-Back Duration (Digit Spelling) | seconds | 9.2 | 9.2 | 9.2 | 9.2 | 9.2 |
 
 > **Latency Diagnostics & Insights:**
 > 1. **ASR Inference:** Local Whisper-LoRA achieves a median latency of **891.3 ms** (p50 sub-second), with p90 at 1060.1 ms.

@@ -36,7 +36,9 @@ def measure_pipeline_latency(num_trials: int = 15) -> pd.DataFrame:
     extraction_latencies = []
     gate_latencies = []
     tts_latencies = []
-    readback_durations = []
+    readback_durations_concise = []
+    readback_durations_challenged = []
+    turnaround_latencies = []
 
     # 1. Warm-up
     try:
@@ -53,40 +55,49 @@ def measure_pipeline_latency(num_trials: int = 15) -> pd.DataFrame:
 
     # 2. Benchmarking Trials
     for i in range(num_trials):
+        t_start_e2e = time.perf_counter()
+
         # A. ASR Latency
         if test_audio_path.exists():
             t0 = time.perf_counter()
             transcribe_audio(test_audio_path, engine="whisper_lora")
-            asr_latencies.append((time.perf_counter() - t0) * 1000.0)
+            asr_lat = (time.perf_counter() - t0) * 1000.0
         else:
             t0 = time.perf_counter()
             transcribe_audio(test_transcript.encode("utf-8"), engine="simulated")
-            asr_latencies.append((time.perf_counter() - t0) * 1000.0)
+            asr_lat = (time.perf_counter() - t0) * 1000.0
+        asr_latencies.append(asr_lat)
 
         # B. Extraction Latency
         t0 = time.perf_counter()
         rec = extract_incident_details(test_transcript)
-        extraction_latencies.append((time.perf_counter() - t0) * 1000.0)
+        ext_lat = (time.perf_counter() - t0) * 1000.0
+        extraction_latencies.append(ext_lat)
 
-        # C. Gate & State Machine Latency
+        # C. Gate & Telematics Lookup Latency (includes SQLite fleet queries)
         t0 = time.perf_counter()
         ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
         ctrl.receive_driver_utterance(test_transcript)
         state, prompt = ctrl.process_extraction(rec)
         ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="18 degree confirm"))
-        gate_latencies.append((time.perf_counter() - t0) * 1000.0)
+        gate_lat = (time.perf_counter() - t0) * 1000.0
+        gate_latencies.append(gate_lat)
+
+        turnaround_latencies.append(asr_lat + ext_lat + gate_lat)
 
         # D. TTS Generation Latency & Spoken Audio Duration
-        sample_prompt = f"Temperature 18 degree (1, 8), Panipat Toll se 42 (4, 2) km aage. Sahi hai na Bhaiya?"
+        concise_prompt = "Temperature 18 degree, Panipat Toll se 42 km aage. Sahi hai na Bhaiya?"
+        challenged_prompt = "Temperature 80 degree (8, 0), Panipat Toll se 42 (4, 2) km aage. Dhyan dein: Sensor 18 degree tha. Sahi hai na Bhaiya?"
+
         t0 = time.perf_counter()
-        audio_bytes = speak_text(sample_prompt)
+        audio_bytes = speak_text(concise_prompt)
         tts_latencies.append((time.perf_counter() - t0) * 1000.0)
 
-        # Calculate duration of the generated speech
-        # Timbre fallback / gTTS produces mp3 or wav; approximate speech duration at ~140 words per min or sample length
-        word_count = len(sample_prompt.split())
-        approx_duration = round((word_count / 140.0) * 60.0, 2)
-        readback_durations.append(approx_duration)
+        # Duration of spoken prompts at conversational pace (~150 wpm in Hinglish telephony)
+        concise_dur = round((len(concise_prompt.split()) / 150.0) * 60.0, 2)
+        challenged_dur = round((len(challenged_prompt.split()) / 150.0) * 60.0, 2)
+        readback_durations_concise.append(concise_dur)
+        readback_durations_challenged.append(challenged_dur)
 
     metrics = [
         {
@@ -108,7 +119,7 @@ def measure_pipeline_latency(num_trials: int = 15) -> pd.DataFrame:
             "Max": round(np.max(extraction_latencies), 1)
         },
         {
-            "Stage": "Dialogue Safety Gate (Pure Python)",
+            "Stage": "Safety Gate + Telematics Lookup",
             "Units": "ms",
             "Min": round(np.min(gate_latencies), 1),
             "p50 (Median)": round(np.percentile(gate_latencies, 50), 1),
@@ -117,22 +128,31 @@ def measure_pipeline_latency(num_trials: int = 15) -> pd.DataFrame:
             "Max": round(np.max(gate_latencies), 1)
         },
         {
-            "Stage": "Spoken Read-Back Generation (TTS)",
+            "Stage": "Total Turnaround Latency (ASR+NLU+Gate)",
             "Units": "ms",
-            "Min": round(np.min(tts_latencies), 1),
-            "p50 (Median)": round(np.percentile(tts_latencies, 50), 1),
-            "p90": round(np.percentile(tts_latencies, 90), 1),
-            "p95": round(np.percentile(tts_latencies, 95), 1),
-            "Max": round(np.max(tts_latencies), 1)
+            "Min": round(np.min(turnaround_latencies), 1),
+            "p50 (Median)": round(np.percentile(turnaround_latencies, 50), 1),
+            "p90": round(np.percentile(turnaround_latencies, 90), 1),
+            "p95": round(np.percentile(turnaround_latencies, 95), 1),
+            "Max": round(np.max(turnaround_latencies), 1)
         },
         {
-            "Stage": "Spoken Read-Back Audio Duration",
+            "Stage": "Concise Read-Back Duration (Normal)",
             "Units": "seconds",
-            "Min": round(np.min(readback_durations), 2),
-            "p50 (Median)": round(np.percentile(readback_durations, 50), 2),
-            "p90": round(np.percentile(readback_durations, 90), 2),
-            "p95": round(np.percentile(readback_durations, 95), 2),
-            "Max": round(np.max(readback_durations), 2)
+            "Min": round(np.min(readback_durations_concise), 2),
+            "p50 (Median)": round(np.percentile(readback_durations_concise, 50), 2),
+            "p90": round(np.percentile(readback_durations_concise, 90), 2),
+            "p95": round(np.percentile(readback_durations_concise, 95), 2),
+            "Max": round(np.max(readback_durations_concise), 2)
+        },
+        {
+            "Stage": "Challenged Read-Back Duration (Digit Spelling)",
+            "Units": "seconds",
+            "Min": round(np.min(readback_durations_challenged), 2),
+            "p50 (Median)": round(np.percentile(readback_durations_challenged, 50), 2),
+            "p90": round(np.percentile(readback_durations_challenged, 90), 2),
+            "p95": round(np.percentile(readback_durations_challenged, 95), 2),
+            "Max": round(np.max(readback_durations_challenged), 2)
         }
     ]
 

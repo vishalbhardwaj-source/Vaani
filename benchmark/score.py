@@ -39,7 +39,7 @@ def compute_metrics() -> pd.DataFrame:
     df = pd.read_csv(RAW_RESULTS_CSV)
 
     summary_rows = []
-    conditions = ["clean", "telephony_8khz", "telephony_10db", "telephony_5db"]
+    conditions = ["clean", "telephony_8khz", "telephony_10db", "telephony_5db", "real_telephony_pilot"]
 
     print("=" * 85)
     print("VAANI EMPIRICAL BENCHMARK EVALUATION METRICS")
@@ -139,7 +139,7 @@ def compute_sensitivity_sweep(df: pd.DataFrame) -> pd.DataFrame:
     """
     sweep_rates = [0.0, 0.05, 0.10, 0.15, 0.20]
     sweep_rows = []
-    conditions = ["clean", "telephony_8khz", "telephony_10db", "telephony_5db"]
+    conditions = ["clean", "telephony_8khz", "telephony_10db", "telephony_5db", "real_telephony_pilot"]
 
     print("\n" + "=" * 85)
     print("PARAMETRIC DRIVER ATTENTION SENSITIVITY SWEEP (0% to 20% Reflexive Agreement)")

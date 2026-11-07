@@ -8,23 +8,30 @@ IMPORTANT: All outputs and logs from this module are explicitly marked 'Simulate
 
 import sqlite3
 import datetime
+import re
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from core.schemas import VehicleRecord, AssistanceRequest, DispatchPriority
 
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "fleet.sqlite"
+_db_initialized = False
 
 
 def get_db_connection() -> sqlite3.Connection:
+    global _db_initialized
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
+    if not _db_initialized:
+        _db_initialized = True
+        init_db()
     return conn
 
 
 def init_db():
     """Ensure database schema is created and seeded with default simulated fleet."""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = get_db_connection()
+    conn = sqlite3.connect(str(DB_PATH))
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -68,18 +75,43 @@ def init_db():
     )
     """)
 
+    # Migration checks for columns in existing DB
+    cursor.execute("PRAGMA table_info(vehicles)")
+    veh_cols = {row["name"] for row in cursor.fetchall()}
+    if "gps_lat" not in veh_cols:
+        cursor.execute("ALTER TABLE vehicles ADD COLUMN gps_lat REAL DEFAULT 28.6139")
+    if "gps_lng" not in veh_cols:
+        cursor.execute("ALTER TABLE vehicles ADD COLUMN gps_lng REAL DEFAULT 77.2090")
+    if "gps_fix_age_minutes" not in veh_cols:
+        cursor.execute("ALTER TABLE vehicles ADD COLUMN gps_fix_age_minutes INTEGER DEFAULT 4")
+    if "speed_kmh" not in veh_cols:
+        cursor.execute("ALTER TABLE vehicles ADD COLUMN speed_kmh REAL DEFAULT 60.0")
+
+    cursor.execute("PRAGMA table_info(assistance_requests)")
+    req_cols = {row["name"] for row in cursor.fetchall()}
+    if "gps_lat" not in req_cols:
+        cursor.execute("ALTER TABLE assistance_requests ADD COLUMN gps_lat REAL")
+    if "gps_lng" not in req_cols:
+        cursor.execute("ALTER TABLE assistance_requests ADD COLUMN gps_lng REAL")
+    if "gps_fix_timestamp" not in req_cols:
+        cursor.execute("ALTER TABLE assistance_requests ADD COLUMN gps_fix_timestamp TEXT")
+    if "supervisor_alert_flag" not in req_cols:
+        cursor.execute("ALTER TABLE assistance_requests ADD COLUMN supervisor_alert_flag INTEGER DEFAULT 0")
+    if "residual_risk_flag" not in req_cols:
+        cursor.execute("ALTER TABLE assistance_requests ADD COLUMN residual_risk_flag INTEGER DEFAULT 0")
+
     # Seed initial test data if empty
     cursor.execute("SELECT COUNT(*) FROM vehicles")
     if cursor.fetchone()[0] == 0:
         seed_data = [
-            ("HR-55-TC-1102", "Ramesh Kumar", "+91-9876543210", "Reefer 32ft Multi-temp", "Ice Cream Consignment", -22.0, -14.0, "Karnal to Delhi", "NH-44 Toll Plaza km 42", "IN_TRANSIT"),
-            ("MH-12-RN-8819", "Sukhwinder Singh", "+91-9811223344", "Reefer 24ft Deep Freeze", "Vaccine Cold-Chain", -20.0, -18.5, "Pune to Mumbai", "Mumbai-Pune Expressway km 68", "IN_TRANSIT"),
-            ("DL-01-AA-4092", "Abdul Sheikh", "+91-9899001122", "Reefer 20ft Chiller", "Dairy & Milk Products", 4.0, 9.5, "Jaipur to Delhi", "NH-48 Bilaspur Chowk", "CRITICAL_ALERT"),
-            ("KA-04-E-5541", "Manjunath Gowda", "+91-9744556677", "Reefer 32ft Heavy", "Frozen Meat Cargo", -18.0, -17.8, "Bangalore to Chennai", "Hosur Highway km 35", "IN_TRANSIT"),
-            ("GJ-01-BX-7201", "Vikram Patel", "+91-9822334455", "Reefer 16ft Quick-Serve", "Fresh Perishables / Fruits", 6.0, 14.2, "Ahmedabad to Surat", "Vadodara Bypass km 80", "MAINTENANCE_REQUIRED")
+            ("HR-55-TC-1102", "Ramesh Kumar", "+91-9876543210", "Reefer 32ft Multi-temp", "Ice Cream Consignment", -22.0, -14.0, "Karnal to Delhi", "NH-44 Corridor Milepost 118", "IN_TRANSIT", 29.6857, 76.9905, 4, 62.0),
+            ("MH-12-RN-8819", "Sukhwinder Singh", "+91-9811223344", "Reefer 24ft Deep Freeze", "Vaccine Cold-Chain", -20.0, -18.5, "Pune to Mumbai", "Mumbai-Pune Expressway Section 4", "IN_TRANSIT", 18.7520, 73.4082, 5, 58.0),
+            ("DL-01-AA-4092", "Abdul Sheikh", "+91-9899001122", "Reefer 20ft Chiller", "Dairy & Milk Products", 4.0, 9.5, "Jaipur to Delhi", "NH-48 Freight Corridor km 52", "CRITICAL_ALERT", 28.3241, 76.8872, 2, 54.0),
+            ("KA-04-E-5541", "Manjunath Gowda", "+91-9744556677", "Reefer 32ft Heavy", "Frozen Meat Cargo", -18.0, -17.8, "Bangalore to Chennai", "Hosur Corridor Milepost 31", "IN_TRANSIT", 12.7409, 77.8253, 6, 60.0),
+            ("GJ-01-BX-7201", "Vikram Patel", "+91-9822334455", "Reefer 16ft Quick-Serve", "Fresh Perishables / Fruits", 6.0, 14.2, "Ahmedabad to Surat", "Vadodara Logistics Hub Outer", "MAINTENANCE_REQUIRED", 22.3072, 73.1812, 3, 65.0)
         ]
         cursor.executemany("""
-        INSERT INTO vehicles VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO vehicles VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, seed_data)
 
     conn.commit()
@@ -100,7 +132,8 @@ def lookup_vehicle(vehicle_id: str) -> Optional[VehicleRecord]:
 
     if not row:
         return None
-    
+
+    r_keys = row.keys()
     return VehicleRecord(
         vehicle_id=row["vehicle_id"],
         driver_name=row["driver_name"],
@@ -111,8 +144,53 @@ def lookup_vehicle(vehicle_id: str) -> Optional[VehicleRecord]:
         current_temp_c=row["current_temp_c"],
         route=row["route"],
         last_known_location=row["last_known_location"],
-        status=row["status"]
+        status=row["status"],
+        gps_lat=row["gps_lat"] if "gps_lat" in r_keys else 28.6139,
+        gps_lng=row["gps_lng"] if "gps_lng" in r_keys else 77.2090,
+        gps_fix_age_minutes=row["gps_fix_age_minutes"] if "gps_fix_age_minutes" in r_keys else 4,
+        speed_kmh=row["speed_kmh"] if "speed_kmh" in r_keys else 60.0
     )
+
+
+def lookup_vehicle_by_phone(phone_number: str) -> Optional[VehicleRecord]:
+    """
+    Caller-ID telematics lookup: identify vehicle from driver's mobile phone number.
+    Extracts trailing 10 digits to robustly match telephony formats (+91, leading 0, spaces).
+    Source: Simulated fleet data
+    """
+    clean_digits = re.sub(r"\D", "", str(phone_number))
+    if len(clean_digits) >= 10:
+        match_digits = clean_digits[-10:]
+    else:
+        return None
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM vehicles")
+    rows = cursor.fetchall()
+    conn.close()
+
+    for r in rows:
+        stored_digits = re.sub(r"\D", "", str(r["driver_phone"]))
+        if stored_digits.endswith(match_digits):
+            r_keys = r.keys()
+            return VehicleRecord(
+                vehicle_id=r["vehicle_id"],
+                driver_name=r["driver_name"],
+                driver_phone=r["driver_phone"],
+                vehicle_type=r["vehicle_type"],
+                cargo_type=r["cargo_type"],
+                target_temp_c=r["target_temp_c"],
+                current_temp_c=r["current_temp_c"],
+                route=r["route"],
+                last_known_location=r["last_known_location"],
+                status=r["status"],
+                gps_lat=r["gps_lat"] if "gps_lat" in r_keys else 28.6139,
+                gps_lng=r["gps_lng"] if "gps_lng" in r_keys else 77.2090,
+                gps_fix_age_minutes=r["gps_fix_age_minutes"] if "gps_fix_age_minutes" in r_keys else 4,
+                speed_kmh=r["speed_kmh"] if "speed_kmh" in r_keys else 60.0
+            )
+    return None
 
 
 def list_vehicles() -> List[VehicleRecord]:
@@ -133,7 +211,11 @@ def list_vehicles() -> List[VehicleRecord]:
             current_temp_c=r["current_temp_c"],
             route=r["route"],
             last_known_location=r["last_known_location"],
-            status=r["status"]
+            status=r["status"],
+            gps_lat=r["gps_lat"] if "gps_lat" in r.keys() else 28.6139,
+            gps_lng=r["gps_lng"] if "gps_lng" in r.keys() else 77.2090,
+            gps_fix_age_minutes=r["gps_fix_age_minutes"] if "gps_fix_age_minutes" in r.keys() else 4,
+            speed_kmh=r["speed_kmh"] if "speed_kmh" in r.keys() else 60.0
         )
         for r in rows
     ]
@@ -146,7 +228,11 @@ def dispatch_assistance(
     distance_km: Optional[float] = None,
     reported_temp_c: Optional[float] = None,
     priority: DispatchPriority = DispatchPriority.HIGH,
-    notes: Optional[str] = None
+    notes: Optional[str] = None,
+    supervisor_alert_flag: bool = False,
+    residual_risk_flag: bool = False,
+    gps_lat: Optional[float] = None,
+    gps_lng: Optional[float] = None
 ) -> Dict[str, Any]:
     """
     Records a simulated roadside assistance and technician dispatch.
@@ -156,14 +242,20 @@ def dispatch_assistance(
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Determine priority based on cold-chain reefer thermal deviation
-    if reported_temp_c is not None and reported_temp_c > 10.0:
+    # Determine priority based on cold-chain reefer thermal deviation or supervisor alert
+    if supervisor_alert_flag:
         priority = DispatchPriority.CRITICAL
+    elif reported_temp_c is not None and reported_temp_c > 10.0:
+        priority = DispatchPriority.CRITICAL
+
+    now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     cursor.execute("""
     INSERT INTO assistance_requests (
-        vehicle_id, incident_type, priority, location_reported, distance_km, reported_temp_c, notes
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        vehicle_id, incident_type, priority, location_reported, distance_km,
+        reported_temp_c, notes, gps_lat, gps_lng, gps_fix_timestamp,
+        supervisor_alert_flag, residual_risk_flag
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         vehicle_id,
         incident_type,
@@ -171,7 +263,12 @@ def dispatch_assistance(
         location_reported,
         distance_km,
         reported_temp_c,
-        f"[Simulated fleet data] {notes or 'Spoken dispatch triggered via Vaani'}"
+        f"[Simulated fleet data] {notes or 'Spoken dispatch triggered via Vaani'}",
+        gps_lat,
+        gps_lng,
+        now_iso,
+        1 if supervisor_alert_flag else 0,
+        1 if residual_risk_flag else 0
     ))
 
     ticket_id = cursor.lastrowid
@@ -179,9 +276,9 @@ def dispatch_assistance(
     # Update vehicle status in simulated fleet
     cursor.execute("""
     UPDATE vehicles 
-    SET status = 'ASSISTANCE_DISPATCHED', current_temp_c = COALESCE(?, current_temp_c)
+    SET status = 'ASSISTANCE_DISPATCHED'
     WHERE vehicle_id = ?
-    """, (reported_temp_c, vehicle_id))
+    """, (vehicle_id,))
 
     conn.commit()
     conn.close()

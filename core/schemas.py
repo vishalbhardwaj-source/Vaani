@@ -26,11 +26,17 @@ class CargoClass(str, Enum):
 
 
 CARGO_TOLERANCE_MAP = {
-    CargoClass.PHARMA_VACCINE: 4.0,       # Strict cold-chain (+2°C to +8°C / -20°C): >4°C divergence is dangerous
-    CargoClass.DAIRY_CHILLER: 8.0,        # Chilled dairy (+4°C): >8°C divergence requires explicit confirmation
-    CargoClass.DEEP_FREEZE: 12.0,         # Sub-zero frozen goods (-18°C to -22°C): >12°C divergence flagged
-    CargoClass.PERISHABLE_PRODUCE: 15.0,  # Fresh fruits/vegetables (+6°C to +12°C): >15°C divergence flagged
-    CargoClass.AMBIENT_GENERAL: 25.0,     # General ambient cargo: wide tolerance band
+    # Referenced from industry cold-chain standards and food safety regulations:
+    # 1. WHO PQS (Performance, Quality, Safety) / Good Distribution Practices (GDP): Vaccine storage (+2°C to +8°C or -20°C): ±4°C max breach tolerance
+    CargoClass.PHARMA_VACCINE: 4.0,
+    # 2. FSSAI Schedule 4 / HACCP Milk Processing & Cold Storage Norms: Dairy products (+4°C target): ±8°C breach threshold
+    CargoClass.DAIRY_CHILLER: 8.0,
+    # 3. Codex Alimentarius / FSSAI Quick Frozen Food Code: Deep freeze (-18°C to -22°C): ±12°C breach threshold
+    CargoClass.DEEP_FREEZE: 12.0,
+    # 4. APEDA Horticultural Cold Chain Standards: Fresh produce & fruits (+6°C to +12°C): ±15°C breach threshold
+    CargoClass.PERISHABLE_PRODUCE: 15.0,
+    # 5. Configurable default for general ambient freight
+    CargoClass.AMBIENT_GENERAL: 25.0,
 }
 
 
@@ -184,7 +190,7 @@ class DriverReply(BaseModel):
 
 
 class VehicleRecord(BaseModel):
-    """Simulated vehicle metadata from fleet database."""
+    """Simulated vehicle metadata and telematics from fleet database."""
     vehicle_id: str
     driver_name: str
     driver_phone: str
@@ -195,6 +201,10 @@ class VehicleRecord(BaseModel):
     route: str
     last_known_location: str
     status: str
+    gps_lat: Optional[float] = 28.6139
+    gps_lng: Optional[float] = 77.2090
+    gps_fix_age_minutes: int = 4
+    speed_kmh: float = 60.0
 
 
 class AssistanceRequest(BaseModel):
@@ -207,6 +217,11 @@ class AssistanceRequest(BaseModel):
     distance_km: Optional[float] = None
     reported_temp_c: Optional[float] = None
     notes: Optional[str] = None
+    gps_lat: Optional[float] = None
+    gps_lng: Optional[float] = None
+    gps_fix_timestamp: Optional[str] = None
+    supervisor_alert_flag: bool = False
+    residual_risk_flag: bool = False
     created_at: Optional[str] = None
     status: str = "DISPATCHED"
 

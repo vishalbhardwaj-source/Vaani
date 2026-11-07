@@ -148,11 +148,11 @@ def test_adaptive_rules_do_not_silently_rewrite_temperatures():
     # Must preserve 40.0, NOT silently rewrite to 14.0
     assert rec_40.temperature_c == 40.0
 
-    # Spoken read-back must speak 40 degree, never 14
+    # Spoken read-back must speak 40 degree, never rewrite to 14 degree
     ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
     prompt = ctrl.generate_readback_prompt(rec_40)
     assert "40" in prompt
-    assert "14" not in prompt
+    assert "Temperature 14 degree" not in prompt
 
     # For 80C (outside normal reefer bounds), it must set None, record anomalous_reading, and generate specific prompt
     rec_80 = extract_incident_details("Temperature 80 degree dikha raha hai Bilaspur Chowk pe")

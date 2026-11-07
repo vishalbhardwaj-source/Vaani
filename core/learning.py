@@ -264,15 +264,61 @@ def synthesize_new_rules() -> Dict[str, Any]:
 
 def update_review_status(item_id: int, status: str, notes: Optional[str] = None) -> bool:
     """Supervisor marks an audit queue item as APPROVED, REJECTED, or RESOLVED."""
+    return review_discrepancy(item_id=item_id, reviewer_id="FLEET_SUPERVISOR", decision=status, notes=notes)
+
+
+def review_discrepancy(item_id: int, reviewer_id: str, decision: str, notes: Optional[str] = None) -> bool:
+    """
+    Supervisor marks an audit queue discrepancy with decision
+    ('APPROVED_FOR_TRAINING', 'REJECTED', 'RESOLVED') and reviewer audit trail.
+    """
     init_learning_db()
     conn = get_db_connection()
     cursor = conn.cursor()
+    full_notes = f"[Reviewer: {reviewer_id}] {notes or ''}".strip()
     cursor.execute("""
     UPDATE learned_corrections
-    SET review_status = ?, reviewer_notes = ?, created_at = CURRENT_TIMESTAMP
+    SET review_status = ?, reviewer_notes = ?
     WHERE id = ?
-    """, (status, notes or "", item_id))
+    """, (decision.upper(), full_notes, item_id))
     rows_affected = cursor.rowcount
     conn.commit()
     conn.close()
     return rows_affected > 0
+
+
+def export_for_supervised_finetuning(output_path: Optional[str] = None, format: str = "jsonl") -> str:
+    """
+    Exports reviewed driver corrections as supervised training data (JSONL)
+    for offline fine-tuning of Whisper or LLM extraction.
+    Only exports entries where review_status = 'APPROVED_FOR_TRAINING'.
+    """
+    init_learning_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    SELECT id, vehicle_id, raw_transcript, original_extraction, driver_correction, corrected_slots
+    FROM learned_corrections
+    WHERE review_status = 'APPROVED_FOR_TRAINING'
+    ORDER BY id ASC
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+
+    import json
+    out_file = Path(output_path) if output_path else Path(__file__).resolve().parent.parent / "data" / "supervised_corrections.jsonl"
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(out_file, "w", encoding="utf-8") as f:
+        for r in rows:
+            entry = {
+                "id": r["id"],
+                "vehicle_id": r["vehicle_id"],
+                "prompt": r["raw_transcript"],
+                "driver_correction": r["driver_correction"],
+                "target_extraction": json.loads(r["corrected_slots"]) if isinstance(r["corrected_slots"], str) else r["corrected_slots"]
+            }
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+    logger.info(f"Exported {len(rows)} approved samples to {out_file}")
+    return str(out_file)

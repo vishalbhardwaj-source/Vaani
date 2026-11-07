@@ -25,7 +25,7 @@ from core.schemas import (
     GateDecision,
     GateResult
 )
-from core.tools import dispatch_assistance, update_eta, lookup_vehicle
+from core.tools import dispatch_assistance, update_eta, lookup_vehicle, lookup_vehicle_by_phone
 
 logger = logging.getLogger("vaani.state_machine")
 
@@ -80,7 +80,8 @@ def evaluate_confirmation_gate(
     Pure confirmation gate function.
     Evaluates:
     1. Driver affirmative intent (CONFIRM vs CORRECT/REJECT).
-    2. Plausibility divergence against vehicle cargo target using per-cargo class tolerances.
+    2. Telemetry plausibility: checks both live telematics sensor (current_temp_c)
+       and cargo consignment target (target_temp_c) using industry-referenced tolerances.
     3. Challenge requirement for large divergence (> class tolerance).
     4. Explicit number repetition verification to prevent reflexive 'haan' overrides.
     5. Residual risk logging when driver verifies an overriding divergent number.
@@ -103,8 +104,13 @@ def evaluate_confirmation_gate(
         )
 
     target_c = vehicle_telemetry.target_temp_c
+    sensor_c = getattr(vehicle_telemetry, "current_temp_c", None)
     tolerance = get_cargo_tolerance(vehicle_telemetry.cargo_type)
-    temp_diff = abs(record.temperature_c - target_c)
+
+    # Telematics divergence: compares against both setpoint target and live sensor reading
+    target_diff = abs(record.temperature_c - target_c)
+    sensor_diff = abs(record.temperature_c - sensor_c) if sensor_c is not None else target_diff
+    temp_diff = max(target_diff, sensor_diff)
 
     if temp_diff > tolerance:
         from gnani.client import parse_hindi_number
@@ -118,8 +124,9 @@ def evaluate_confirmation_gate(
 
         if not has_repeated_num:
             expected_num_str = f"{record.temperature_c:g}"
+            comp_label = f"sensor {sensor_c:g}°C / target {target_c:g}°C" if sensor_c is not None else f"target {target_c:g}°C"
             challenge_prompt = (
-                f"Telematics target ({int(target_c) if target_c.is_integer() else target_c} degree) se kaafi antar hai. "
+                f"Telematics {comp_label} se kaafi antar hai. "
                 f"Kripya number repeat karein: '{expected_num_str} degree confirm'."
             )
             return GateResult(
@@ -132,10 +139,10 @@ def evaluate_confirmation_gate(
             )
         else:
             # Driver explicitly repeated and confirmed the number.
-            # Residual risk: driver confirmed an anomalous divergent value.
+            # Residual risk: driver confirmed an anomalous divergent value -> requires supervisor review.
             return GateResult(
                 decision=GateDecision.ALLOW,
-                reason=f"Driver explicitly repeated and verified {record.temperature_c:g}°C override against telematics target {target_c:g}°C.",
+                reason=f"Driver explicitly repeated and verified {record.temperature_c:g}°C override against telematics ({sensor_c}°C sensor / {target_c}°C target).",
                 telematics_divergence=temp_diff,
                 threshold_applied=tolerance,
                 residual_risk_flag=True
@@ -143,7 +150,7 @@ def evaluate_confirmation_gate(
 
     return GateResult(
         decision=GateDecision.ALLOW,
-        reason=f"Reported {record.temperature_c:g}°C is within safe tolerance ({tolerance:g}°C) of cargo target ({target_c:g}°C).",
+        reason=f"Reported {record.temperature_c:g}°C is within safe tolerance ({tolerance:g}°C) of telematics (sensor {sensor_c}°C / target {target_c}°C).",
         telematics_divergence=temp_diff,
         threshold_applied=tolerance,
         residual_risk_flag=False
@@ -155,24 +162,43 @@ class DialogueController:
     Finite State Machine governing driver interactions and action gate.
     All transitions are recorded with precise audit trails.
     """
-    def __init__(self, vehicle_id: str = "HR-55-TC-1102", max_correction_rounds: int = 2):
+    def __init__(
+        self,
+        vehicle_id: Optional[str] = "HR-55-TC-1102",
+        caller_phone: Optional[str] = None,
+        max_correction_rounds: int = 2
+    ):
         self.state: DialogueState = DialogueState.LISTENING
-        self.vehicle_id = vehicle_id
+        self.caller_phone = caller_phone
         self.max_correction_rounds = max_correction_rounds
         self.correction_rounds = 0
         self.requires_forced_confirmation = False
-        
-        # Verify vehicle against fleet database
-        self.veh_telemetry: Optional[Any] = lookup_vehicle(vehicle_id) if vehicle_id else None
+        self.last_gate_residual_risk = False
+
+        # Caller-ID lookup if phone number is provided, falling back to vehicle_id
+        if caller_phone:
+            self.veh_telemetry = lookup_vehicle_by_phone(caller_phone)
+            self.vehicle_id = self.veh_telemetry.vehicle_id if self.veh_telemetry else None
+        elif vehicle_id:
+            self.vehicle_id = vehicle_id
+            self.veh_telemetry = lookup_vehicle(vehicle_id)
+        else:
+            self.vehicle_id = None
+            self.veh_telemetry = None
+
         self.is_unverified_vehicle: bool = (self.veh_telemetry is None)
-        
+
         self.current_record: Optional[ExtractionRecord] = None
         self.last_driver_utterance: str = ""
         self.last_agent_prompt: str = ""
         self.last_action_result: Optional[Dict[str, Any]] = None
-        
+
         self.history: List[StateTransitionLog] = []
-        self._record_transition(DialogueState.LISTENING, "SESSION_INITIALIZED", {"vehicle_id": vehicle_id, "verified": not self.is_unverified_vehicle})
+        self._record_transition(
+            DialogueState.LISTENING,
+            "SESSION_INITIALIZED",
+            {"vehicle_id": self.vehicle_id, "caller_phone": self.caller_phone, "verified": not self.is_unverified_vehicle}
+        )
 
     def _record_transition(self, to_state: DialogueState, trigger: str, payload: Dict[str, Any]):
         old_state = self.state
@@ -271,27 +297,38 @@ class DialogueController:
         )
         return self.process_extraction(updated_record)
 
-    def generate_readback_prompt(self, record: ExtractionRecord) -> str:
+    def generate_readback_prompt(self, record: ExtractionRecord, force_digit_spelling: bool = False) -> str:
         """
         Generate spoken Hinglish read-back string for Timbre TTS.
-        Uses digit-by-digit spelling for critical numbers to defeat diesel acoustic noise.
-        Example: 'Temperature 18 degree (1, 8), toll plaza se 42 (4, 2) km aage. Sahi hai na Bhaiya?'
+        Normal read-back is concise (~3.5 s). Digit-by-digit spelling is reserved for
+        when the telematics gate challenges an anomalous reading or in extreme noise conditions.
+        Supports full barge-in / interruptibility during playback.
+        Example normal: 'Temperature 18 degree, toll plaza se 42 km aage. Sahi hai na Bhaiya?'
+        Example challenged: 'Temperature 80 degree (8, 0), toll plaza se 42 (4, 2) km aage. Dhyan dein: ...'
         """
+        use_spelling = force_digit_spelling or getattr(self, "requires_forced_confirmation", False)
+
         parts = []
         if record.temperature_c is not None:
             temp_num = int(record.temperature_c) if record.temperature_c.is_integer() else record.temperature_c
             sign_word = "minus " if record.temperature_c < 0 else ""
-            # Digit-by-digit breakdown (e.g. 18 -> "1, 8", 80 -> "8, 0")
-            digits = ", ".join(list(str(abs(int(temp_num)))))
-            parts.append(f"Temperature {sign_word}{temp_num} degree ({sign_word}{digits})")
+            if use_spelling:
+                digits = ", ".join(list(str(abs(int(temp_num)))))
+                parts.append(f"Temperature {sign_word}{temp_num} degree ({sign_word}{digits})")
+            else:
+                parts.append(f"Temperature {sign_word}{temp_num} degree")
 
         if record.location_text:
             if record.location_text.startswith("GPS: "):
-                parts.append(f"GPS location {record.location_text[5:]} ke paas")
+                age_str = f" ({self.veh_telemetry.gps_fix_age_minutes} minute purana)" if (self.veh_telemetry and getattr(self.veh_telemetry, "gps_fix_age_minutes", None)) else ""
+                parts.append(f"GPS telemetry{age_str} ke mutabik {record.location_text[5:]}")
             elif record.distance_km is not None:
                 dist_num = int(record.distance_km) if record.distance_km.is_integer() else record.distance_km
-                dist_digits = ", ".join(list(str(abs(int(dist_num)))))
-                parts.append(f"{record.location_text} se {dist_num} ({dist_digits}) km aage")
+                if use_spelling:
+                    dist_digits = ", ".join(list(str(abs(int(dist_num)))))
+                    parts.append(f"{record.location_text} se {dist_num} ({dist_digits}) km aage")
+                else:
+                    parts.append(f"{record.location_text} se {dist_num} km aage")
             else:
                 parts.append(f"{record.location_text} ke paas")
 
@@ -300,11 +337,16 @@ class DialogueController:
 
         # Telematics plausibility policy: Flag deviation beyond per-cargo class tolerance
         if self.veh_telemetry and record.temperature_c is not None:
-            temp_diff = abs(record.temperature_c - self.veh_telemetry.target_temp_c)
             tolerance = get_cargo_tolerance(self.veh_telemetry.cargo_type)
+            sensor_c = getattr(self.veh_telemetry, "current_temp_c", None)
+            target_c = self.veh_telemetry.target_temp_c
+            target_diff = abs(record.temperature_c - target_c)
+            sensor_diff = abs(record.temperature_c - sensor_c) if sensor_c is not None else target_diff
+            temp_diff = max(target_diff, sensor_diff)
             if temp_diff > tolerance:
                 self.requires_forced_confirmation = True
-                parts.append(f"Dhyan dein: Target {int(self.veh_telemetry.target_temp_c)} degree tha aur report {int(record.temperature_c)} degree hai")
+                comp = f"Target {int(target_c)} degree tha" if sensor_c is None else f"Sensor {int(sensor_c)} degree aur target {int(target_c)} degree tha"
+                parts.append(f"Dhyan dein: {comp} aur report {int(record.temperature_c)} degree hai")
 
         details = ", ".join(parts) if parts else "Diya gaya report"
         return f"{details}. Sahi hai na Bhaiya?"
@@ -342,6 +384,7 @@ class DialogueController:
 
             if gate_res.decision == GateDecision.ALLOW:
                 self.requires_forced_confirmation = False
+                self.last_gate_residual_risk = gate_res.residual_risk_flag
                 self._record_transition(
                     DialogueState.ACTING,
                     trigger="DRIVER_AFFIRMATIVE_CONFIRMATION",
@@ -470,6 +513,12 @@ class DialogueController:
         if not rec:
             raise ValueError("No valid record to dispatch")
 
+        # Check if gate had residual risk (e.g. override confirmed on divergent reading)
+        residual = getattr(self, "last_gate_residual_risk", False)
+        veh = self.veh_telemetry or lookup_vehicle(rec.vehicle_id or self.vehicle_id)
+        gps_lat = veh.gps_lat if veh else None
+        gps_lng = veh.gps_lng if veh else None
+
         # Execute simulated tool
         dispatch_result = dispatch_assistance(
             vehicle_id=rec.vehicle_id or self.vehicle_id,
@@ -477,12 +526,15 @@ class DialogueController:
             location_reported=rec.location_text or "Highway",
             distance_km=rec.distance_km,
             reported_temp_c=rec.temperature_c,
-            notes=f"Confirmed via driver voice read-back. Raw: '{rec.raw_transcript}'"
+            notes=f"Confirmed via driver voice read-back. Raw: '{rec.raw_transcript}'",
+            supervisor_alert_flag=residual,
+            residual_risk_flag=residual,
+            gps_lat=gps_lat,
+            gps_lng=gps_lng
         )
         self.last_action_result = dispatch_result
 
         # Dynamically compute destination and delay from vehicle telematics
-        veh = lookup_vehicle(rec.vehicle_id or self.vehicle_id)
         destination_hub = "Delhi Central Depot"
         if veh and " to " in veh.route:
             destination_hub = f"{veh.route.split(' to ')[-1].strip()} Hub"
@@ -496,9 +548,10 @@ class DialogueController:
             reason=f"Incident: {rec.incident_type.value} at {rec.location_text}"
         )
 
+        sup_note = " Fleet supervisor ko bhi alert bhej diya gaya hai." if residual else ""
         spoken_confirmation = (
             f"Dhanyawad Bhaiya! Assistance ticket {dispatch_result['ticket_id']} dispatch ho gaya hai. "
-            f"Technician lagbhag {dispatch_result['technician_eta_min']} minute mein pahunch rahe hain. "
+            f"Technician lagbhag {dispatch_result['technician_eta_min']} minute mein pahunch rahe hain.{sup_note} "
             f"Safe rahein!"
         )
         self.last_agent_prompt = spoken_confirmation
