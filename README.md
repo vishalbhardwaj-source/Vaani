@@ -22,7 +22,7 @@ streamlit run app/dashboard.py
 python demo.py
 ```
 
-### 🛡️ The 1-Minute Thesis Proof: Acoustic Trap vs Safety Gate
+### 🛡️ Thesis Proof: Acoustic Trap vs Safety Gate
 
 | Spoken Driver Voice | Acoustic Channel Condition | What Standard ASR Heard | Vaani Deterministic Safety Gate | Dispatch Action |
 | :--- | :--- | :--- | :--- | :--- |
