@@ -46,11 +46,16 @@ LATIN_NUMBER_WORDS = {
     "paanch": 5, "panch": 5, "chhah": 6, "che": 6, "saat": 7, "aath": 8, "ath": 8,
     "nau": 9, "das": 10, "dus": 10, "gyarah": 11, "barah": 12, "terah": 13,
     "chaudah": 14, "chaudha": 14, "chawdah": 14, "pandrah": 15, "solah": 16, "satrah": 17,
-    "atharah": 18, "athara": 18, "atharaah": 18, "aathara": 18, "unnis": 19, "bees": 20,
-    "ikkis": 21, "baais": 22, "teis": 23, "chaubees": 24, "chaubis": 24, "pachchis": 25,
-    "chabbis": 26, "sattais": 27, "atthais": 28, "athais": 28, "atthayeas": 28, "unatis": 29,
-    "tees": 30, "paintis": 35, "chalis": 40, "chaalis": 40, "bayalis": 42, "pachas": 50,
-    "saath": 60, "sattar": 70, "assi": 80, "assee": 80, "aasi": 80, "nabbe": 90
+    "atharah": 18, "athara": 18, "atharaah": 18, "aathara": 18, "attharah": 18, "atthara": 18,
+    "unnis": 19, "bees": 20, "ikkis": 21, "baais": 22, "bais": 22, "baees": 22,
+    "teis": 23, "teees": 23, "tayis": 23, "chaubees": 24, "chaubis": 24, "chobis": 24, "chobees": 24,
+    "pachchis": 25, "pachees": 25, "pachis": 25, "pacheese": 25, "pachhees": 25, "pachchees": 25,
+    "chabbis": 26, "chhabis": 26, "chhabees": 26, "sattais": 27, "satais": 27, "sattaees": 27,
+    "atthais": 28, "athais": 28, "atthayeas": 28, "athhais": 28, "athaees": 28,
+    "unatis": 29, "untis": 29, "unantis": 29, "tees": 30,
+    "paintis": 35, "pentis": 35, "paintees": 35, "pentees": 35,
+    "chalis": 40, "chaalis": 40, "chaalees": 40, "bayalis": 42, "byalis": 42, "bayaalis": 42, "byaalis": 42,
+    "pachas": 50, "saath": 60, "sattar": 70, "assi": 80, "assee": 80, "aasi": 80, "ashee": 80, "nabbe": 90
 }
 
 # Devanagari Script Words and Numerals (Matched strictly on whole whitespace/punct tokens)
@@ -435,18 +440,26 @@ def parse_hindi_number(text: str) -> Optional[float]:
     Uses regex word boundaries (\b) for Latin words to prevent substring misfires
     (e.g., 'ek' inside 'theek' or 'do' inside 'doori').
     For Devanagari words, matches strictly on whitespace/punctuation delimited tokens.
+    Handles negative polarity ('minus 22', '-22', 'minus baais', 'ऋणात्मक').
     """
     lower = text.lower().strip()
+
+    is_negative = bool(
+        re.search(r"\b(minus|negative|rin|rinaatmak)\b", lower) or 
+        re.search(r"(?:^|\s)-(?:\s*\d)", lower) or
+        "ऋणात्मक" in lower or "माइनस" in lower
+    )
 
     # 1. Direct ASCII digits
     digit_match = re.search(r"(-?\d+(?:\.\d+)?)", lower)
     if digit_match:
         try:
-            return float(digit_match.group(1))
+            val = float(digit_match.group(1))
+            if is_negative and val > 0:
+                val = -val
+            return val
         except ValueError:
             pass
-
-    is_negative = ("minus" in lower) or ("negative" in lower) or ("माइनस" in lower)
 
     # 2. Latin word boundary matching (Prevents "ek" matching in "theek", "do" in "doori")
     # Sort by descending length so "chaubees" matches before "chaar"

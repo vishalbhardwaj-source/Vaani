@@ -47,6 +47,25 @@ def save_cache(cache: Dict[str, Any]):
         json.dump(cache, f, indent=2, ensure_ascii=False)
 
 
+def get_vehicle_for_utterance(utt_id: str, true_slots: Dict[str, Any]) -> str:
+    """Select the simulated vehicle with matching cargo profile to test realistic telematics."""
+    true_temp = true_slots.get("temperature_c")
+    if true_temp is not None:
+        try:
+            t = float(true_temp)
+            if t <= -10:
+                return "HR-55-TC-1102"  # Ice cream cargo, target -22C
+            elif t <= 0:
+                return "MH-12-RN-8819"  # Deep freeze vaccines, target -20C
+            elif t <= 8:
+                return "DL-01-AA-4092"  # Dairy & milk, target +4C
+            else:
+                return "GJ-01-BX-7201"  # Fresh produce / perishables, target +6C
+        except Exception:
+            pass
+    return "DL-01-AA-4092"
+
+
 def run_benchmark_row(
     utt_id: str,
     condition: str,
@@ -54,18 +73,19 @@ def run_benchmark_row(
     true_slots: Dict[str, Any],
     cache: Dict[str, Any]
 ) -> Dict[str, Any]:
-    cache_key = f"{utt_id}_{condition}_v2"
+    cache_key = f"{utt_id}_{condition}_v4"
     if cache_key in cache:
         return cache[cache_key]
 
     audio_file = AUDIO_DIR / f"{utt_id}_{condition}.wav"
     audio_path = audio_file if audio_file.exists() else None
 
-    # Step 1: Speech to Text
+    # Step 1: Speech to Text (Track 1 Acoustic Noise Simulation with calibrated traps)
     asr_res = transcribe_audio(
         audio_path_or_bytes=audio_path or reference_text.encode("utf-8"),
         condition=condition,
-        reference_hint=reference_text
+        reference_hint=reference_text,
+        engine="simulated"
     )
     transcript = asr_res.get("transcript", "")
     confidence = asr_res.get("confidence", 1.0)
@@ -100,8 +120,9 @@ def run_benchmark_row(
 
     has_extraction_error = not (temp_match and dist_match and loc_match)
 
-    # Step 4: Dialogue Controller & Read-Back Simulation
-    controller = DialogueController(vehicle_id="HR-55-TC-1102")
+    # Step 4: Dialogue Controller & Read-Back Simulation with Cargo-Aligned Vehicle
+    assigned_vehicle = get_vehicle_for_utterance(utt_id, true_slots)
+    controller = DialogueController(vehicle_id=assigned_vehicle)
     controller.receive_driver_utterance(transcript)
     state, readback_prompt = controller.process_extraction(extraction)
 
@@ -125,6 +146,8 @@ def run_benchmark_row(
     error_caught = False
     silent_failure = False
     action_executed = False
+    telematics_challenged = bool(controller.requires_forced_confirmation)
+    telematics_blocked = False
 
     # Realistic Driver Human-Factor Simulation:
     # Over engine noise, human drivers can occasionally mishear or reflexively say "haan".
@@ -142,15 +165,25 @@ def run_benchmark_row(
     driver_reflexive_error = (utt_hash < int(miss_prob * 100))
 
     if controller.state == DialogueState.CONFIRMING:
+        gate_active = bool(controller.requires_forced_confirmation)
+        expected_temp_val = f"{extraction.temperature_c:g}" if extraction.temperature_c is not None else ""
+
         if has_extraction_error:
             if driver_reflexive_error:
-                # Driver mishears read-back over loud diesel noise and says "haan" by reflex
+                # Driver mishears read-back over loud diesel noise and says "haan" by reflex without repeating number
                 reply = DriverReply(intent="CONFIRM", raw_text="haan bhaiya sahi hai")
                 final_state, final_prompt = controller.handle_confirmation_reply(reply)
-                error_caught = False
-                silent_failure = True
-                if final_state == DialogueState.DONE and controller.last_action_result:
-                    action_executed = True
+                if gate_active and final_state == DialogueState.CONFIRMING:
+                    # Telematics safety gate successfully BLOCKED dispatch of misheard anomaly!
+                    telematics_blocked = True
+                    error_caught = True
+                    silent_failure = False
+                    action_executed = False
+                else:
+                    error_caught = False
+                    silent_failure = True
+                    if final_state == DialogueState.DONE and controller.last_action_result:
+                        action_executed = True
             else:
                 # Driver catches error and speaks correction
                 if not temp_match and true_temp is not None:
@@ -166,14 +199,23 @@ def run_benchmark_row(
                 state, updated_prompt = controller.handle_confirmation_reply(reply)
                 error_caught = True
 
-                # Driver confirms corrected read-back
-                confirm_reply = DriverReply(intent="CONFIRM", raw_text="haan ab bilkul sahi hai")
+                # Driver confirms corrected read-back with number repeat if gate is active
+                corr_temp_val = f"{controller.current_record.temperature_c:g}" if controller.current_record and controller.current_record.temperature_c is not None else ""
+                if controller.requires_forced_confirmation and corr_temp_val:
+                    confirm_reply = DriverReply(intent="CONFIRM", raw_text=f"{corr_temp_val} degree confirm")
+                else:
+                    confirm_reply = DriverReply(intent="CONFIRM", raw_text="haan ab bilkul sahi hai")
+
                 final_state, final_prompt = controller.handle_confirmation_reply(confirm_reply)
                 if final_state == DialogueState.DONE and controller.last_action_result:
                     action_executed = True
         else:
-            # Accurate extraction: Driver confirms
-            reply = DriverReply(intent="CONFIRM", raw_text="haan bhaiya bilkul sahi hai")
+            # Accurate extraction: Driver confirms (repeats number if gate active)
+            if controller.requires_forced_confirmation and expected_temp_val:
+                reply = DriverReply(intent="CONFIRM", raw_text=f"{expected_temp_val} degree confirm")
+            else:
+                reply = DriverReply(intent="CONFIRM", raw_text="haan bhaiya bilkul sahi hai")
+
             final_state, final_prompt = controller.handle_confirmation_reply(reply)
             if final_state == DialogueState.DONE and controller.last_action_result:
                 action_executed = True
@@ -186,6 +228,7 @@ def run_benchmark_row(
     result_data = {
         "utt_id": utt_id,
         "condition": condition,
+        "vehicle_id": assigned_vehicle,
         "source": engine_source,
         "reference_text": reference_text,
         "transcript": transcript,
@@ -199,6 +242,8 @@ def run_benchmark_row(
         "has_extraction_error": has_extraction_error,
         "error_caught": error_caught,
         "silent_failure": silent_failure,
+        "telematics_challenged": telematics_challenged,
+        "telematics_blocked": telematics_blocked,
         "action_executed": action_executed,
         "readback_prompt": readback_prompt,
         "final_state": controller.state.value

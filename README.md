@@ -30,38 +30,52 @@ Our empirical benchmark evaluates **100 audio clips** across 4 acoustic conditio
 > **Evaluation Protocol & Purpose:**  
 > Track 1 isolates the finite state machine and dialogue safety layer from ASR variation by using calibrated acoustic degradation and scripted driver replies.
 > Audio was synthesized using `gTTS` and mixed with calibrated synthetic Indian truck diesel engine and cabin noise.
+> Each utterance is mapped to its matching fleet cargo vehicle (`HR-55-TC-1102` for sub-zero ice cream, `DL-01-AA-4092` for dairy, `GJ-01-BX-7201` for fresh produce).
 > In this track, specific phonetic confusion traps (18↔80, 14↔40, negative polarity loss) are injected into the input to stress-test the state machine's interception capability.
 > Driver replies model human factors: in loud cabin noise, drivers have an assumed reflexive error probability ($0\%$ in clean up to $12\%$ in severe noise).
 > The scorecard below was generated directly by `benchmark/score.py` using `benchmark/results/raw_benchmark_results.csv`:
 
-| Acoustic Condition | N | Source Engine | WER (%) | Raw Slot Acc (%) | Total Errors | Errors Caught by Read-Back | Silent Failures | Final Dispatch Accuracy (%) |
-| :--- | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Clean (16 kHz)** | 25 | Acoustic Simulation (Calibrated SNR) | 0.00% | 96.0% | 1 | **1 of 1 (100.0%)** | **0 (0.0%)** | **100.0%** |
-| **Telephony 8 kHz** | 25 | Acoustic Simulation (Calibrated SNR) | 0.00% | 96.0% | 1 | **1 of 1 (100.0%)** | **0 (0.0%)** | **100.0%** |
-| **Telephony + 10 dB SNR** | 25 | Acoustic Simulation (Calibrated SNR) | 1.72% | 72.0% | 7 | **6 of 7 (85.7%)** | **1 (4.0%)** | **96.0%** |
-| **Telephony + 5 dB SNR** | 25 | Acoustic Simulation (Calibrated SNR) | 3.16% | 64.0% | 9 | **9 of 9 (100.0%)** | **0 (0.0%)** | **100.0%** |
+| Acoustic Condition | N | Source Engine | WER (%) | Raw Slot Acc (%) | Total Errors | Errors Caught by Read-Back | Silent Failures | Gate Blocked Anomalies | Final Dispatch Accuracy (%) |
+| :--- | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Clean (16 kHz)** | 25 | Acoustic Simulation (Calibrated SNR) | 0.00% | 96.0% | 1 | **1 of 1 (100.0%)** | **0 (0.0%)** | 0 | **100.0%** |
+| **Telephony 8 kHz** | 25 | Acoustic Simulation (Calibrated SNR) | 0.00% | 96.0% | 1 | **1 of 1 (100.0%)** | **0 (0.0%)** | 0 | **100.0%** |
+| **Telephony + 10 dB SNR** | 25 | Acoustic Simulation (Calibrated SNR) | 1.72% | 72.0% | 7 | **6 of 7 (85.7%)** | **1 (4.0%)** | 0 | **96.0%** |
+| **Telephony + 5 dB SNR** | 25 | Acoustic Simulation (Calibrated SNR) | 3.16% | 64.0% | 9 | **9 of 9 (100.0%)** | **0 (0.0%)** | 0 | **100.0%** |
 
 ---
 
-### Official Scorecard Track 2: Empirical Model Evaluation (Held-Out Test Set N = 7 Utterances, 28 Clips)
+### Official Scorecard Track 2: Empirical Model Generalization (Held-Out Test Set N = 7 Utterances, 28 Clips)
 
 To measure actual acoustic generalization without data leakage, `core/train_asr.py`, `core/train_denoiser.py`, and `core/train_nlu.py` quarantine 7 held-out utterances (`utt_03, utt_07, utt_11, utt_15, utt_19, utt_22, utt_25`). 
-The table below reports real Word Error Rate (WER) measured by `benchmark/evaluate_trained_models.py` using the trained Whisper-LoRA model with and without the 8 kHz neural denoiser (saved in `benchmark/results/model_evaluation_metrics.csv`):
+The table below reports real Word Error Rate (WER) and **Number Survival Accuracy** (whether temperatures and distances survive transcription) measured by `benchmark/evaluate_trained_models.py` using the trained Whisper-LoRA model with and without the 8 kHz neural denoiser (saved in `benchmark/results/model_evaluation_metrics.csv`):
 
-| Condition | In-Domain (N=18) Raw WER | In-Domain (N=18) Denoised WER | Held-Out (N=7) Raw WER | Held-Out (N=7) Denoised WER | Overall (N=25) Raw WER | Overall (N=25) Denoised WER |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Clean (16 kHz)** | **1.58%** | 1.98% | **21.05%** | 23.16% | **6.90%** | 7.76% |
-| **Telephony 8 kHz** | **1.58%** | 2.37% | **31.58%** | 28.42% | **9.77%** | 9.48% |
-| **Telephony + 10 dB SNR** | **2.77%** | 3.16% | **32.63%** | 36.84% | **10.92%** | 12.36% |
-| **Telephony + 5 dB SNR** | **4.74%** | 13.83% | **40.00%** | 43.16% | **14.37%** | 21.84% |
+> **Sample Size Notice:** $N=7$ held-out utterances (28 audio clips across 4 channel variants) is a compact benchmark set; results demonstrate empirical acoustic trends rather than large-corpus asymptotic convergence.
+
+#### Headline Metric: Held-Out Generalization (N = 7 Utterances, 28 Audio Clips)
+| Acoustic Condition | Held-Out Raw WER (%) | Held-Out Denoised WER (%) | Held-Out Raw Number Acc (%) | Held-Out Denoised Number Acc (%) |
+| :--- | :---: | :---: | :---: | :---: |
+| **Clean (16 kHz)** | **20.00%** | 22.11% | **100.0%** | 100.0% |
+| **Telephony 8 kHz** | 29.47% | **27.37%** | **100.0%** | 100.0% |
+| **Telephony + 10 dB SNR** | **32.63%** | 34.74% | **100.0%** | 90.0% |
+| **Telephony + 5 dB SNR** | **43.16%** | **43.16%** | 70.0% | **80.0%** |
+
+#### In-Domain Training Baseline Reference (N = 18 Utterances, 72 Audio Clips)
+| Acoustic Condition | In-Domain Raw WER (%) | In-Domain Denoised WER (%) | In-Domain Raw Number Acc (%) |
+| :--- | :---: | :---: | :---: |
+| **Clean (16 kHz)** | 3.56% | 2.37% | 100.0% |
+| **Telephony 8 kHz** | **1.98%** | 24.51% | 100.0% |
+| **Telephony + 10 dB SNR** | 3.56% | 5.14% | 100.0% |
+| **Telephony + 5 dB SNR** | 3.56% | 14.23% | 100.0% |
 
 #### Key Empirical Diagnostics & Insights:
-1. **Script Alignment Diagnostic:**  
-   In initial evaluation runs, setting `language="hi"` forced Whisper's multilingual head to decode into Devanagari Hindi script (`भाया रीफर का...`), which scored an artificial ~100% substitution WER against Roman Hinglish references (`Bhaiya reefer ka...`). Removing language coercion aligns Whisper with Roman Hinglish fine-tuning, bringing In-Domain Raw WER down to **1.58%** on clean and **4.74%** at 5 dB SNR.
-2. **Denoiser Ablation:**  
-   A spectral denoiser trained on small local audio data introduces phase distortion and spectral smearing at low SNRs (at 5 dB SNR in-domain WER rises from 4.74% raw to 13.83% denoised). Consequently, **direct raw audio into Whisper is the recommended default pipeline**.
-3. **Held-Out NLU Accuracy:**  
-   Evaluating the deterministic regex extractor on the 7 held-out utterances yields **94.7% slot accuracy** (18 of 19 mandatory slots extracted correctly across cold-chain landmarks and temperatures), confirming that deterministic code provides robust out-of-distribution guardrails.
+1. **Critical Number Survival Rate:**  
+   In dispatch workflows, word error on filler conversational phrases (`"bhaiya"`, `"chal raha hai"`) does not cause misdispatch. What is critical is whether numeric slots (temperatures and distances) survive. On clean, 8 kHz, and 10 dB SNR telephony, **100% of critical numbers survived transcription**, dropping to 70–80% only under harsh 5 dB SNR rumble.
+2. **Language Prompt Alignment (`language="en"`):**  
+   Forcing `language="en", task="transcribe"` in both Whisper-LoRA training (`core/train_asr.py`) and inference prevents the decoder from drifting between language partitions under high acoustic noise.
+3. **Denoiser Ablation:**  
+   A spectral denoiser trained on limited local audio data introduces phase distortion and spectral smearing at low SNRs (at 5 dB SNR in-domain WER rises from 3.56% raw to 14.23% denoised). Consequently, **direct raw audio into Whisper is the recommended default pipeline**.
+4. **Unseen Fresh Sentences Evaluation:**  
+   To evaluate slot extraction beyond the benchmark dataset, 10 completely fresh sentences with novel landmarks (Alwar Bypass, Agra Toll, Vapi Checkpost, Surat Highway, Ludhiana GT Road) were tested (`test_unseen_fresh_sentences_slot_accuracy`), achieving **93.3% slot accuracy** (28/30 slots).
 
 ---
 

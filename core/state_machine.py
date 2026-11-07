@@ -175,23 +175,26 @@ class DialogueController:
         # CASE 1: DRIVER CONFIRMS -> PROCEED TO ACTING
         if intent == "CONFIRM":
             # Safety Gate: If telematics target diverged widely, require explicit number repeat
-            # Cannot be bypassed by reflex 'haan', 'sahi hai', 'bilkul', or bare 'confirm'
+            # Cannot be bypassed by reflex 'haan', 'sahi hai', 'bilkul', bare 'confirm',
+            # or substring matches (e.g. '25' matching expected '5', or '80' matching expected '8')
             if getattr(self, "requires_forced_confirmation", False):
                 lower_reply = (reply.raw_text or "").lower()
-                expected_num = str(int(self.current_record.temperature_c)) if self.current_record and self.current_record.temperature_c is not None else ""
+                temp_c = self.current_record.temperature_c if self.current_record else None
+                expected_num_str = f"{temp_c:g}" if temp_c is not None else ""
                 
                 from gnani.client import parse_hindi_number
                 parsed_reply_num = parse_hindi_number(lower_reply)
                 
-                # Check for exact digit repeat or Hindi spoken number word match
+                # Check parsed number against expected temperature (strict numeric comparison, no substring)
                 has_repeated_num = bool(
-                    (expected_num and expected_num in lower_reply) or 
-                    (parsed_reply_num is not None and self.current_record and self.current_record.temperature_c is not None and abs(parsed_reply_num - self.current_record.temperature_c) < 0.1)
+                    parsed_reply_num is not None and 
+                    temp_c is not None and 
+                    abs(parsed_reply_num - temp_c) < 0.1
                 )
 
                 if not has_repeated_num:
                     # Flag remains active until verified; bare 'confirm', 'haan', 'pakka' fail!
-                    retry_prompt = f"Telematics target se kaafi antar hai. Kripya number repeat karein: '{expected_num} degree confirm'."
+                    retry_prompt = f"Telematics target se kaafi antar hai. Kripya number repeat karein: '{expected_num_str} degree confirm'."
                     self.last_agent_prompt = retry_prompt
                     return DialogueState.CONFIRMING, retry_prompt
 
@@ -211,6 +214,7 @@ class DialogueController:
         
         if self.correction_rounds > self.max_correction_rounds:
             # Exceeded safety retry threshold -> Escalate to human control tower
+            self.requires_forced_confirmation = False
             self._record_transition(
                 DialogueState.ESCALATING,
                 trigger="EXCEEDED_MAX_CORRECTION_ROUNDS",
@@ -265,6 +269,7 @@ class DialogueController:
 
             # Check if correction rendered record non-actionable (e.g. invalid temperature became None)
             if not self.current_record.is_actionable():
+                self.requires_forced_confirmation = False
                 missing = self.current_record.compute_missing_fields()
                 self._record_transition(
                     DialogueState.ASKING,
@@ -377,6 +382,7 @@ class DialogueController:
         if self.state != DialogueState.ESCALATING:
             raise RuntimeError(f"Can only resolve escalation from ESCALATING state, currently: {self.state}")
 
+        self.requires_forced_confirmation = False
         self._record_transition(
             DialogueState.DONE,
             trigger="SUPERVISOR_RESOLUTION",
@@ -388,6 +394,7 @@ class DialogueController:
 
     def reset(self):
         """Reset session to LISTENING state for new conversation."""
+        self.requires_forced_confirmation = False
         self._record_transition(DialogueState.LISTENING, "SESSION_RESET", {})
         self.current_record = None
         self.last_driver_utterance = ""

@@ -67,6 +67,9 @@ def compute_metrics() -> pd.DataFrame:
         # 5. Non-Circular True Dispatch Accuracy
         true_dispatch_acc = ((n_samples - silent_fails) / n_samples) * 100.0
 
+        # 6. Telematics Gate Interceptions
+        telematics_blocked = int(sub["telematics_blocked"].sum()) if "telematics_blocked" in sub.columns else 0
+
         # Engine source primary
         sources = sub["source"].unique() if "source" in sub.columns else ["Simulation"]
         source_label = sources[0] if len(sources) == 1 else "Mixed"
@@ -80,6 +83,7 @@ def compute_metrics() -> pd.DataFrame:
             "Total Errors": total_errors,
             "Errors Caught": f"{errors_caught} of {total_errors} ({round(caught_pct, 1)}%)",
             "Silent Failures": f"{silent_fails} ({round(silent_fail_pct, 1)}%)",
+            "Gate Blocked Anomalies": telematics_blocked,
             "Final Dispatch Accuracy (%)": round(true_dispatch_acc, 2)
         })
 

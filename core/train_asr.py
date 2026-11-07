@@ -46,6 +46,8 @@ class HinglishTelephonyASRDataset(Dataset):
     """
     def __init__(self, processor: WhisperProcessor):
         self.processor = processor
+        # Configure decoder prefix tokens for Latin / Roman Hinglish fine-tuning
+        self.processor.tokenizer.set_prefix_tokens(language="en", task="transcribe", predict_timestamps=False)
         self.samples: List[Dict[str, Any]] = []
         self._build_dataset()
 

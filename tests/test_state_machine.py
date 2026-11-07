@@ -200,3 +200,44 @@ def test_pydantic_schema_validation():
     with pytest.raises(ValidationError):
         # Negative distance
         ExtractionRecord(distance_km=-10.0, location_text="Depot")
+
+
+def test_committed_benchmark_results_consistency_with_controller():
+    """
+    REGRESSION TEST:
+    Ensures committed benchmark results are strictly up to date with the controller code,
+    verifying that the scorecard and controller describe the same system.
+    """
+    from pathlib import Path
+    import pandas as pd
+
+    repo_root = Path(__file__).resolve().parent.parent
+    controller_path = repo_root / "core" / "state_machine.py"
+    raw_csv_path = repo_root / "benchmark" / "results" / "raw_benchmark_results.csv"
+    summary_csv_path = repo_root / "benchmark" / "results" / "summary_metrics.csv"
+    sweep_csv_path = repo_root / "benchmark" / "results" / "driver_sensitivity_sweep.csv"
+
+    assert raw_csv_path.exists(), "raw_benchmark_results.csv missing!"
+    assert summary_csv_path.exists(), "summary_metrics.csv missing!"
+    assert sweep_csv_path.exists(), "driver_sensitivity_sweep.csv missing!"
+
+    # 1. Timestamp freshness check: results must not be older than controller code
+    ctrl_mtime = controller_path.stat().st_mtime
+    raw_mtime = raw_csv_path.stat().st_mtime
+    # Allow 2 second margin for filesystem resolution
+    assert raw_mtime >= (ctrl_mtime - 2.0), (
+        f"Committed benchmark results ({raw_mtime}) are older than controller code ({ctrl_mtime})! "
+        "Run python benchmark/run_benchmark.py to synchronize."
+    )
+
+    # 2. Results content integrity
+    df = pd.read_csv(raw_csv_path)
+    assert len(df) == 100, f"Expected 100 benchmark rows, got {len(df)}"
+    assert "telematics_challenged" in df.columns
+    assert "telematics_blocked" in df.columns
+
+    # 3. Safety consistency: blocked telematics anomalies CAN NEVER reach DONE or execute actions
+    blocked_rows = df[df["telematics_blocked"] == True]
+    for _, row in blocked_rows.iterrows():
+        assert row["action_executed"] == False, f"Row {row['utt_id']} had action_executed=True despite gate block!"
+        assert row["final_state"] != "DONE", f"Row {row['utt_id']} reached DONE despite gate block!"

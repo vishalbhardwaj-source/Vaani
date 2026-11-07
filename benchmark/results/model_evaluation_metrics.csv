@@ -1,5 +1,5 @@
-Condition,Total N,In-Domain N,Held-Out N,In-Domain Raw WER (%),In-Domain Denoised WER (%),Held-Out Raw WER (%),Held-Out Denoised WER (%),Overall Raw WER (%),Overall Denoised WER (%)
-clean,25,18,7,1.58,1.98,21.05,23.16,6.9,7.76
-telephony_8khz,25,18,7,1.58,2.37,31.58,28.42,9.77,9.48
-telephony_10db,25,18,7,2.77,3.16,32.63,36.84,10.92,12.36
-telephony_5db,25,18,7,4.74,13.83,40.0,43.16,14.37,21.84
+Condition,Held-Out N,Held-Out Raw WER (%),Held-Out Denoised WER (%),Held-Out Raw Number Acc (%),Held-Out Denoised Number Acc (%),In-Domain N,In-Domain Raw WER (%),In-Domain Denoised WER (%),In-Domain Raw Number Acc (%)
+clean,7,20.0,22.11,100.0,100.0,18,3.56,2.37,100.0
+telephony_8khz,7,29.47,27.37,100.0,100.0,18,1.98,24.51,100.0
+telephony_10db,7,32.63,34.74,100.0,90.0,18,3.56,5.14,100.0
+telephony_5db,7,43.16,43.16,70.0,80.0,18,3.56,14.23,100.0

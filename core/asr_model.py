@@ -75,10 +75,11 @@ class HinglishWhisperASR:
         ).input_features.to(self.device)
 
         with torch.no_grad():
-            # Generate with task="transcribe" (aligns with Roman Hinglish fine-tuning)
+            # Generate with language="en" & task="transcribe" (aligns with Roman Hinglish fine-tuning)
             gen_tokens = self.model.generate(
                 input_features,
                 max_new_tokens=128,
+                language="en",
                 task="transcribe"
             )
             transcript = self.processor.batch_decode(gen_tokens, skip_special_tokens=True)[0].strip()

@@ -319,3 +319,154 @@ def test_escalation_safety_and_supervisor_handover():
     assert state_done == DialogueState.DONE
     assert ctrl.state == DialogueState.DONE
     assert "SUPERVISOR_PRIYA" in msg
+
+
+# -------------------------------------------------------------
+# 9. Substring Bypass Rejection & Strict Numeric Comparison
+# -------------------------------------------------------------
+def test_substring_bypass_rejected_and_strict_comparison():
+    """
+    Substrings (e.g. '5' inside '25', or '8' inside '80') MUST NOT bypass
+    the telematics forced confirmation gate!
+    """
+    # Vehicle HR-55-TC-1102 has target_temp -22.0C
+    # Case A: Reported temp = 5.0C (|5 - (-22)| = 27C > 25C)
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.receive_driver_utterance("Temperature 5 degree hai")
+    ctrl.process_extraction(ExtractionRecord(
+        incident_type=IncidentType.REEFER_TEMPERATURE,
+        temperature_c=5.0,
+        location_text="Panipat Toll",
+        distance_km=None
+    ))
+    assert ctrl.requires_forced_confirmation is True
+
+    # Substring trap 1: Driver says 'haan 25 pakka' -> contains '5', but parsed is 25.0 != 5.0
+    state1, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="haan 25 pakka"))
+    assert state1 == DialogueState.CONFIRMING
+    assert ctrl.requires_forced_confirmation is True
+
+    # Genuine match: Driver says '5 degree confirm' or 'paanch degree pakka'
+    state_ok, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="5 degree confirm"))
+    assert state_ok == DialogueState.DONE
+    assert ctrl.requires_forced_confirmation is False
+
+
+def test_negative_telematics_plausibility_and_confirmation():
+    """
+    Cold-chain deep freeze: Vehicle DL-01-AA-4092 has target +4C (Dairy).
+    Driver reports -22C (| -22 - 4 | = 26C > 25C).
+    1. Driver saying '22 degree confirm' (positive) MUST be rejected.
+    2. Driver saying 'minus 22 confirm' or '-22 pakka' MUST unlock dispatch.
+    """
+    ctrl = DialogueController(vehicle_id="DL-01-AA-4092")
+    ctrl.receive_driver_utterance("Sensor -22 degree show kar raha hai")
+    ctrl.process_extraction(ExtractionRecord(
+        incident_type=IncidentType.REEFER_TEMPERATURE,
+        temperature_c=-22.0,
+        location_text="Bilaspur Chowk",
+        distance_km=None
+    ))
+    assert ctrl.requires_forced_confirmation is True
+
+    # Wrong polarity: positive 22
+    s_wrong, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="haan 22 degree confirm"))
+    assert s_wrong == DialogueState.CONFIRMING
+    assert ctrl.requires_forced_confirmation is True
+
+    # Correct polarity: minus 22
+    s_right, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="minus 22 degree confirm"))
+    assert s_right == DialogueState.DONE
+    assert ctrl.requires_forced_confirmation is False
+    assert ctrl.last_action_result["reported_temp_c"] == -22.0
+
+
+def test_flag_lifetime_resets_on_session_reset_and_escalation():
+    """requires_forced_confirmation must not leak across sessions or escalations."""
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.receive_driver_utterance("Temperature 25 degree")
+    ctrl.process_extraction(ExtractionRecord(
+        incident_type=IncidentType.REEFER_TEMPERATURE,
+        temperature_c=25.0,
+        location_text="Toll Plaza",
+        distance_km=None
+    ))
+    assert ctrl.requires_forced_confirmation is True
+
+    # Reset clears flag
+    ctrl.reset()
+    assert ctrl.requires_forced_confirmation is False
+
+    # Trigger flag again
+    ctrl.receive_driver_utterance("Temperature 25 degree")
+    ctrl.process_extraction(ExtractionRecord(
+        incident_type=IncidentType.REEFER_TEMPERATURE,
+        temperature_c=25.0,
+        location_text="Toll Plaza",
+        distance_km=None
+    ))
+    assert ctrl.requires_forced_confirmation is True
+
+    # Escalate -> flag cleared
+    ctrl.handle_confirmation_reply(DriverReply(intent="REJECT", raw_text="galat hai"))
+    ctrl.handle_confirmation_reply(DriverReply(intent="REJECT", raw_text="galat hai"))
+    s_esc, _ = ctrl.handle_confirmation_reply(DriverReply(intent="REJECT", raw_text="galat hai"))
+    assert s_esc == DialogueState.ESCALATING
+    assert ctrl.requires_forced_confirmation is False
+
+
+def test_unseen_fresh_sentences_slot_accuracy():
+    """
+    Evaluate slot extraction on 10 completely fresh, unseen sentences
+    written independently from the benchmark dataset.
+    """
+    from gnani.client import extract_incident_details
+
+    fresh_cases = [
+        ("Bhaiya reefer 16 degree chala gaya hai Alwar Bypass se 14 km aage", 16.0, "Alwar Bypass", 14.0),
+        ("Chiller temperature minus 15 degree ho gaya Manesar Chauraha ke paas", -15.0, "Manesar Chauraha", None),
+        ("Engine heat up ho gaya breakdown hai Agra Toll Plaza se 20 km pehle", None, "Agra Toll Plaza", 20.0),
+        ("Sir compressor band hai 26 degree display ho raha hai Vapi Checkpost pe", 26.0, "Vapi Checkpost", None),
+        ("Reefer warning minus 18 degree Ludhiana GT Road pe", -18.0, "Ludhiana GT Road", None),
+        ("Gaadi breakdown ho gayi clutch plate jal gayi Jaipur Bypass km 45", None, "Jaipur Bypass", 45.0),
+        ("Bhaiya 22 degree temperature dikha raha hai reefer sensor Karnal Flyover", 22.0, "Karnal Flyover", None),
+        ("Sir urgent reefer minus 12 degree pe hai Rohtak Bypass se 8 km", -12.0, "Rohtak Bypass", 8.0),
+        ("Cabin me alert hai temperature 32 degree Surat Highway pe", 32.0, "Surat Highway", None),
+        ("Reefer temperature 11 degree ho gaya dairy ka Meerut Toll se 16 km", 11.0, "Meerut Toll", 16.0),
+    ]
+
+    correct_slots = 0
+    total_slots = 0
+
+    for text, expected_temp, expected_loc, expected_dist in fresh_cases:
+        rec = extract_incident_details(text)
+        
+        # Temp check
+        total_slots += 1
+        if expected_temp is None:
+            if rec.temperature_c is None:
+                correct_slots += 1
+        else:
+            if rec.temperature_c is not None and abs(rec.temperature_c - expected_temp) < 0.1:
+                correct_slots += 1
+
+        # Loc check
+        total_slots += 1
+        if expected_loc is None:
+            if rec.location_text is None:
+                correct_slots += 1
+        else:
+            if rec.location_text and (expected_loc.lower() in rec.location_text.lower() or rec.location_text.lower() in expected_loc.lower()):
+                correct_slots += 1
+
+        # Dist check
+        total_slots += 1
+        if expected_dist is None:
+            if rec.distance_km is None:
+                correct_slots += 1
+        else:
+            if rec.distance_km is not None and abs(rec.distance_km - expected_dist) <= 0.5:
+                correct_slots += 1
+
+    accuracy = correct_slots / total_slots
+    assert accuracy >= 0.90, f"Fresh sentences slot accuracy {accuracy:.2%} below 90%"
