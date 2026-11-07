@@ -32,7 +32,7 @@ python demo.py
 
 ---
 
-## Executive Summary (1-Page Brief)
+## Executive Summary 
 
 Truck drivers and cold-chain ground crews operate in deafening cabin environments (diesel engine rumble, highway wind, horn reverberation) where typing on a mobile screen at 70 km/h is impossible and speech recognition inevitably makes acoustic mistakes (confusing *18°C* with *80°C* or *14 km* with *40 km*). A single misread number can spoil an entire refrigerated consignment or dispatch mechanics to the wrong highway milestone.
 
