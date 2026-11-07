@@ -114,7 +114,7 @@
     "<|nocaptions|>",
     "<|notimestamps|>"
   ],
-  "is_local": true,
+  "is_local": false,
   "language": null,
   "local_files_only": false,
   "model_max_length": 1024,

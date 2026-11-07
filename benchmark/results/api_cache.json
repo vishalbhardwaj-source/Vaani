@@ -2936,5 +2936,70 @@
     "confidence": 0.95,
     "anomalous_reading": null,
     "acoustic_warning": null
+  },
+  "evon_v3_c2ae75a66e_2ab3bc7ab188e592": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 15.0,
+    "location_text": "Shahbad",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas",
+    "confidence": 0.95,
+    "anomalous_reading": null,
+    "acoustic_warning": null
+  },
+  "evon_v3_c2ae75a66e_d3fa4a34a6998751": {
+    "incident_type": "unknown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Vadodara Bypass",
+    "distance_km": 30.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km",
+    "confidence": 0.95,
+    "anomalous_reading": null,
+    "acoustic_warning": null
+  },
+  "evon_v3_c2ae75a66e_2553e1dcf3f7d4db": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 19.0,
+    "location_text": "Ghaziabad Border",
+    "distance_km": 12.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage",
+    "confidence": 0.95,
+    "anomalous_reading": null,
+    "acoustic_warning": null
+  },
+  "evon_v3_c2ae75a66e_17c8d83e82e4eceb": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 25.0,
+    "location_text": "Rewari Bypass",
+    "distance_km": 18.0,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km",
+    "confidence": 0.95,
+    "anomalous_reading": null,
+    "acoustic_warning": null
+  },
+  "evon_v3_c2ae75a66e_b521184464a41465": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 18.0,
+    "location_text": "Kmp Expressway",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway",
+    "confidence": 0.95,
+    "anomalous_reading": null,
+    "acoustic_warning": null
   }
 }

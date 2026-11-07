@@ -174,8 +174,9 @@ def test_telematics_plausibility_forces_firm_confirmation():
     (e.g. reporting 25C when target is -20C for Ice Cream):
     1. A reflex 'haan' is challenged.
     2. A reflex 'haan bilkul sahi hai' does NOT bypass the check.
-    3. The flag does NOT reset after the first reply.
-    4. Only repeating the number or stating 'confirm' unlocks dispatch.
+    3. A bare 'confirm' does NOT bypass the check (bare 'confirm' is as reflexive as 'haan').
+    4. The flag does NOT reset after any reflexive reply.
+    5. ONLY explicitly repeating the number (e.g. '25 degree') unlocks dispatch.
     """
     # HR-55-TC-1102 has target_temp_c = -20C (Ice Cream)
     ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
@@ -190,18 +191,28 @@ def test_telematics_plausibility_forces_firm_confirmation():
     assert ctrl.state == DialogueState.CONFIRMING
     assert ctrl.requires_forced_confirmation is True
 
-    # Attempt 1: Simple 'haan' reflexively spoken by driver is challenged
-    state_retry, prompt_retry = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="haan"))
-    assert state_retry == DialogueState.CONFIRMING
-    assert ctrl.requires_forced_confirmation is True  # Flag MUST NOT reset!
-    assert "repeat" in prompt_retry.lower()
+    # Reflex attempt 1: 'haan'
+    s1, p1 = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="haan"))
+    assert s1 == DialogueState.CONFIRMING
+    assert ctrl.requires_forced_confirmation is True
+    assert "repeat" in p1.lower()
 
-    # Attempt 2: Reflexive 'haan bilkul sahi hai' (mimicking read-back phrase) still DOES NOT bypass!
-    state_retry2, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="haan bilkul sahi hai"))
-    assert state_retry2 == DialogueState.CONFIRMING
+    # Reflex attempt 2: 'bilkul sahi hai'
+    s2, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="bilkul sahi hai"))
+    assert s2 == DialogueState.CONFIRMING
     assert ctrl.requires_forced_confirmation is True
 
-    # Attempt 3: Distinct action: driver repeats number with confirm
+    # Reflex attempt 3: bare 'confirm' (CRITICAL SAFETY REGRESSION)
+    s3, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="confirm"))
+    assert s3 == DialogueState.CONFIRMING
+    assert ctrl.requires_forced_confirmation is True
+
+    # Reflex attempt 4: 'haan bilkul confirm'
+    s4, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="haan bilkul confirm"))
+    assert s4 == DialogueState.CONFIRMING
+    assert ctrl.requires_forced_confirmation is True
+
+    # Genuine distinct action: driver repeats number
     state_final, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="25 degree confirm"))
     assert state_final == DialogueState.DONE
     assert ctrl.requires_forced_confirmation is False
@@ -209,11 +220,18 @@ def test_telematics_plausibility_forces_firm_confirmation():
 
 
 # -------------------------------------------------------------
-# 6. Correction Path Bounds Enforcement
+# 6. Correction Path Bounds Enforcement & Transition to ASKING
 # -------------------------------------------------------------
 def test_correction_path_enforces_bounds():
-    """If driver speaks an impossible correction (e.g. 99C or -55C), it must NOT overwrite temperature."""
-    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    """
+    If driver speaks an impossible correction (e.g. 99C or -55C):
+    1. It must NOT overwrite temperature_c.
+    2. Setting temperature_c = None renders record inactionable.
+    3. Controller must transition from CONFIRMING -> ASKING.
+    4. Dispatch is completely blocked while in ASKING.
+    5. Valid clarification reply restores actionability.
+    """
+    ctrl = DialogueController(vehicle_id="DL-01-AA-4092")
     ctrl.receive_driver_utterance("Reefer 18 degree")
     ctrl.process_extraction(ExtractionRecord(
         incident_type=IncidentType.REEFER_TEMPERATURE,
@@ -221,12 +239,38 @@ def test_correction_path_enforces_bounds():
         location_text="Toll Plaza",
         distance_km=42.0
     ))
+    assert ctrl.state == DialogueState.CONFIRMING
 
     # Driver says an impossible correction: "Nahi 99 degree"
-    state_corr, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CORRECT", corrected_temperature_c=99.0))
-    assert state_corr == DialogueState.CONFIRMING
+    state_corr, prompt_asking = ctrl.handle_confirmation_reply(
+        DriverReply(intent="CORRECT", corrected_temperature_c=99.0, raw_text="nahi 99 degree")
+    )
+    # Must transition to ASKING because record is missing valid temperature
+    assert state_corr == DialogueState.ASKING
     assert ctrl.current_record.temperature_c is None
     assert ctrl.current_record.anomalous_reading == 99.0
+    assert "temperature" in prompt_asking.lower()
+
+    # Safety Guarantee: Confirmation reply is impossible from ASKING
+    import pytest
+    with pytest.raises(RuntimeError):
+        ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="haan"))
+
+    # Safety Guarantee: Direct dispatch is blocked from ASKING
+    with pytest.raises(PermissionError):
+        ctrl._execute_dispatch_action()
+
+    # Driver supplies valid clarification: -18C
+    clarified_record = ctrl.current_record.model_copy()
+    clarified_record.temperature_c = -18.0
+    state_after_clarify, readback = ctrl.receive_missing_slot_reply("-18 degree", clarified_record)
+    assert state_after_clarify == DialogueState.CONFIRMING
+    assert "-18" in readback
+
+    # Driver confirms valid readback -> reaches DONE
+    state_done, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="haan sahi hai"))
+    assert state_done == DialogueState.DONE
+    assert ctrl.last_action_result["reported_temp_c"] == -18.0
 
 
 # -------------------------------------------------------------

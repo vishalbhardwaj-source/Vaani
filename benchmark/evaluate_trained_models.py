@@ -62,6 +62,7 @@ def evaluate():
     for cond in conditions:
         refs_all, hyps_raw_all, hyps_denoised_all = [], [], []
         refs_heldout, hyps_raw_heldout, hyps_denoised_heldout = [], [], []
+        refs_indomain, hyps_raw_indomain, hyps_denoised_indomain = [], [], []
 
         for _, row in df.iterrows():
             utt_id = row["id"]
@@ -82,7 +83,8 @@ def evaluate():
             in_raw = processor(audio_16k_raw, sampling_rate=16000, return_tensors="pt")
             in_raw = {k: v.to(device) for k, v in in_raw.items()}
             with torch.no_grad():
-                gen_raw = asr_model.generate(**in_raw, max_new_tokens=128, language="hi", task="transcribe")
+                # Generate without forced language="hi" to prevent Devanagari script mismatch against Roman Hinglish references
+                gen_raw = asr_model.generate(**in_raw, max_new_tokens=128, task="transcribe")
                 hyp_raw = processor.batch_decode(gen_raw, skip_special_tokens=True)[0].strip()
 
             # 2. With Model 1 Denoiser
@@ -98,7 +100,7 @@ def evaluate():
             in_cleaned = processor(cleaned_16k, sampling_rate=16000, return_tensors="pt")
             in_cleaned = {k: v.to(device) for k, v in in_cleaned.items()}
             with torch.no_grad():
-                gen_cleaned = asr_model.generate(**in_cleaned, max_new_tokens=128, language="hi", task="transcribe")
+                gen_cleaned = asr_model.generate(**in_cleaned, max_new_tokens=128, task="transcribe")
                 hyp_denoised = processor.batch_decode(gen_cleaned, skip_special_tokens=True)[0].strip()
 
             refs_all.append(clean_text(ref))
@@ -109,9 +111,16 @@ def evaluate():
                 refs_heldout.append(clean_text(ref))
                 hyps_raw_heldout.append(clean_text(hyp_raw))
                 hyps_denoised_heldout.append(clean_text(hyp_denoised))
+            else:
+                refs_indomain.append(clean_text(ref))
+                hyps_raw_indomain.append(clean_text(hyp_raw))
+                hyps_denoised_indomain.append(clean_text(hyp_denoised))
 
         wer_all_raw = jiwer.wer(refs_all, hyps_raw_all) * 100.0
         wer_all_denoised = jiwer.wer(refs_all, hyps_denoised_all) * 100.0
+
+        wer_indomain_raw = jiwer.wer(refs_indomain, hyps_raw_indomain) * 100.0 if refs_indomain else 0.0
+        wer_indomain_denoised = jiwer.wer(refs_indomain, hyps_denoised_indomain) * 100.0 if refs_indomain else 0.0
 
         wer_heldout_raw = jiwer.wer(refs_heldout, hyps_raw_heldout) * 100.0 if refs_heldout else 0.0
         wer_heldout_denoised = jiwer.wer(refs_heldout, hyps_denoised_heldout) * 100.0 if refs_heldout else 0.0
@@ -119,11 +128,14 @@ def evaluate():
         summary_rows.append({
             "Condition": cond,
             "Total N": len(refs_all),
+            "In-Domain N": len(refs_indomain),
             "Held-Out N": len(refs_heldout),
-            "Overall Raw WER (%)": round(wer_all_raw, 2),
-            "Overall Denoised WER (%)": round(wer_all_denoised, 2),
+            "In-Domain Raw WER (%)": round(wer_indomain_raw, 2),
+            "In-Domain Denoised WER (%)": round(wer_indomain_denoised, 2),
             "Held-Out Raw WER (%)": round(wer_heldout_raw, 2),
             "Held-Out Denoised WER (%)": round(wer_heldout_denoised, 2),
+            "Overall Raw WER (%)": round(wer_all_raw, 2),
+            "Overall Denoised WER (%)": round(wer_all_denoised, 2),
         })
 
     eval_df = pd.DataFrame(summary_rows)

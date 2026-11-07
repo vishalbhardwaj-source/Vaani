@@ -174,17 +174,23 @@ class DialogueController:
 
         # CASE 1: DRIVER CONFIRMS -> PROCEED TO ACTING
         if intent == "CONFIRM":
-            # Safety Gate: If telematics target diverged widely, require explicit number repeat or 'confirm'
-            # Cannot be bypassed by reflex 'haan' or 'haan bilkul sahi hai'
+            # Safety Gate: If telematics target diverged widely, require explicit number repeat
+            # Cannot be bypassed by reflex 'haan', 'sahi hai', 'bilkul', or bare 'confirm'
             if getattr(self, "requires_forced_confirmation", False):
                 lower_reply = (reply.raw_text or "").lower()
                 expected_num = str(int(self.current_record.temperature_c)) if self.current_record and self.current_record.temperature_c is not None else ""
                 
-                has_repeated_num = bool(expected_num and expected_num in lower_reply)
-                has_explicit_confirm = ("confirm" in lower_reply) or ("pakka" in lower_reply)
+                from gnani.client import parse_hindi_number
+                parsed_reply_num = parse_hindi_number(lower_reply)
+                
+                # Check for exact digit repeat or Hindi spoken number word match
+                has_repeated_num = bool(
+                    (expected_num and expected_num in lower_reply) or 
+                    (parsed_reply_num is not None and self.current_record and self.current_record.temperature_c is not None and abs(parsed_reply_num - self.current_record.temperature_c) < 0.1)
+                )
 
-                if not (has_repeated_num or has_explicit_confirm):
-                    # Flag remains active until verified; does not reset on reflex replies!
+                if not has_repeated_num:
+                    # Flag remains active until verified; bare 'confirm', 'haan', 'pakka' fail!
                     retry_prompt = f"Telematics target se kaafi antar hai. Kripya number repeat karein: '{expected_num} degree confirm'."
                     self.last_agent_prompt = retry_prompt
                     return DialogueState.CONFIRMING, retry_prompt
@@ -256,6 +262,18 @@ class DialogueController:
                 )
             except Exception as e:
                 logger.error(f"Failed to persist driver correction to learning DB: {e}")
+
+            # Check if correction rendered record non-actionable (e.g. invalid temperature became None)
+            if not self.current_record.is_actionable():
+                missing = self.current_record.compute_missing_fields()
+                self._record_transition(
+                    DialogueState.ASKING,
+                    trigger="CORRECTION_RENDERED_RECORD_INACTIONABLE",
+                    payload={"missing_fields": missing, "record": self.current_record.model_dump()}
+                )
+                prompt = self._generate_clarification_prompt(missing)
+                self.last_agent_prompt = prompt
+                return self.state, prompt
 
             # Move back to CONFIRMING with updated values
             self._record_transition(
