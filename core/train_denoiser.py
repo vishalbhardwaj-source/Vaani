@@ -29,10 +29,15 @@ MODEL_SAVE_PATH = BASE_DIR / "models" / "denoiser_8khz.pt"
 MODEL_SAVE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
+# Quarantined Held-Out Test Set (Excluded from denoiser training)
+HELD_OUT_UTT_IDS = {"utt_03", "utt_07", "utt_11", "utt_15", "utt_19", "utt_22", "utt_25"}
+
+
 class TelephonyNoiseSpeechDataset(Dataset):
     """
     In-memory / dynamically generated dataset of clean Hinglish speech
     mixed with truck engine and road cabin noise at variable SNRs.
+    Strictly excludes the 7 held-out evaluation utterances.
     """
     def __init__(self, sample_rate: int = 8000, chunk_sec: float = 2.0, num_samples: int = 400):
         self.sr = sample_rate
@@ -45,10 +50,15 @@ class TelephonyNoiseSpeechDataset(Dataset):
         self._load_noise_audio()
 
     def _load_clean_speech(self):
-        """Load clean Hinglish fleet recordings."""
+        """Load clean Hinglish fleet recordings (excluding held-out test clips)."""
         audio_dir = BASE_DIR / "benchmark" / "audio"
         clean_files = list(audio_dir.glob("*_clean.wav"))
         for f in clean_files:
+            # Extract utt id (e.g. "utt_03" from "utt_03_clean.wav")
+            utt_id = f.stem.replace("_clean", "")
+            if utt_id in HELD_OUT_UTT_IDS:
+                continue
+
             try:
                 data, fs = sf.read(str(f))
                 if fs != self.sr:
@@ -60,7 +70,7 @@ class TelephonyNoiseSpeechDataset(Dataset):
             except Exception as e:
                 pass
 
-        print(f"Loaded {len(self.clean_bank)} clean base speech recordings.")
+        print(f"Loaded {len(self.clean_bank)} clean base speech recordings (quarantined {len(HELD_OUT_UTT_IDS)} held-out utterances).")
 
     def _load_noise_audio(self):
         """Generate diverse truck cabin acoustic profiles (engine harmonics + road rumble)."""

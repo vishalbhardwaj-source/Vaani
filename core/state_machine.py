@@ -174,14 +174,23 @@ class DialogueController:
 
         # CASE 1: DRIVER CONFIRMS -> PROCEED TO ACTING
         if intent == "CONFIRM":
-            # Safety Gate: If telematics target diverged widely, require explicit 'pakka' confirmation
+            # Safety Gate: If telematics target diverged widely, require explicit number repeat or 'confirm'
+            # Cannot be bypassed by reflex 'haan' or 'haan bilkul sahi hai'
             if getattr(self, "requires_forced_confirmation", False):
                 lower_reply = (reply.raw_text or "").lower()
-                if "pakka" not in lower_reply and "bilkul" not in lower_reply and "sahi hai" not in lower_reply:
-                    self.requires_forced_confirmation = False
-                    retry_prompt = "Dhyan dein: Telematics target se kaafi antar hai. Agar bilkul sure hain toh 'haan pakka' kahein."
+                expected_num = str(int(self.current_record.temperature_c)) if self.current_record and self.current_record.temperature_c is not None else ""
+                
+                has_repeated_num = bool(expected_num and expected_num in lower_reply)
+                has_explicit_confirm = ("confirm" in lower_reply) or ("pakka" in lower_reply)
+
+                if not (has_repeated_num or has_explicit_confirm):
+                    # Flag remains active until verified; does not reset on reflex replies!
+                    retry_prompt = f"Telematics target se kaafi antar hai. Kripya number repeat karein: '{expected_num} degree confirm'."
                     self.last_agent_prompt = retry_prompt
                     return DialogueState.CONFIRMING, retry_prompt
+
+                # Explicit distinct action satisfied -> unlock and clear flag
+                self.requires_forced_confirmation = False
 
             self._record_transition(
                 DialogueState.ACTING,
@@ -217,9 +226,20 @@ class DialogueController:
             
             orig_slots = self.current_record.model_dump()
 
-            # Apply corrections to the current record
+            # Apply corrections to the current record with strict reefer physical bounds (-40C to +50C)
             if reply.corrected_temperature_c is not None:
-                self.current_record.temperature_c = reply.corrected_temperature_c
+                if -40.0 <= reply.corrected_temperature_c <= 50.0:
+                    self.current_record.temperature_c = reply.corrected_temperature_c
+                    self.current_record.anomalous_reading = None
+                    # Update forced confirmation status if corrected temperature is now plausible
+                    veh_t = lookup_vehicle(self.vehicle_id)
+                    if veh_t and abs(self.current_record.temperature_c - veh_t.target_temp_c) <= 25.0:
+                        self.requires_forced_confirmation = False
+                else:
+                    logger.warning(f"Driver correction {reply.corrected_temperature_c}°C out of realistic bounds (-40 to 50°C)")
+                    self.current_record.anomalous_reading = reply.corrected_temperature_c
+                    self.current_record.temperature_c = None
+
             if reply.corrected_location:
                 self.current_record.location_text = reply.corrected_location
             if reply.corrected_distance_km is not None:

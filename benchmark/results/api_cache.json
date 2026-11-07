@@ -2910,5 +2910,31 @@
     "confidence": 0.95,
     "anomalous_reading": 80.0,
     "acoustic_warning": "Acoustic trap: Heard 80.0°C which is outside reefer bounds (-40 to 50°C)."
+  },
+  "evon_v3_c2ae75a66e_7da4bf57e30d369f": {
+    "incident_type": "breakdown",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": null,
+    "location_text": "Bypass",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Sir engine band ho gaya hai Karnal bypass pe",
+    "confidence": 0.95,
+    "anomalous_reading": null,
+    "acoustic_warning": null
+  },
+  "evon_v3_c2ae75a66e_b666a52f9b630e77": {
+    "incident_type": "reefer_temperature",
+    "vehicle_id": "HR-55-TC-1102",
+    "temperature_c": 15.0,
+    "location_text": "Highway",
+    "distance_km": null,
+    "consignment_id": null,
+    "missing_fields": [],
+    "raw_transcript": "Bhaiya temperature 15 degree Mathura Highway pe",
+    "confidence": 0.95,
+    "anomalous_reading": null,
+    "acoustic_warning": null
   }
 }

@@ -40,10 +40,8 @@ GNANI_EVON_URL = os.getenv("GNANI_EVON_URL", "https://api.gnani.ai/v1/evon/chat"
 GNANI_TIMBRE_URL = os.getenv("GNANI_TIMBRE_URL", "https://api.gnani.ai/v1/timbre/tts")
 ASR_ENGINE = os.getenv("ASR_ENGINE", "whisper_lora")  # 'whisper_lora', 'prisma', or 'simulated'
 
-# Comprehensive Hindi/Devanagari & Transliterated Number Dictionary
-# Includes adversarial phonetic confusions (18 vs 80, 14 vs 40, 28 vs 18)
-HINDI_NUMBER_WORDS = {
-    # Latin / Hinglish Transliterations
+# Comprehensive Latin/Hinglish Transliterated Number Dictionary
+LATIN_NUMBER_WORDS = {
     "shunya": 0, "zero": 0, "ek": 1, "do": 2, "teen": 3, "chaar": 4, "char": 4,
     "paanch": 5, "panch": 5, "chhah": 6, "che": 6, "saat": 7, "aath": 8, "ath": 8,
     "nau": 9, "das": 10, "dus": 10, "gyarah": 11, "barah": 12, "terah": 13,
@@ -51,21 +49,26 @@ HINDI_NUMBER_WORDS = {
     "atharah": 18, "athara": 18, "atharaah": 18, "aathara": 18, "unnis": 19, "bees": 20,
     "ikkis": 21, "baais": 22, "teis": 23, "chaubees": 24, "chaubis": 24, "pachchis": 25,
     "chabbis": 26, "sattais": 27, "atthais": 28, "athais": 28, "atthayeas": 28, "unatis": 29,
-    "tees": 30, "chalis": 40, "chaalis": 40, "bayalis": 42, "pachas": 50,
-    "saath": 60, "sattar": 70, "assi": 80, "assee": 80, "aasi": 80, "nabbe": 90,
+    "tees": 30, "paintis": 35, "chalis": 40, "chaalis": 40, "bayalis": 42, "pachas": 50,
+    "saath": 60, "sattar": 70, "assi": 80, "assee": 80, "aasi": 80, "nabbe": 90
+}
 
-    # Devanagari Words
+# Devanagari Script Words and Numerals (Matched strictly on whole whitespace/punct tokens)
+DEVANAGARI_NUMBER_WORDS = {
     "शून्य": 0, "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पांच": 5, "छह": 6, "सात": 7,
     "आठ": 8, "नौ": 9, "दस": 10, "ग्यारह": 11, "बारह": 12, "तेरह": 13, "चौदह": 14,
     "पंद्रह": 15, "सोलह": 16, "सत्रह": 17, "अट्ठारह": 18, "अठारह": 18, "उन्नीस": 19,
     "बीस": 20, "इक्कीस": 21, "बाईस": 22, "तेईस": 23, "चौबीस": 24, "पच्चीस": 25,
     "छब्बीस": 26, "सत्ताईस": 27, "अट्ठाइस": 28, "अट्ठाईस": 28, "उनतीस": 29, "तीस": 30,
-    "चालीस": 40, "बयालीस": 42, "पचास": 50, "साठ": 60, "सत्तर": 70, "अस्सी": 80, "नब्बे": 90,
-
+    "पैंतीस": 35, "चालीस": 40, "बयालीस": 42, "पचास": 50, "साठ": 60, "सत्तर": 70,
+    "अस्सी": 80, "नब्बे": 90,
     # Devanagari Digits
     "०": 0, "१": 1, "२": 2, "३": 3, "४": 4, "५": 5, "६": 6, "७": 7, "८": 8, "९": 9,
-    "१८": 18, "८०": 80, "१४": 14, "४०": 40, "२८": 28, "४२": 42
+    "१८": 18, "८०": 80, "१४": 14, "४०": 40, "२८": 28, "४२": 42, "३५": 35
 }
+
+# Combined dictionary for backward compatibility
+HINDI_NUMBER_WORDS = {**LATIN_NUMBER_WORDS, **DEVANAGARI_NUMBER_WORDS}
 
 
 class GnaniCache:
@@ -427,9 +430,14 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
 
 
 def parse_hindi_number(text: str) -> Optional[float]:
-    """Parse digits, Devanagari numerals, or Hindi spoken words into a float."""
+    """
+    Parse digits, Devanagari numerals, or Hindi spoken words into a float.
+    Uses regex word boundaries (\b) for Latin words to prevent substring misfires
+    (e.g., 'ek' inside 'theek' or 'do' inside 'doori').
+    For Devanagari words, matches strictly on whitespace/punctuation delimited tokens.
+    """
     lower = text.lower().strip()
-    
+
     # 1. Direct ASCII digits
     digit_match = re.search(r"(-?\d+(?:\.\d+)?)", lower)
     if digit_match:
@@ -438,14 +446,20 @@ def parse_hindi_number(text: str) -> Optional[float]:
         except ValueError:
             pass
 
-    # 2. Check Hindi / Devanagari dictionary
     is_negative = ("minus" in lower) or ("negative" in lower) or ("माइनस" in lower)
-    
-    # Check words sorted by length descending so compound words match first
-    sorted_words = sorted(HINDI_NUMBER_WORDS.keys(), key=len, reverse=True)
-    for word in sorted_words:
-        if word in lower:
-            val = float(HINDI_NUMBER_WORDS[word])
+
+    # 2. Latin word boundary matching (Prevents "ek" matching in "theek", "do" in "doori")
+    # Sort by descending length so "chaubees" matches before "chaar"
+    for word in sorted(LATIN_NUMBER_WORDS.keys(), key=len, reverse=True):
+        if re.search(rf"\b{re.escape(word)}\b", lower):
+            val = float(LATIN_NUMBER_WORDS[word])
+            return -val if is_negative else val
+
+    # 3. Devanagari whole-token matching (Prevents "तीस" matching inside "पैंतीस")
+    deva_tokens = re.findall(r"[\u0900-\u097F]+", lower)
+    for token in deva_tokens:
+        if token in DEVANAGARI_NUMBER_WORDS:
+            val = float(DEVANAGARI_NUMBER_WORDS[token])
             return -val if is_negative else val
 
     return None

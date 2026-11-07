@@ -116,8 +116,19 @@ def test_hindi_spoken_number_word_parsing():
     assert parse_hindi_number("अस्सी") == 80.0
     assert parse_hindi_number("अट्ठाइस") == 28.0
     assert parse_hindi_number("चालीस") == 40.0
+    assert parse_hindi_number("पैंतीस") == 35.0
     assert parse_hindi_number("१८") == 18.0
     assert parse_hindi_number("८०") == 80.0
+
+    # CRITICAL ADVERSARIAL CASES (Ensures substring misfires do not invent values):
+    assert parse_hindi_number("nahi theek nahi hai") is None  # Must NOT match "ek" in "theek"
+    assert parse_hindi_number("doori toll se aage") is None    # Must NOT match "do" in "doori"
+    assert parse_hindi_number("haan theek hai") is None        # Must NOT match "ek" in "theek"
+
+    # Classify reply regression: "nahi theek nahi hai" is a flat REJECT, NOT a correction to 1.0C
+    reply_reject = classify_driver_reply("nahi theek nahi hai")
+    assert reply_reject.intent == "REJECT"
+    assert reply_reject.corrected_temperature_c is None
 
     reply = classify_driver_reply("Nahi bhaiya atharah degree hai")
     assert reply.intent == "CORRECT"
@@ -155,13 +166,16 @@ def test_adaptive_rules_do_not_silently_rewrite_temperatures():
 
 
 # -------------------------------------------------------------
-# 5. Telematics Plausibility Policy Test
+# 5. Telematics Plausibility Policy Test & Non-Bypass
 # -------------------------------------------------------------
 def test_telematics_plausibility_forces_firm_confirmation():
     """
     If reported temperature wildly diverges from vehicle cargo target in fleet.sqlite
-    (e.g. reporting 25C when target is -20C for Ice Cream), simple 'haan' is rejected
-    with forced confirmation prompt requiring 'haan pakka'.
+    (e.g. reporting 25C when target is -20C for Ice Cream):
+    1. A reflex 'haan' is challenged.
+    2. A reflex 'haan bilkul sahi hai' does NOT bypass the check.
+    3. The flag does NOT reset after the first reply.
+    4. Only repeating the number or stating 'confirm' unlocks dispatch.
     """
     # HR-55-TC-1102 has target_temp_c = -20C (Ice Cream)
     ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
@@ -174,17 +188,59 @@ def test_telematics_plausibility_forces_firm_confirmation():
     )
     ctrl.process_extraction(rec)
     assert ctrl.state == DialogueState.CONFIRMING
+    assert ctrl.requires_forced_confirmation is True
 
-    # Divergence is |25 - (-20)| = 45C (>25C threshold)
-    # Simple 'haan' reflexively spoken by driver is challenged
+    # Attempt 1: Simple 'haan' reflexively spoken by driver is challenged
     state_retry, prompt_retry = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="haan"))
-    assert state_retry == DialogueState.CONFIRMING  # Did NOT dispatch yet!
-    assert "pakka" in prompt_retry.lower()
+    assert state_retry == DialogueState.CONFIRMING
+    assert ctrl.requires_forced_confirmation is True  # Flag MUST NOT reset!
+    assert "repeat" in prompt_retry.lower()
 
-    # Firm confirmation unlocks dispatch
-    state_final, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="haan pakka 25 degree hai"))
+    # Attempt 2: Reflexive 'haan bilkul sahi hai' (mimicking read-back phrase) still DOES NOT bypass!
+    state_retry2, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="haan bilkul sahi hai"))
+    assert state_retry2 == DialogueState.CONFIRMING
+    assert ctrl.requires_forced_confirmation is True
+
+    # Attempt 3: Distinct action: driver repeats number with confirm
+    state_final, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="25 degree confirm"))
     assert state_final == DialogueState.DONE
+    assert ctrl.requires_forced_confirmation is False
     assert ctrl.last_action_result is not None
+
+
+# -------------------------------------------------------------
+# 6. Correction Path Bounds Enforcement
+# -------------------------------------------------------------
+def test_correction_path_enforces_bounds():
+    """If driver speaks an impossible correction (e.g. 99C or -55C), it must NOT overwrite temperature."""
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.receive_driver_utterance("Reefer 18 degree")
+    ctrl.process_extraction(ExtractionRecord(
+        incident_type=IncidentType.REEFER_TEMPERATURE,
+        temperature_c=18.0,
+        location_text="Toll Plaza",
+        distance_km=42.0
+    ))
+
+    # Driver says an impossible correction: "Nahi 99 degree"
+    state_corr, _ = ctrl.handle_confirmation_reply(DriverReply(intent="CORRECT", corrected_temperature_c=99.0))
+    assert state_corr == DialogueState.CONFIRMING
+    assert ctrl.current_record.temperature_c is None
+    assert ctrl.current_record.anomalous_reading == 99.0
+
+
+# -------------------------------------------------------------
+# 7. Novel Landmark Extraction (Unseen Test Sentences)
+# -------------------------------------------------------------
+def test_novel_landmark_extraction():
+    """Test extractor on novel road phrases and places not in the training corpus."""
+    r1 = extract_incident_details("Sir engine band ho gaya hai Karnal bypass pe")
+    assert r1.location_text == "Bypass" or "Karnal" in str(r1.location_text)
+    assert r1.incident_type == IncidentType.BREAKDOWN
+
+    r2 = extract_incident_details("Bhaiya temperature 15 degree Mathura Highway pe")
+    assert r2.temperature_c == 15.0
+    assert r2.location_text == "Highway" or "Mathura" in str(r2.location_text)
 
 
 # -------------------------------------------------------------

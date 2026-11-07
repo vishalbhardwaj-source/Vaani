@@ -25,12 +25,13 @@ Our empirical benchmark evaluates **100 audio clips** across 4 acoustic conditio
 - **Telephony + 10 dB SNR:** 8 kHz telephony mixed with Indian truck diesel engine and tyre noise at 10 dB Signal-to-Noise Ratio.
 - **Telephony + 5 dB SNR:** 8 kHz telephony mixed with severe cabin rumble and horn reflections at 5 dB SNR.
 
-### Official Scorecard (Benchmark Evaluation: 25 Utterances x 4 Channels = 100 Clips)
+### Official Scorecard Track 1: Acoustic Noise Simulation (Calibrated SNR Confusion Traps)
 
 > **Evaluation Protocol & Transparency Note:**  
 > The scorecard below was generated directly by `benchmark/score.py` using `benchmark/results/raw_benchmark_results.csv`.
 > Audio was synthesized using `gTTS` and mixed with calibrated synthetic Indian truck diesel engine and cabin noise (Acoustic Simulation Track).
-> The benchmark models a non-circular human driver factor: in loud cabin noise, drivers have an assumed reflexive error probability ($0\%$ in clean up to $12\%$ in severe noise).
+> In this track, specific phonetic confusion traps (18↔80, 14↔40, negative polarity loss) are stress-tested to measure the state machine's interception capability.
+> Driver replies model human factors: in loud cabin noise, drivers have an assumed reflexive error probability ($0\%$ in clean up to $12\%$ in severe noise).
 
 | Acoustic Condition | N | Source Engine | WER (%) | Raw Slot Acc (%) | Total Errors | Errors Caught by Read-Back | Silent Failures | Final Dispatch Accuracy (%) |
 | :--- | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -41,9 +42,25 @@ Our empirical benchmark evaluates **100 audio clips** across 4 acoustic conditio
 
 ---
 
-### Parametric Driver Attention Sensitivity Sweep (0% to 20% Reflexive Error Rate)
+### Official Scorecard Track 2: Empirical Model Evaluation (Held-Out Test Set N = 7 Utterances, 28 Clips)
 
-To address the reality that human driver attention under highway fatigue is a variable parameter rather than a single fixed constant, `benchmark/score.py` executes a parametric sweep across assumed driver mishearing/reflexive agreement rates:
+To measure actual acoustic generalization without data leakage, `core/train_asr.py`, `core/train_denoiser.py`, and `core/train_nlu.py` quarantine 7 held-out utterances (`utt_03, utt_07, utt_11, utt_15, utt_19, utt_22, utt_25`). 
+The table below reports real Word Error Rate (WER) measured by `benchmark/evaluate_trained_models.py` using the trained neural denoiser and Whisper-LoRA model (saved in `benchmark/results/model_evaluation_metrics.csv`):
+
+| Condition | In-Domain (N=18) Raw WER | In-Domain Denoised WER | Held-Out (N=7) Raw WER | Held-Out Denoised WER |
+| :--- | :---: | :---: | :---: | :---: |
+| **Clean (16 kHz)** | 106.3% | 97.1% | 133.7% | 107.4% |
+| **Telephony 8 kHz** | 98.6% | 94.5% | 105.3% | **96.8%** |
+| **Telephony + 10 dB SNR** | 106.6% | 119.5% | **95.8%** | 103.2% |
+| **Telephony + 5 dB SNR** | 112.1% | 121.8% | 102.1% | 103.2% |
+
+*Note: Baseline `openai/whisper-tiny` without domain fine-tuning exhibits high initial Hinglish WER on telephonic bandpass audio; front-end denoising consistently improves transcription fidelity on 8 kHz telephony.*
+
+---
+
+### Illustrative Driver Attention Sensitivity Sweep (0% to 20% Reflexive Error Rate)
+
+> **Methodological Note:** The table below is an illustrative parametric sensitivity sweep ($E_{\text{silent}} = \text{Errors} \times \text{Assumed Rate}$), demonstrating the mathematical boundary conditions of read-back confirmation under varying driver fatigue and distractibility, rather than a physical measurement of driver psychology.
 
 | Assumed Driver Error Rate | Clean (16 kHz) Dispatch Acc | Telephony 8 kHz Dispatch Acc | 10 dB SNR Dispatch Acc | 5 dB SNR Dispatch Acc |
 | :---: | :---: | :---: | :---: | :---: |
@@ -81,7 +98,7 @@ Vaani supports both **Cloud STT (Gnani Prisma)** and **On-Device Local GPU STT (
                   ▼
 ┌────────────────────────────────────────┐
 │ DUAL ASR ENGINE:                       │
-│ - Fine-Tuned Whisper-LoRA (Local GPU)  │ (0.86% WER @ 5 dB SNR, sub-second latency)
+│ - Fine-Tuned Whisper-LoRA (Local GPU)  │ (Evaluated on held-out N=7 unseen clips; sub-second latency)
 │ - OR Gnani Prisma v3.0 (Cloud API)     │
 └─────────────────┬──────────────────────┘
                   │ Spoken Transcript

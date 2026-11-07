@@ -21,7 +21,8 @@ def test_core_safety_guarantee_dispatch_cannot_run_without_confirmation():
     The language model or controller cannot trigger dispatch tools unless
     explicitly in the ACTING state reached via driver confirmation.
     """
-    controller = DialogueController(vehicle_id="HR-55-TC-1102")
+    # DL-01-AA-4092 has target_temp_c = 4.0C (Chiller), so 18C and 28C are within normal plausibility threshold (<= 25C delta)
+    controller = DialogueController(vehicle_id="DL-01-AA-4092")
     
     # 1. Test from LISTENING
     assert controller.state == DialogueState.LISTENING
@@ -51,7 +52,8 @@ def test_core_safety_guarantee_dispatch_cannot_run_without_confirmation():
 
 def test_happy_path_confirmation_to_dispatch():
     """Verify full successful pipeline: LISTENING -> EXTRACTING -> CONFIRMING -> ACTING -> DONE."""
-    controller = DialogueController(vehicle_id="HR-55-TC-1102")
+    # DL-01-AA-4092 has target_temp_c = 4.0C (Chiller), so 18C is within normal plausibility threshold (<= 25C delta)
+    controller = DialogueController(vehicle_id="DL-01-AA-4092")
     
     # Driver reports
     state, msg = controller.receive_driver_utterance("Reefer temperature 18 degree toll plaza se 42 km aage")
@@ -87,7 +89,8 @@ def test_readback_catches_misheard_number_and_corrects():
     Driver rejects and corrects to 18.
     Vaani verifies corrected 18 before dispatching.
     """
-    controller = DialogueController(vehicle_id="HR-55-TC-1102")
+    # DL-01-AA-4092 has target_temp_c = 4.0C (Chiller), so 18C and 28C are within normal plausibility threshold (<= 25C delta)
+    controller = DialogueController(vehicle_id="DL-01-AA-4092")
     controller.receive_driver_utterance("Bhaiya reefer 18 degree...")
 
     # Misread extraction (28 instead of 18)
@@ -156,7 +159,8 @@ def test_continuous_learning_records_driver_correction():
     """Verify that driver corrections are persisted into the continuous learning memory store."""
     from core.learning import get_learned_corrections, get_adaptive_rules
 
-    controller = DialogueController(vehicle_id="HR-55-TC-1102")
+    # DL-01-AA-4092 has target_temp_c = 4.0C (Chiller), so 18C and 28C are within normal plausibility threshold (<= 25C delta)
+    controller = DialogueController(vehicle_id="DL-01-AA-4092")
     controller.receive_driver_utterance("Reefer 18 degree toll plaza")
 
     # Erroneous extraction (e.g. 28 instead of 18)

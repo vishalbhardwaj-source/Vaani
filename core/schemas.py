@@ -6,7 +6,7 @@ Ensures strict validation before any action tool can be executed.
 
 from enum import Enum
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 class IncidentType(str, Enum):
@@ -37,6 +37,8 @@ class DialogueState(str, Enum):
 
 class ExtractionRecord(BaseModel):
     """Structured extraction from driver utterance."""
+    model_config = ConfigDict(validate_assignment=True)
+
     incident_type: IncidentType = Field(
         default=IncidentType.UNKNOWN,
         description="Type of incident reported by the driver"

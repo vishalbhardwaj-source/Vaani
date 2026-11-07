@@ -1,0 +1,5 @@
+Condition,Total N,Held-Out N,Overall Raw WER (%),Overall Denoised WER (%),Held-Out Raw WER (%),Held-Out Denoised WER (%)
+clean,25,7,106.32,97.13,133.68,107.37
+telephony_8khz,25,7,98.56,94.54,105.26,96.84
+telephony_10db,25,7,106.61,119.54,95.79,103.16
+telephony_5db,25,7,112.07,121.84,102.11,103.16
