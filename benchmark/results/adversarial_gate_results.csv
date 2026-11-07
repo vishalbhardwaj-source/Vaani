@@ -1,0 +1,11 @@
+Scenario ID,Vehicle ID,Cargo Target (°C),Reported Temp (°C),Target Divergence (°C),Gate Challenged,Reflexive Reply (haan) Blocked,Action Executed on Reflexive,Verified Repeat Permitted,Final State Verified
+adv_01,HR-55-TC-1102,-22.0,12.0,34.0,True,True,False,True,DONE
+adv_02,HR-55-TC-1102,-22.0,18.0,40.0,True,True,False,True,DONE
+adv_03,HR-55-TC-1102,-22.0,25.0,47.0,True,True,False,True,DONE
+adv_04,HR-55-TC-1102,-22.0,35.0,57.0,True,True,False,True,DONE
+adv_05,DL-01-AA-4092,4.0,-24.0,28.0,True,True,False,True,DONE
+adv_06,DL-01-AA-4092,4.0,32.0,28.0,True,True,False,True,DONE
+adv_07,DL-01-AA-4092,4.0,40.0,36.0,True,True,False,True,DONE
+adv_08,GJ-01-BX-7201,6.0,-22.0,28.0,True,True,False,True,DONE
+adv_09,GJ-01-BX-7201,6.0,35.0,29.0,True,True,False,True,DONE
+adv_10,GJ-01-BX-7201,6.0,42.0,36.0,True,True,False,True,DONE

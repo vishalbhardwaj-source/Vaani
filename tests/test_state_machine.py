@@ -4,6 +4,8 @@ Verifies the core safety guarantee: Dispatch actions CAN NEVER run without expli
 """
 
 import pytest
+from pathlib import Path
+import pandas as pd
 from pydantic import ValidationError
 from core.schemas import DialogueState, ExtractionRecord, DriverReply, IncidentType
 from core.state_machine import DialogueController
@@ -69,7 +71,7 @@ def test_happy_path_confirmation_to_dispatch():
     state, prompt = controller.process_extraction(rec)
     assert state == DialogueState.CONFIRMING
     assert "18 degree" in prompt
-    assert "42 km" in prompt
+    assert "42 (4, 2) km" in prompt
 
     # Driver confirms: "Haan sahi hai"
     reply = DriverReply(intent="CONFIRM", raw_text="haan sahi hai")
@@ -256,3 +258,42 @@ def test_committed_benchmark_results_consistency_with_controller():
     for _, row in blocked_rows.iterrows():
         assert row["action_executed"] == False, f"Row {row['utt_id']} had action_executed=True despite gate block!"
         assert row["final_state"] != "DONE", f"Row {row['utt_id']} reached DONE despite gate block!"
+
+
+def test_readme_tables_match_committed_csvs():
+    """Guardrail test ensuring README.md tables match committed benchmark CSVs exactly."""
+    project_root = Path(__file__).resolve().parent.parent
+    readme_path = project_root / "README.md"
+    summary_csv_path = project_root / "benchmark" / "results" / "summary_metrics.csv"
+    adv_csv_path = project_root / "benchmark" / "results" / "adversarial_gate_results.csv"
+    e2e_csv_path = project_root / "benchmark" / "results" / "held_out_e2e_slot_metrics.csv"
+
+    assert readme_path.exists(), "README.md does not exist!"
+    assert summary_csv_path.exists(), "summary_metrics.csv does not exist!"
+    assert adv_csv_path.exists(), "adversarial_gate_results.csv does not exist!"
+    assert e2e_csv_path.exists(), "held_out_e2e_slot_metrics.csv does not exist!"
+
+    with open(readme_path, "r", encoding="utf-8") as f:
+        readme_text = f.read()
+
+    # Verify Track 1 summary metrics are present in README.md
+    df_sum = pd.read_csv(summary_csv_path)
+    for _, row in df_sum.iterrows():
+        cond = str(row["Condition"])
+        assert cond in readme_text, f"Condition {cond} from summary_metrics.csv missing in README!"
+        raw_acc = str(row["Raw Slot Acc (%)"])
+        assert raw_acc in readme_text, f"Raw Slot Acc {raw_acc} for {cond} missing in README!"
+
+    # Verify Adversarial Gate results are present in README.md
+    df_adv = pd.read_csv(adv_csv_path)
+    for _, row in df_adv.iterrows():
+        scen = str(row["Scenario ID"])
+        assert scen in readme_text, f"Scenario {scen} from adversarial_gate_results.csv missing in README!"
+
+    # Verify End-to-End Held-Out Slot metrics are present in README.md
+    df_e2e = pd.read_csv(e2e_csv_path)
+    for _, row in df_e2e.iterrows():
+        cond = str(row["Condition"])
+        e2e_acc = str(row["End-to-End Slot Accuracy"])
+        assert e2e_acc in readme_text, f"E2E Slot Acc {e2e_acc} for {cond} missing in README!"
+

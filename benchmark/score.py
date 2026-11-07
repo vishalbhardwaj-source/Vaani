@@ -87,10 +87,9 @@ def compute_metrics() -> pd.DataFrame:
         summary_rows.append({
             "Condition": cond,
             "Sample Size (N)": n_samples,
-            "Source Engine": source_label,
-            "WER (%)": round(wer_val, 2),
             "Raw Slot Acc (%)": round(slot_acc_raw, 2),
-            "Total Errors": total_errors,
+            "Raw Slot Error Rate (%)": round(100.0 - slot_acc_raw, 2),
+            "Total ASR Errors": total_errors,
             "Driver Corrected Errors": driver_corrected,
             "Gate Blocked Anomalies (Safe)": telematics_blocked,
             "Silent Failures": f"{silent_fails} ({round(silent_fail_pct, 1)}%)",

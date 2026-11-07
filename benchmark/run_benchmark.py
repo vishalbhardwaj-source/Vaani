@@ -298,6 +298,10 @@ def run_all():
     from benchmark.score import compute_metrics
     compute_metrics()
 
+    # Run Adversarial Gate Benchmark
+    from benchmark.run_adversarial_gate import run_adversarial_benchmark
+    run_adversarial_benchmark()
+
 
 if __name__ == "__main__":
     run_all()

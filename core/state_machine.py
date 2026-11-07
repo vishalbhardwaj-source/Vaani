@@ -183,7 +183,9 @@ class DialogueController:
 
         if record.location_text:
             if record.distance_km is not None:
-                parts.append(f"{record.location_text} se {int(record.distance_km) if record.distance_km.is_integer() else record.distance_km} km aage")
+                dist_num = int(record.distance_km) if record.distance_km.is_integer() else record.distance_km
+                dist_digits = ", ".join(list(str(abs(int(dist_num)))))
+                parts.append(f"{record.location_text} se {dist_num} ({dist_digits}) km aage")
             else:
                 parts.append(f"{record.location_text} ke paas")
 
