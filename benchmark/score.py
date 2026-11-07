@@ -66,23 +66,16 @@ def compute_metrics() -> pd.DataFrame:
         caught_pct = (errors_caught / total_errors * 100.0) if total_errors > 0 else 100.0
 
         # 4. Error Disposition (Mutually exclusive: Total Errors = Driver Corrected + Gate Blocked + Silent Failures)
+        telematics_challenged = int(sub["telematics_challenged"].sum()) if "telematics_challenged" in sub.columns else 0
         telematics_blocked = int(sub["telematics_blocked"].sum()) if "telematics_blocked" in sub.columns else 0
         driver_corrected = int(sub[sub["has_extraction_error"]]["driver_corrected"].sum()) if "driver_corrected" in sub.columns else (errors_caught - telematics_blocked)
         silent_fails = int(sub["silent_failure"].sum())
         silent_fail_pct = (silent_fails / n_samples) * 100.0
 
         # 5. Final Dispatch Outcomes across all N clips:
-        # Successful Dispatches: executed with accurate or corrected data (action_executed == True & silent_failure == False)
-        # Blocked Anomalies: safe, but dispatch withheld to prevent damage (action_executed == False)
-        # Silent Failures: corrupted dispatch executed due to uncaught error
-        # Note: Successful Dispatches + Blocked Anomalies + Silent Failures == N (Total Clips)
         successful_dispatches = int(sub[(sub["action_executed"] == True) & (sub["silent_failure"] == False)].shape[0])
         successful_dispatch_pct = (successful_dispatches / n_samples) * 100.0
         blocked_pct = (telematics_blocked / n_samples) * 100.0
-
-        # Engine source primary
-        sources = sub["source"].unique() if "source" in sub.columns else ["Simulation"]
-        source_label = sources[0] if len(sources) == 1 else "Mixed"
 
         summary_rows.append({
             "Condition": cond,
@@ -91,7 +84,8 @@ def compute_metrics() -> pd.DataFrame:
             "Raw Slot Error Rate (%)": round(100.0 - slot_acc_raw, 2),
             "Total ASR Errors": total_errors,
             "Driver Corrected Errors": driver_corrected,
-            "Gate Blocked Anomalies (Safe)": telematics_blocked,
+            "Gate Challenged Anomalies": telematics_challenged,
+            "Gate Blocked Reflexive Confirms": telematics_blocked,
             "Silent Failures": f"{silent_fails} ({round(silent_fail_pct, 1)}%)",
             "Successful Dispatches (%)": f"{successful_dispatches} of {n_samples} ({round(successful_dispatch_pct, 1)}%)",
             "Blocked Dispatch Withheld (%)": f"{telematics_blocked} of {n_samples} ({round(blocked_pct, 1)}%)",

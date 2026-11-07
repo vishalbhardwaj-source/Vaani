@@ -231,11 +231,11 @@ def test_correction_path_enforces_bounds():
     4. Dispatch is completely blocked while in ASKING.
     5. Valid clarification reply restores actionability.
     """
-    ctrl = DialogueController(vehicle_id="DL-01-AA-4092")
-    ctrl.receive_driver_utterance("Reefer 18 degree")
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.receive_driver_utterance("Reefer minus 18 degree")
     ctrl.process_extraction(ExtractionRecord(
         incident_type=IncidentType.REEFER_TEMPERATURE,
-        temperature_c=18.0,
+        temperature_c=-18.0,
         location_text="Toll Plaza",
         distance_km=42.0
     ))

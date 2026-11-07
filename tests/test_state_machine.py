@@ -54,8 +54,8 @@ def test_core_safety_guarantee_dispatch_cannot_run_without_confirmation():
 
 def test_happy_path_confirmation_to_dispatch():
     """Verify full successful pipeline: LISTENING -> EXTRACTING -> CONFIRMING -> ACTING -> DONE."""
-    # DL-01-AA-4092 has target_temp_c = 4.0C (Chiller), so 18C is within normal plausibility threshold (<= 25C delta)
-    controller = DialogueController(vehicle_id="DL-01-AA-4092")
+    # GJ-01-BX-7201 has target_temp_c = 6.0C (Produce tolerance ±15C), so 18C is within normal plausibility threshold (<= 15C delta)
+    controller = DialogueController(vehicle_id="GJ-01-BX-7201")
     
     # Driver reports
     state, msg = controller.receive_driver_utterance("Reefer temperature 18 degree toll plaza se 42 km aage")
@@ -91,8 +91,9 @@ def test_readback_catches_misheard_number_and_corrects():
     Driver rejects and corrects to 18.
     Vaani verifies corrected 18 before dispatching.
     """
-    # DL-01-AA-4092 has target_temp_c = 4.0C (Chiller), so 18C and 28C are within normal plausibility threshold (<= 25C delta)
-    controller = DialogueController(vehicle_id="DL-01-AA-4092")
+    # GJ-01-BX-7201 has target_temp_c = 6.0C (Produce tolerance ±15C):
+    # 28C diverges by 22C (> 15C) and is challenged, while corrected 18C (delta 12C <= 15C) is safe.
+    controller = DialogueController(vehicle_id="GJ-01-BX-7201")
     controller.receive_driver_utterance("Bhaiya reefer 18 degree...")
 
     # Misread extraction (28 instead of 18)
@@ -158,11 +159,11 @@ def test_retry_threshold_escalates_to_human_dispatcher():
 
 
 def test_continuous_learning_records_driver_correction():
-    """Verify that driver corrections are persisted into the continuous learning memory store."""
+    """Verify that driver corrections are persisted into the offline audit memory store."""
     from core.learning import get_learned_corrections, get_adaptive_rules
 
-    # DL-01-AA-4092 has target_temp_c = 4.0C (Chiller), so 18C and 28C are within normal plausibility threshold (<= 25C delta)
-    controller = DialogueController(vehicle_id="DL-01-AA-4092")
+    # GJ-01-BX-7201 has target_temp_c = 6.0C (Produce tolerance ±15C)
+    controller = DialogueController(vehicle_id="GJ-01-BX-7201")
     controller.receive_driver_utterance("Reefer 18 degree toll plaza")
 
     # Erroneous extraction (e.g. 28 instead of 18)
@@ -186,11 +187,11 @@ def test_continuous_learning_records_driver_correction():
     assert len(corrections) > 0
     assert any("18" in str(c["corrected_slots"]) for c in corrections)
     
-    # Check adaptive rules updated
+    # Check offline patterns loaded
     rules = get_adaptive_rules()
     assert len(rules) > 0
     pattern_names = [r["pattern"] for r in rules]
-    assert any("18 vs 28" in p or "18 vs 80" in p for p in pattern_names)
+    assert any("18 vs 80" in p or "14 vs 40" in p for p in pattern_names)
 
 
 def test_pydantic_schema_validation():
@@ -296,4 +297,109 @@ def test_readme_tables_match_committed_csvs():
         cond = str(row["Condition"])
         e2e_acc = str(row["End-to-End Slot Accuracy"])
         assert e2e_acc in readme_text, f"E2E Slot Acc {e2e_acc} for {cond} missing in README!"
+
+
+def test_evaluate_confirmation_gate_exhaustive():
+    """
+    Exhaustive tests for the pure evaluate_confirmation_gate function:
+    1. Exact divergence boundaries: under, exact, and above cargo tolerance.
+    2. Per-cargo class thresholds (Vaccine ±4°C, Dairy ±8°C, Ice Cream ±12°C).
+    3. Reflexive confirmation ('haan', 'sahi hai', bare 'confirm') blocked when challenged.
+    4. Verified number repeats ('X degree confirm', spoken minus forms) allowed.
+    5. Known residual risk: driver explicitly repeats and confirms divergent value -> allowed with residual risk flag.
+    """
+    from core.state_machine import evaluate_confirmation_gate
+    from core.schemas import GateDecision, VehicleRecord
+
+    # Mock telemetry for Vaccine vehicle (Target -20°C, Tolerance ±4°C)
+    veh_vaccine = VehicleRecord(
+        vehicle_id="MH-12-RN-8819", driver_name="Sukhwinder", driver_phone="+91-9811223344",
+        vehicle_type="Reefer 24ft", cargo_type="Vaccine Cold-Chain",
+        target_temp_c=-20.0, current_temp_c=-18.0, route="Pune to Mumbai",
+        last_known_location="Mumbai-Pune Expressway km 68", status="IN_TRANSIT"
+    )
+
+    # 1. Vaccine Safe: -18°C (delta 2°C <= 4°C tolerance) -> ALLOW on standard 'haan'
+    rec_v1 = ExtractionRecord(temperature_c=-18.0, location_text="Pune Highway")
+    res_v1 = evaluate_confirmation_gate(rec_v1, DriverReply(intent="CONFIRM", raw_text="haan sahi hai"), veh_vaccine)
+    assert res_v1.decision == GateDecision.ALLOW
+    assert res_v1.residual_risk_flag is False
+
+    # 2. Vaccine Breach: -14°C (delta 6°C > 4°C tolerance) -> CHALLENGE on reflexive 'haan'
+    rec_v2 = ExtractionRecord(temperature_c=-14.0, location_text="Pune Highway")
+    res_v2 = evaluate_confirmation_gate(rec_v2, DriverReply(intent="CONFIRM", raw_text="haan bhaiya"), veh_vaccine)
+    assert res_v2.decision == GateDecision.CHALLENGE
+    assert "Telematics target" in str(res_v2.challenge_prompt)
+
+    # 3. Vaccine Breach with Spoken Minus Repeat -> ALLOW
+    res_v3 = evaluate_confirmation_gate(rec_v2, DriverReply(intent="CONFIRM", raw_text="minus 14 degree confirm"), veh_vaccine)
+    assert res_v3.decision == GateDecision.ALLOW
+    assert res_v3.residual_risk_flag is True
+
+    # 4. Boundary cases on Ice Cream vehicle (Target -22°C, Tolerance ±12°C)
+    veh_icecream = VehicleRecord(
+        vehicle_id="HR-55-TC-1102", driver_name="Ramesh", driver_phone="+91-9876543210",
+        vehicle_type="Reefer 32ft", cargo_type="Ice Cream Consignment",
+        target_temp_c=-22.0, current_temp_c=-14.0, route="Karnal to Delhi",
+        last_known_location="NH-44 Toll Plaza km 42", status="IN_TRANSIT"
+    )
+
+    # Under boundary: -12°C (delta 10°C < 12°C) -> ALLOW
+    res_b_under = evaluate_confirmation_gate(ExtractionRecord(temperature_c=-12.0), DriverReply(intent="CONFIRM", raw_text="haan"), veh_icecream)
+    assert res_b_under.decision == GateDecision.ALLOW
+
+    # Exact boundary: -10°C (delta 12°C == 12°C) -> ALLOW
+    res_b_exact = evaluate_confirmation_gate(ExtractionRecord(temperature_c=-10.0), DriverReply(intent="CONFIRM", raw_text="haan"), veh_icecream)
+    assert res_b_exact.decision == GateDecision.ALLOW
+
+    # Above boundary: -8°C (delta 14°C > 12°C) -> CHALLENGE
+    res_b_above = evaluate_confirmation_gate(ExtractionRecord(temperature_c=-8.0), DriverReply(intent="CONFIRM", raw_text="haan"), veh_icecream)
+    assert res_b_above.decision == GateDecision.CHALLENGE
+
+    # 5. Known Residual Risk: Driver mishears and repeats the wrong number
+    # Dairy truck (+4°C), reported 40°C, driver explicitly repeats "40 degree confirm"
+    veh_dairy = VehicleRecord(
+        vehicle_id="DL-01-AA-4092", driver_name="Abdul", driver_phone="+91-9899001122",
+        vehicle_type="Reefer 20ft", cargo_type="Dairy & Milk Products",
+        target_temp_c=4.0, current_temp_c=9.0, route="Jaipur to Delhi",
+        last_known_location="NH-48 Bilaspur Chowk", status="IN_TRANSIT"
+    )
+    rec_risk = ExtractionRecord(temperature_c=40.0, location_text="Bilaspur Chowk")
+    res_risk = evaluate_confirmation_gate(rec_risk, DriverReply(intent="CONFIRM", raw_text="haan 40 degree confirm"), veh_dairy)
+    assert res_risk.decision == GateDecision.ALLOW
+    assert res_risk.residual_risk_flag is True  # Audit flag actively records driver override of telematics breach!
+
+
+def test_unknown_vehicle_id_fails_loudly_and_asks():
+    """Verify that an unknown vehicle registration fails loudly and routes to ASKING for identity."""
+    controller = DialogueController(vehicle_id="UNKNOWN-REG-9999")
+    assert controller.is_unverified_vehicle is True
+
+    # Driver reports
+    controller.receive_driver_utterance("Temperature 18 degree")
+    state, prompt = controller.process_extraction(ExtractionRecord(temperature_c=18.0, location_text="Panipat"))
+
+    # Must transition to ASKING for vehicle confirmation, never guessing or falling back silently!
+    assert state == DialogueState.ASKING
+    assert "registration number confirm karein" in prompt.lower()
+    assert controller.last_action_result is None
+
+
+def test_generic_location_fragments_rejected_and_anchored_to_gps():
+    """Verify that generic location words ('toll', 'highway') are not accepted as dispatch locations alone."""
+    from gnani.client import extract_incident_details
+
+    # Generic utterance without a named city or landmark
+    rec = extract_incident_details("Bhaiya reefer 18 degree ho gaya hai toll ke paas")
+    assert rec.location_text is None  # Bare generic 'toll' is REJECTED by extractor
+
+    # Fed into DialogueController with valid vehicle having GPS telematics
+    controller = DialogueController(vehicle_id="HR-55-TC-1102")
+    controller.receive_driver_utterance("Bhaiya reefer 18 degree ho gaya hai toll ke paas")
+    state, prompt = controller.process_extraction(rec)
+
+    # State machine anchors to vehicle's telematics GPS
+    assert state == DialogueState.CONFIRMING
+    assert "GPS location NH-44 Toll Plaza km 42" in prompt
+
 

@@ -250,13 +250,11 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
         "confidence": 0.95
     }
 
-    # Dynamic continuous learning few-shot prompt
-    few_shot_context = get_few_shot_prompt_context(transcript)
-    prompt_with_learning = (
+    # Dynamic extraction prompt (safe, deterministic: no unreviewed runtime rewrites)
+    extraction_prompt = (
         f"You are an expert AI logistics dispatcher handling noisy Indian highway speech in Hinglish.\n"
         f"Extract JSON from this driver report:\n"
         f"'{transcript}'\n\n"
-        f"{few_shot_context}\n\n"
         f"Output strictly valid JSON with fields: incident_type (reefer_temperature, breakdown, delay, unknown), "
         f"temperature_c (number or null), location_text (string or null), distance_km (number or null)."
     )
@@ -267,7 +265,7 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
             payload = {
-                "contents": [{"parts": [{"text": prompt_with_learning}]}],
+                "contents": [{"parts": [{"text": extraction_prompt}]}],
                 "generationConfig": {"responseMimeType": "application/json", "temperature": 0.0}
             }
             with httpx.Client(timeout=10.0) as client:
@@ -288,7 +286,7 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
     if GNANI_API_KEY and GNANI_API_KEY != "your_gnani_api_key_here":
         try:
             headers = {"Authorization": f"Bearer {GNANI_API_KEY}", "Content-Type": "application/json"}
-            payload = {"model": "evon-v3.3", "messages": [{"role": "user", "content": prompt_with_learning}], "temperature": 0.0}
+            payload = {"model": "evon-v3.3", "messages": [{"role": "user", "content": extraction_prompt}], "temperature": 0.0}
             with httpx.Client(timeout=10.0) as client:
                 res = client.post(GNANI_EVON_URL, headers=headers, json=payload)
                 if res.status_code == 200:
@@ -399,33 +397,64 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
             pass
 
     # 4. Location Landmark Extraction
-    # Sorted by descending length to match compound landmarks first (e.g. "Mumbai Pune Expressway" before "Expressway")
+    # Matches against a comprehensive Indian highway corridor gazetteer.
+    # Excludes standalone generic fragments ("toll", "highway", "flyover", "chowk", "bypass")
+    # so vague phrases like "toll ke paas" never dispatch without specific named landmarks.
+    import difflib
+
     known_landmarks = [
-        "mumbai pune expressway", "mumbai-pune expressway", "mathura toll plaza",
-        "bawal industrial area", "vadodara bypass", "bilaspur chowk",
+        "mumbai pune expressway", "mumbai-pune expressway", "agra expressway",
+        "kmp expressway", "jaipur highway", "delhi jaipur highway", "delhi meerut expressway",
+        "yamuna expressway", "western peripheral expressway", "eastern peripheral expressway",
+        "nh 44 milepost 94", "nh 44", "nh 48", "nh 8", "gt road",
+        "mathura toll plaza", "panipat toll", "karnal toll", "gurugram toll",
+        "kherki daula toll", "shahjahanpur toll", "ladowal toll",
+        "bawal industrial area", "manesar imt", "bhiwadi industrial area",
+        "vadodara bypass", "rewari bypass", "panipat bypass", "karnal bypass", "ambala bypass",
+        "bilaspur chowk", "iffco chowk", "rajiv chowk", "hero honda chowk",
+        "dharuhera flyover", "karnal flyover", "manesar chauraha",
         "murthal dhaba", "shambhu border", "ghaziabad border", "kundli border",
-        "jaipur highway", "rewari bypass", "panipat toll", "karnal toll",
-        "gurugram toll", "agra expressway", "kmp expressway", "ambala cantt",
-        "nh 44 milepost 94", "dharuhera flyover", "dharuhera", "neemrana",
-        "shahbad", "sonipat", "manesar", "panipat", "bawal", "toll plaza",
-        "expressway", "highway", "bypass", "flyover", "chowk", "toll"
+        "singhu border", "badarpur border", "kapashera border",
+        "ambala cantt", "dharuhera", "neemrana", "shahbad", "sonipat", "manesar",
+        "panipat", "bawal", "rewari", "karnal", "murthal", "kurukshetra",
+        "ambala", "mathura", "agra", "vadodara", "surat", "bharuch", "vapi",
+        "ahmedabad", "pune", "mumbai", "thane", "navi mumbai", "hosur", "bengaluru",
+        "bangalore", "chennai", "hyderabad", "nagpur", "bhopal", "indore",
+        "jaipur", "ajmer", "delhi", "gurugram", "gurgaon", "noida", "ghaziabad", "faridabad"
     ]
-    # Sort strictly by descending length
+    # Sort strictly by descending length to match compound names first
     known_landmarks.sort(key=len, reverse=True)
 
+    matched_location = None
     for lm in known_landmarks:
         if lm in lower:
-            # Canonicalize names
             title_case = lm.title()
             if "Mumbai" in title_case:
                 title_case = "Mumbai Pune Expressway"
-            record_dict["location_text"] = title_case
+            matched_location = title_case
             break
 
-    # If no landmark is found, do NOT fabricate defaults like "NH Highway Milepost"!
-    # Leave as None so state machine triggers ASKING state.
-    if not record_dict["location_text"]:
-        record_dict["location_text"] = None
+    # Fuzzy matching fallback across token sequences if no exact substring matched
+    if not matched_location:
+        tokens = lower.split()
+        best_score = 0.0
+        best_match = None
+        for span_len in (3, 2, 1):
+            for i in range(len(tokens) - span_len + 1):
+                candidate = " ".join(tokens[i:i+span_len])
+                # Skip bare generic terms
+                if candidate in {"toll", "toll plaza", "highway", "expressway", "bypass", "flyover", "chowk", "chauraha", "border", "dhaba"}:
+                    continue
+                for lm in known_landmarks:
+                    ratio = difflib.SequenceMatcher(None, candidate, lm).ratio()
+                    if ratio >= 0.80 and ratio > best_score:
+                        best_score = ratio
+                        best_match = lm.title()
+            if best_match:
+                break
+        matched_location = best_match
+
+    record_dict["location_text"] = matched_location
 
     try:
         record = ExtractionRecord(**record_dict)

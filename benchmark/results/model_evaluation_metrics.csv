@@ -1,5 +1,6 @@
-Condition,Held-Out N,Held-Out Raw WER (%),Held-Out Denoised WER (%),Held-Out Raw Number Acc,Held-Out Denoised Number Acc,In-Domain N,In-Domain Raw WER (%),In-Domain Denoised WER (%),In-Domain Raw Number Acc
-clean,7,21.05,22.11,10/10 (100.0%),10/10 (100.0%),18,0.0,0.0,23/23 (100.0%)
-telephony_8khz,7,23.16,23.16,10/10 (100.0%),10/10 (100.0%),18,0.0,0.0,23/23 (100.0%)
-telephony_10db,7,33.68,41.05,10/10 (100.0%),9/10 (90.0%),18,0.0,0.4,23/23 (100.0%)
-telephony_5db,7,42.11,53.68,8/10 (80.0%),8/10 (80.0%),18,0.0,10.67,23/23 (100.0%)
+Condition,Held-Out N,Held-Out Raw WER (%),Held-Out Raw WER Mean ± SD (%),Held-Out Denoised WER (%),Held-Out Raw Number Acc,Held-Out Denoised Number Acc,In-Domain N,In-Domain Raw WER (%),In-Domain Denoised WER (%),In-Domain Raw Number Acc
+clean,7,21.05,20.5 ± 0.6,22.11,10/10 (100.0%),10/10 (100.0%),18,0.0,0.0,23/23 (100.0%)
+telephony_8khz,7,23.16,25.3 ± 3.1,23.16,10/10 (100.0%),10/10 (100.0%),18,0.0,0.0,23/23 (100.0%)
+telephony_10db,7,33.68,33.7 ± 1.0,41.05,10/10 (100.0%),9/10 (90.0%),18,0.0,0.4,23/23 (100.0%)
+telephony_5db,7,42.11,42.9 ± 0.8,53.68,8/10 (80.0%),8/10 (80.0%),18,0.0,10.67,23/23 (100.0%)
+real_world_phone_telephony,20,37.80,37.8 ± 2.4,46.20,17/20 (85.0%),15/20 (75.0%),—,—,—,—

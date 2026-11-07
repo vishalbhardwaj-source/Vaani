@@ -1,5 +1,5 @@
-Condition,Sample Size (N),Raw Slot Acc (%),Raw Slot Error Rate (%),Total ASR Errors,Driver Corrected Errors,Gate Blocked Anomalies (Safe),Silent Failures,Successful Dispatches (%),Blocked Dispatch Withheld (%),Controller Code Hash
-clean,25,96.0,4.0,1,1,0,0 (0.0%),25 of 25 (100.0%),0 of 25 (0.0%),e0176a4b348bcc7a81428ba592f65ecf2260309fb3bd40cd3d6c4de376bb13cc
-telephony_8khz,25,96.0,4.0,1,1,0,0 (0.0%),25 of 25 (100.0%),0 of 25 (0.0%),e0176a4b348bcc7a81428ba592f65ecf2260309fb3bd40cd3d6c4de376bb13cc
-telephony_10db,25,72.0,28.0,7,6,0,1 (4.0%),24 of 25 (96.0%),0 of 25 (0.0%),e0176a4b348bcc7a81428ba592f65ecf2260309fb3bd40cd3d6c4de376bb13cc
-telephony_5db,25,64.0,36.0,9,9,0,0 (0.0%),25 of 25 (100.0%),0 of 25 (0.0%),e0176a4b348bcc7a81428ba592f65ecf2260309fb3bd40cd3d6c4de376bb13cc
+Condition,Sample Size (N),Raw Slot Acc (%),Raw Slot Error Rate (%),Total ASR Errors,Driver Corrected Errors,Gate Challenged Anomalies,Gate Blocked Reflexive Confirms,Silent Failures,Successful Dispatches (%),Blocked Dispatch Withheld (%),Controller Code Hash
+clean,25,96.0,4.0,1,1,1,0,0 (0.0%),25 of 25 (100.0%),0 of 25 (0.0%),d027dc88597ba5212ba66e20ce8ca5b6e39008c5ef0be69c61c4e4127372ed10
+telephony_8khz,25,96.0,4.0,1,1,1,0,0 (0.0%),25 of 25 (100.0%),0 of 25 (0.0%),d027dc88597ba5212ba66e20ce8ca5b6e39008c5ef0be69c61c4e4127372ed10
+telephony_10db,25,72.0,28.0,7,6,2,0,1 (4.0%),24 of 25 (96.0%),0 of 25 (0.0%),d027dc88597ba5212ba66e20ce8ca5b6e39008c5ef0be69c61c4e4127372ed10
+telephony_5db,25,64.0,36.0,9,9,5,0,0 (0.0%),25 of 25 (100.0%),0 of 25 (0.0%),d027dc88597ba5212ba66e20ce8ca5b6e39008c5ef0be69c61c4e4127372ed10

@@ -18,7 +18,12 @@ from core.schemas import (
     ExtractionRecord,
     DriverReply,
     IncidentType,
-    StateTransitionLog
+    StateTransitionLog,
+    CargoClass,
+    CARGO_TOLERANCE_MAP,
+    get_cargo_tolerance,
+    GateDecision,
+    GateResult
 )
 from core.tools import dispatch_assistance, update_eta, lookup_vehicle
 
@@ -65,6 +70,86 @@ def get_controller_code_hash() -> str:
 get_benchmark_dependencies_hash = get_controller_code_hash
 
 
+def evaluate_confirmation_gate(
+    record: ExtractionRecord,
+    reply: DriverReply,
+    vehicle_telemetry: Optional[Any],
+    is_already_challenged: bool = False
+) -> GateResult:
+    """
+    Pure confirmation gate function.
+    Evaluates:
+    1. Driver affirmative intent (CONFIRM vs CORRECT/REJECT).
+    2. Plausibility divergence against vehicle cargo target using per-cargo class tolerances.
+    3. Challenge requirement for large divergence (> class tolerance).
+    4. Explicit number repetition verification to prevent reflexive 'haan' overrides.
+    5. Residual risk logging when driver verifies an overriding divergent number.
+    """
+    intent = reply.intent.upper()
+    if intent != "CONFIRM":
+        return GateResult(
+            decision=GateDecision.BLOCK,
+            reason=f"Driver intent '{reply.intent}' is not CONFIRM",
+            threshold_applied=None,
+            residual_risk_flag=False
+        )
+
+    if vehicle_telemetry is None or record.temperature_c is None:
+        return GateResult(
+            decision=GateDecision.ALLOW,
+            reason="No telematics target available; proceeding on driver confirmation alone.",
+            threshold_applied=None,
+            residual_risk_flag=False
+        )
+
+    target_c = vehicle_telemetry.target_temp_c
+    tolerance = get_cargo_tolerance(vehicle_telemetry.cargo_type)
+    temp_diff = abs(record.temperature_c - target_c)
+
+    if temp_diff > tolerance:
+        from gnani.client import parse_hindi_number
+        lower_reply = (reply.raw_text or "").lower()
+        parsed_reply_num = parse_hindi_number(lower_reply)
+
+        has_repeated_num = bool(
+            parsed_reply_num is not None and
+            abs(parsed_reply_num - record.temperature_c) < 0.1
+        )
+
+        if not has_repeated_num:
+            expected_num_str = f"{record.temperature_c:g}"
+            challenge_prompt = (
+                f"Telematics target ({int(target_c) if target_c.is_integer() else target_c} degree) se kaafi antar hai. "
+                f"Kripya number repeat karein: '{expected_num_str} degree confirm'."
+            )
+            return GateResult(
+                decision=GateDecision.CHALLENGE,
+                reason=f"Divergence {temp_diff:.1f}°C exceeds {tolerance:.1f}°C threshold for {vehicle_telemetry.cargo_type}. Explicit number repetition required.",
+                challenge_prompt=challenge_prompt,
+                telematics_divergence=temp_diff,
+                threshold_applied=tolerance,
+                residual_risk_flag=False
+            )
+        else:
+            # Driver explicitly repeated and confirmed the number.
+            # Residual risk: driver confirmed an anomalous divergent value.
+            return GateResult(
+                decision=GateDecision.ALLOW,
+                reason=f"Driver explicitly repeated and verified {record.temperature_c:g}°C override against telematics target {target_c:g}°C.",
+                telematics_divergence=temp_diff,
+                threshold_applied=tolerance,
+                residual_risk_flag=True
+            )
+
+    return GateResult(
+        decision=GateDecision.ALLOW,
+        reason=f"Reported {record.temperature_c:g}°C is within safe tolerance ({tolerance:g}°C) of cargo target ({target_c:g}°C).",
+        telematics_divergence=temp_diff,
+        threshold_applied=tolerance,
+        residual_risk_flag=False
+    )
+
+
 class DialogueController:
     """
     Finite State Machine governing driver interactions and action gate.
@@ -77,13 +162,17 @@ class DialogueController:
         self.correction_rounds = 0
         self.requires_forced_confirmation = False
         
+        # Verify vehicle against fleet database
+        self.veh_telemetry: Optional[Any] = lookup_vehicle(vehicle_id) if vehicle_id else None
+        self.is_unverified_vehicle: bool = (self.veh_telemetry is None)
+        
         self.current_record: Optional[ExtractionRecord] = None
         self.last_driver_utterance: str = ""
         self.last_agent_prompt: str = ""
         self.last_action_result: Optional[Dict[str, Any]] = None
         
         self.history: List[StateTransitionLog] = []
-        self._record_transition(DialogueState.LISTENING, "SESSION_INITIALIZED", {})
+        self._record_transition(DialogueState.LISTENING, "SESSION_INITIALIZED", {"vehicle_id": vehicle_id, "verified": not self.is_unverified_vehicle})
 
     def _record_transition(self, to_state: DialogueState, trigger: str, payload: Dict[str, Any]):
         old_state = self.state
@@ -124,9 +213,24 @@ class DialogueController:
         if self.state != DialogueState.EXTRACTING:
             raise RuntimeError(f"Extraction can only be processed from EXTRACTING state, currently: {self.state}")
 
-        # Validate vehicle ID fallback
+        # Validate vehicle ID verification
+        if self.is_unverified_vehicle or not self.vehicle_id:
+            self._record_transition(
+                DialogueState.ASKING,
+                trigger="UNVERIFIED_VEHICLE_ID",
+                payload={"provided_vehicle_id": self.vehicle_id}
+            )
+            prompt = "Bhaiya gaadi ka registration number confirm karein taaki telematics verify ho sake."
+            self.last_agent_prompt = prompt
+            return self.state, prompt
+
         if not record.vehicle_id:
             record.vehicle_id = self.vehicle_id
+
+        # Telematics location anchor: If spoken location is missing or generic, anchor to telematics GPS
+        if not record.location_text:
+            if self.veh_telemetry and getattr(self.veh_telemetry, "last_known_location", None):
+                record.location_text = f"GPS: {self.veh_telemetry.last_known_location}"
             
         self.current_record = record
 
@@ -171,7 +275,7 @@ class DialogueController:
         """
         Generate spoken Hinglish read-back string for Timbre TTS.
         Uses digit-by-digit spelling for critical numbers to defeat diesel acoustic noise.
-        Example: 'Temperature 18 (ek, aath) degree, toll plaza se 42 km aage. Sahi hai?'
+        Example: 'Temperature 18 degree (1, 8), toll plaza se 42 (4, 2) km aage. Sahi hai na Bhaiya?'
         """
         parts = []
         if record.temperature_c is not None:
@@ -182,7 +286,9 @@ class DialogueController:
             parts.append(f"Temperature {sign_word}{temp_num} degree ({sign_word}{digits})")
 
         if record.location_text:
-            if record.distance_km is not None:
+            if record.location_text.startswith("GPS: "):
+                parts.append(f"GPS location {record.location_text[5:]} ke paas")
+            elif record.distance_km is not None:
                 dist_num = int(record.distance_km) if record.distance_km.is_integer() else record.distance_km
                 dist_digits = ", ".join(list(str(abs(int(dist_num)))))
                 parts.append(f"{record.location_text} se {dist_num} ({dist_digits}) km aage")
@@ -192,22 +298,24 @@ class DialogueController:
         if record.incident_type == IncidentType.BREAKDOWN:
             parts.insert(0, f"Vehicle {self.vehicle_id} breakdown report")
 
-        # Telematics plausibility policy: Flag large deviation (>25C) from cargo target in fleet.sqlite
-        veh_telemetry = lookup_vehicle(self.vehicle_id)
-        if veh_telemetry and record.temperature_c is not None:
-            temp_diff = abs(record.temperature_c - veh_telemetry.target_temp_c)
-            if temp_diff > 25.0:
+        # Telematics plausibility policy: Flag deviation beyond per-cargo class tolerance
+        if self.veh_telemetry and record.temperature_c is not None:
+            temp_diff = abs(record.temperature_c - self.veh_telemetry.target_temp_c)
+            tolerance = get_cargo_tolerance(self.veh_telemetry.cargo_type)
+            if temp_diff > tolerance:
                 self.requires_forced_confirmation = True
-                parts.append(f"Dhyan dein: Target {int(veh_telemetry.target_temp_c)} degree tha aur report {int(record.temperature_c)} degree hai")
+                parts.append(f"Dhyan dein: Target {int(self.veh_telemetry.target_temp_c)} degree tha aur report {int(record.temperature_c)} degree hai")
 
         details = ", ".join(parts) if parts else "Diya gaya report"
         return f"{details}. Sahi hai na Bhaiya?"
 
     def handle_confirmation_reply(self, reply: DriverReply) -> Tuple[DialogueState, str]:
         """
-        Step 3: Evaluate driver reply to read-back.
+        Step 3: Evaluate driver reply to read-back using pure confirmation gate.
         Rules:
-        - CONFIRM -> transitions to ACTING (and immediately executes dispatch) -> DONE
+        - CONFIRM -> gate evaluates plausibility:
+            - If ALLOW -> transitions to ACTING (and immediately executes dispatch) -> DONE
+            - If CHALLENGE -> prompts for explicit number repetition
         - CORRECT -> transitions to CORRECTING -> CONFIRMING
         - REJECT / UNCLEAR -> treated as not confirmed; retries or escalates
         - If correction_rounds exceeds max_correction_rounds -> ESCALATING
@@ -217,42 +325,34 @@ class DialogueController:
 
         intent = reply.intent.upper()
 
-        # CASE 1: DRIVER CONFIRMS -> PROCEED TO ACTING
+        # CASE 1: DRIVER CONFIRMS -> EVALUATE VIA PURE GATE
         if intent == "CONFIRM":
-            # Safety Gate: If telematics target diverged widely, require explicit number repeat
-            # Cannot be bypassed by reflex 'haan', 'sahi hai', 'bilkul', bare 'confirm',
-            # or substring matches (e.g. '25' matching expected '5', or '80' matching expected '8')
-            if getattr(self, "requires_forced_confirmation", False):
-                lower_reply = (reply.raw_text or "").lower()
-                temp_c = self.current_record.temperature_c if self.current_record else None
-                expected_num_str = f"{temp_c:g}" if temp_c is not None else ""
-                
-                from gnani.client import parse_hindi_number
-                parsed_reply_num = parse_hindi_number(lower_reply)
-                
-                # Check parsed number against expected temperature (strict numeric comparison, no substring)
-                has_repeated_num = bool(
-                    parsed_reply_num is not None and 
-                    temp_c is not None and 
-                    abs(parsed_reply_num - temp_c) < 0.1
-                )
-
-                if not has_repeated_num:
-                    # Flag remains active until verified; bare 'confirm', 'haan', 'pakka' fail!
-                    retry_prompt = f"Telematics target se kaafi antar hai. Kripya number repeat karein: '{expected_num_str} degree confirm'."
-                    self.last_agent_prompt = retry_prompt
-                    return DialogueState.CONFIRMING, retry_prompt
-
-                # Explicit distinct action satisfied -> unlock and clear flag
-                self.requires_forced_confirmation = False
-
-            self._record_transition(
-                DialogueState.ACTING,
-                trigger="DRIVER_AFFIRMATIVE_CONFIRMATION",
-                payload={"driver_reply": reply.model_dump(), "record": self.current_record.model_dump()}
+            gate_res = evaluate_confirmation_gate(
+                self.current_record,
+                reply,
+                self.veh_telemetry,
+                is_already_challenged=getattr(self, "requires_forced_confirmation", False)
             )
-            # Execute gated tools
-            return self._execute_dispatch_action()
+
+            if gate_res.decision == GateDecision.CHALLENGE:
+                self.requires_forced_confirmation = True
+                retry_prompt = gate_res.challenge_prompt or "Kripya number repeat karein."
+                self.last_agent_prompt = retry_prompt
+                return DialogueState.CONFIRMING, retry_prompt
+
+            if gate_res.decision == GateDecision.ALLOW:
+                self.requires_forced_confirmation = False
+                self._record_transition(
+                    DialogueState.ACTING,
+                    trigger="DRIVER_AFFIRMATIVE_CONFIRMATION",
+                    payload={
+                        "driver_reply": reply.model_dump(),
+                        "record": self.current_record.model_dump(),
+                        "gate_decision": gate_res.model_dump()
+                    }
+                )
+                # Execute gated tools
+                return self._execute_dispatch_action()
 
         # CASE 2: DRIVER CORRECTS OR REJECTS
         self.correction_rounds += 1
@@ -287,9 +387,10 @@ class DialogueController:
                     self.current_record.temperature_c = reply.corrected_temperature_c
                     self.current_record.anomalous_reading = None
                     # Update forced confirmation status if corrected temperature is now plausible
-                    veh_t = lookup_vehicle(self.vehicle_id)
-                    if veh_t and abs(self.current_record.temperature_c - veh_t.target_temp_c) <= 25.0:
-                        self.requires_forced_confirmation = False
+                    if self.veh_telemetry:
+                        tol = get_cargo_tolerance(self.veh_telemetry.cargo_type)
+                        if abs(self.current_record.temperature_c - self.veh_telemetry.target_temp_c) <= tol:
+                            self.requires_forced_confirmation = False
                 else:
                     logger.warning(f"Driver correction {reply.corrected_temperature_c}°C out of realistic bounds (-40 to 50°C)")
                     self.current_record.anomalous_reading = reply.corrected_temperature_c
@@ -300,17 +401,18 @@ class DialogueController:
             if reply.corrected_distance_km is not None:
                 self.current_record.distance_km = reply.corrected_distance_km
 
-            # Continuous Learning Loop: Persist driver correction to LLM memory
+            # Offline Acoustic Confusion Audit Queue: Log driver correction for human review
             try:
                 from core.learning import record_driver_correction
                 record_driver_correction(
                     raw_transcript=self.last_driver_utterance,
                     original_extraction=orig_slots,
                     driver_correction=reply.raw_text,
-                    corrected_slots=self.current_record.model_dump()
+                    corrected_slots=self.current_record.model_dump(),
+                    vehicle_id=self.vehicle_id
                 )
             except Exception as e:
-                logger.error(f"Failed to persist driver correction to learning DB: {e}")
+                logger.error(f"Failed to persist driver correction to audit queue: {e}")
 
             # Check if correction rendered record non-actionable (e.g. invalid temperature became None)
             if not self.current_record.is_actionable():
@@ -437,10 +539,14 @@ class DialogueController:
         self.last_agent_prompt = msg
         return DialogueState.DONE, msg
 
-    def reset(self):
+    def reset(self, new_vehicle_id: Optional[str] = None):
         """Reset session to LISTENING state for new conversation."""
+        if new_vehicle_id:
+            self.vehicle_id = new_vehicle_id
+        self.veh_telemetry = lookup_vehicle(self.vehicle_id) if self.vehicle_id else None
+        self.is_unverified_vehicle = (self.veh_telemetry is None)
         self.requires_forced_confirmation = False
-        self._record_transition(DialogueState.LISTENING, "SESSION_RESET", {})
+        self._record_transition(DialogueState.LISTENING, "SESSION_RESET", {"vehicle_id": self.vehicle_id})
         self.current_record = None
         self.last_driver_utterance = ""
         self.last_agent_prompt = ""

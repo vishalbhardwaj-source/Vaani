@@ -1,0 +1,6 @@
+Stage,Units,Min,p50 (Median),p90,p95,Max
+Local Whisper-LoRA ASR,ms,855.6,891.3,1060.1,8357.5,25359.4
+NLU Slot Extraction,ms,1.6,3.0,3.4,3.8,4.6
+Dialogue Safety Gate (Pure Python),ms,17.0,18.8,20.9,21.8,23.2
+Spoken Read-Back Generation (TTS),ms,1.4,1.5,1.8,273.6,907.6
+Spoken Read-Back Audio Duration,seconds,7.29,7.29,7.29,7.29,7.29

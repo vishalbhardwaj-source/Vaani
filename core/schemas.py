@@ -17,6 +17,56 @@ class IncidentType(str, Enum):
     UNKNOWN = "unknown"
 
 
+class CargoClass(str, Enum):
+    PHARMA_VACCINE = "pharma_vaccine"
+    DAIRY_CHILLER = "dairy_chiller"
+    DEEP_FREEZE = "deep_freeze"
+    PERISHABLE_PRODUCE = "perishable_produce"
+    AMBIENT_GENERAL = "ambient_general"
+
+
+CARGO_TOLERANCE_MAP = {
+    CargoClass.PHARMA_VACCINE: 4.0,       # Strict cold-chain (+2°C to +8°C / -20°C): >4°C divergence is dangerous
+    CargoClass.DAIRY_CHILLER: 8.0,        # Chilled dairy (+4°C): >8°C divergence requires explicit confirmation
+    CargoClass.DEEP_FREEZE: 12.0,         # Sub-zero frozen goods (-18°C to -22°C): >12°C divergence flagged
+    CargoClass.PERISHABLE_PRODUCE: 15.0,  # Fresh fruits/vegetables (+6°C to +12°C): >15°C divergence flagged
+    CargoClass.AMBIENT_GENERAL: 25.0,     # General ambient cargo: wide tolerance band
+}
+
+
+def get_cargo_tolerance(cargo_type_str: Optional[str]) -> float:
+    """Map cargo description to telematics safety tolerance threshold (°C)."""
+    if not cargo_type_str:
+        return 20.0
+    lower = cargo_type_str.lower()
+    if "vaccine" in lower or "pharma" in lower or "medicine" in lower:
+        return CARGO_TOLERANCE_MAP[CargoClass.PHARMA_VACCINE]
+    if "dairy" in lower or "milk" in lower or "chiller" in lower:
+        return CARGO_TOLERANCE_MAP[CargoClass.DAIRY_CHILLER]
+    if "ice cream" in lower or "frozen" in lower or "meat" in lower or "deep freeze" in lower:
+        return CARGO_TOLERANCE_MAP[CargoClass.DEEP_FREEZE]
+    if "fruit" in lower or "vegetable" in lower or "perishable" in lower:
+        return CARGO_TOLERANCE_MAP[CargoClass.PERISHABLE_PRODUCE]
+    return CARGO_TOLERANCE_MAP[CargoClass.AMBIENT_GENERAL]
+
+
+class GateDecision(str, Enum):
+    ALLOW = "ALLOW"          # Permit action tool execution
+    CHALLENGE = "CHALLENGE"  # Plausibility anomaly: prompt driver to repeat number
+    BLOCK = "BLOCK"          # Safety violation: abort or ask for correction
+
+
+class GateResult(BaseModel):
+    """Result of pure confirmation gate evaluation."""
+    decision: GateDecision
+    reason: str
+    challenge_prompt: Optional[str] = None
+    telematics_divergence: Optional[float] = None
+    threshold_applied: Optional[float] = None
+    residual_risk_flag: bool = False
+
+
+
 class DispatchPriority(str, Enum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"

@@ -1,10 +1,13 @@
 """
-Vaani: Continuous Learning & Adaptive LLM Memory
-Implements an In-Context Continuous Learning loop:
-1. Captures driver acoustic corrections when the read-back catches an ASR mistake.
-2. Persists feedback pairs into SQLite ('learned_corrections' and 'adaptive_rules').
-3. Generates dynamic few-shot in-context learning prompts for the LLM.
-4. Synthesizes phonetic disambiguation rules (e.g. 18 vs 80, 14 vs 40, minus polarity).
+Vaani: Offline Acoustic Confusion Logging & Supervisor Review Queue
+Captures read-back discrepancies and driver corrections for offline analytics,
+error analysis, and supervised model retraining.
+
+SAFETY ARCHITECTURE NOTE:
+To prevent stored prompt injection, preserve true physical alarms (e.g. real 40°C fires),
+and eliminate autonomous silent rewrites, unreviewed runtime corrections are NEVER
+injected into live extraction prompts or model inference paths. All driver feedback
+is stored strictly in an audit queue for offline human supervisor inspection.
 """
 
 import sqlite3
@@ -27,7 +30,7 @@ def get_db_connection() -> sqlite3.Connection:
 
 
 def init_learning_db():
-    """Ensure continuous learning tables are initialized once with domain-specific seed memories."""
+    """Ensure audit tables are initialized for offline acoustic review."""
     global _learning_db_initialized
     if _learning_db_initialized:
         return
@@ -39,40 +42,52 @@ def init_learning_db():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS learned_corrections (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        vehicle_id TEXT,
         raw_transcript TEXT NOT NULL,
         original_extraction TEXT NOT NULL,
         driver_correction TEXT NOT NULL,
         acoustic_trap TEXT,
         corrected_slots TEXT NOT NULL,
+        review_status TEXT DEFAULT 'PENDING_SUPERVISOR_AUDIT',
+        reviewer_notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
+    # Migration check for existing tables
+    cursor.execute("PRAGMA table_info(learned_corrections)")
+    existing_cols = {row["name"] for row in cursor.fetchall()}
+    if "vehicle_id" not in existing_cols:
+        cursor.execute("ALTER TABLE learned_corrections ADD COLUMN vehicle_id TEXT DEFAULT 'UNKNOWN'")
+    if "review_status" not in existing_cols:
+        cursor.execute("ALTER TABLE learned_corrections ADD COLUMN review_status TEXT DEFAULT 'PENDING_SUPERVISOR_AUDIT'")
+    if "reviewer_notes" not in existing_cols:
+        cursor.execute("ALTER TABLE learned_corrections ADD COLUMN reviewer_notes TEXT")
+
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS adaptive_rules (
+    CREATE TABLE IF NOT EXISTS offline_confusion_patterns (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         pattern TEXT UNIQUE NOT NULL,
-        correction_rule TEXT NOT NULL,
+        observed_confusion TEXT NOT NULL,
         frequency INTEGER DEFAULT 1,
-        confidence REAL DEFAULT 0.85,
+        severity TEXT DEFAULT 'MEDIUM',
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
-    # Seed initial highway acoustic trap knowledge base if empty
-    cursor.execute("SELECT COUNT(*) FROM adaptive_rules")
+    # Initial reference patterns documented during fleet acoustic audits
+    cursor.execute("SELECT COUNT(*) FROM offline_confusion_patterns")
     if cursor.fetchone()[0] == 0:
-        seed_rules = [
-            ("18 vs 80 ambiguity", "When audio sounds like '80 degree' in a refrigerated truck, reefer limits dictate it is likely 18°C. Confirm 18°C first.", 12, 0.96),
-            ("14 vs 40 ambiguity", "In perishable dairy runs, '40 degree' is physically hazardous; check if driver intended 14°C before triggering chiller alarm.", 9, 0.92),
-            ("Negative polarity drop", "Under 5dB SNR, 'minus' prefix is frequently swallowed by engine rumble. Compare against cargo target profile.", 8, 0.88),
-            ("Landmark truncation", "'Toll plaza' without prefix usually refers to nearest route checkpoint on the active vehicle corridor.", 15, 0.95),
-            ("Expressway milestone syntax", "Milestone numbers (e.g. km 42, km 68) follow the highway keyword, not temperature values.", 7, 0.91)
+        seed_patterns = [
+            ("18 vs 80 phonetic confusion", "Acoustic ambiguity between 18 ('atharah') and 80 ('assi') under 10dB diesel rumble.", 14, "HIGH"),
+            ("14 vs 40 phonetic confusion", "Acoustic ambiguity between 14 ('choudah') and 40 ('chalis') under road noise.", 8, "HIGH"),
+            ("Negative polarity drop", "Engine rumble swallowing 'minus' sign in sub-zero consignments.", 9, "CRITICAL"),
+            ("Highway milestone vs temperature", "Distance milestones (e.g. 68 km) phonetically confused with temperature values.", 5, "MEDIUM"),
         ]
         cursor.executemany("""
-        INSERT OR IGNORE INTO adaptive_rules (pattern, correction_rule, frequency, confidence)
+        INSERT OR IGNORE INTO offline_confusion_patterns (pattern, observed_confusion, frequency, severity)
         VALUES (?, ?, ?, ?)
-        """, seed_rules)
+        """, seed_patterns)
 
     conn.commit()
     conn.close()
@@ -80,11 +95,11 @@ def init_learning_db():
 
 
 def get_rules_version_hash() -> str:
-    """Return MD5 hash of current adaptive rules to invalidate stale LLM extraction caches."""
+    """Return MD5 hash of current audit patterns for tracking."""
     init_learning_db()
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT pattern, updated_at FROM adaptive_rules ORDER BY id ASC")
+    cursor.execute("SELECT pattern, updated_at FROM offline_confusion_patterns ORDER BY id ASC")
     rows = cursor.fetchall()
     conn.close()
     content = "|".join(f"{r['pattern']}_{r['updated_at']}" for r in rows)
@@ -96,68 +111,67 @@ def record_driver_correction(
     original_extraction: Dict[str, Any],
     driver_correction: str,
     corrected_slots: Dict[str, Any],
-    acoustic_trap: Optional[str] = None
+    acoustic_trap: Optional[str] = None,
+    vehicle_id: Optional[str] = None
 ) -> int:
     """
     Called whenever a driver corrects a read-back prompt.
-    Persists the failure/correction pair and updates adaptive frequency weights.
+    Persists the failure/correction pair strictly for offline supervisor audit.
+    NEVER mutates live prompt contexts or performs autonomous rewrites.
     """
     init_learning_db()
     conn = get_db_connection()
     cursor = conn.cursor()
 
     import json
+    # Sanitize and truncate strings to prevent audit log bloat
+    clean_raw = str(raw_transcript).strip()[:500]
+    clean_driver = str(driver_correction).strip()[:500]
     orig_str = json.dumps(original_extraction, ensure_ascii=False)
     corr_str = json.dumps(corrected_slots, ensure_ascii=False)
 
     cursor.execute("""
     INSERT INTO learned_corrections (
-        raw_transcript, original_extraction, driver_correction, acoustic_trap, corrected_slots
-    ) VALUES (?, ?, ?, ?, ?)
-    """, (raw_transcript, orig_str, driver_correction, acoustic_trap or "Driver Spoken Correction", corr_str))
+        vehicle_id, raw_transcript, original_extraction, driver_correction,
+        acoustic_trap, corrected_slots, review_status
+    ) VALUES (?, ?, ?, ?, ?, ?, 'PENDING_SUPERVISOR_AUDIT')
+    """, (vehicle_id or "UNKNOWN", clean_raw, orig_str, clean_driver, acoustic_trap or "Driver Spoken Correction", corr_str))
 
     rec_id = cursor.lastrowid
 
-    # Detect pattern for adaptive rule learning
+    # Update offline confusion frequency strictly for analytics/reporting
     pattern = None
-    rule_desc = None
+    orig_temp = original_extraction.get("temperature_c")
+    corr_temp = corrected_slots.get("temperature_c")
     
-    if "18" in str(corrected_slots.get("temperature_c")) and "80" in raw_transcript:
-        pattern = "18 vs 80 ambiguity"
-        rule_desc = "Transcripts showing 80°C in reefer cabins should prioritize 18°C per driver feedback."
-    elif "18" in str(corrected_slots.get("temperature_c")) and "28" in raw_transcript:
-        pattern = "18 vs 28 ambiguity"
-        rule_desc = "Phonetic similarity between 18 ('atharah') and 28 ('atthais') caught and resolved to 18°C."
-    elif "14" in str(corrected_slots.get("temperature_c")) and "40" in raw_transcript:
-        pattern = "14 vs 40 ambiguity"
-        rule_desc = "Transcripts showing 40°C in chilled consignments resolve to 14°C per driver feedback."
-    elif corrected_slots.get("temperature_c") is not None and corrected_slots.get("temperature_c") < 0:
-        pattern = "Negative polarity drop"
-        rule_desc = "Restored negative sub-zero temperature sign swallowed by cabin rumble."
+    if orig_temp is not None and corr_temp is not None:
+        if abs(orig_temp - 80.0) < 0.1 and abs(corr_temp - 18.0) < 0.1:
+            pattern = "18 vs 80 phonetic confusion"
+        elif abs(orig_temp - 40.0) < 0.1 and abs(corr_temp - 14.0) < 0.1:
+            pattern = "14 vs 40 phonetic confusion"
+        elif corr_temp < 0 and orig_temp >= 0:
+            pattern = "Negative polarity drop"
 
     if pattern:
         cursor.execute("""
-        INSERT INTO adaptive_rules (pattern, correction_rule, frequency, confidence, updated_at)
-        VALUES (?, ?, 1, 0.90, CURRENT_TIMESTAMP)
-        ON CONFLICT(pattern) DO UPDATE SET
-            frequency = frequency + 1,
-            confidence = MIN(0.99, confidence + 0.02),
-            updated_at = CURRENT_TIMESTAMP
-        """, (pattern, rule_desc))
+        UPDATE offline_confusion_patterns 
+        SET frequency = frequency + 1, updated_at = CURRENT_TIMESTAMP
+        WHERE pattern = ?
+        """, (pattern,))
 
     conn.commit()
     conn.close()
     return rec_id
 
 
-def get_learned_corrections(limit: int = 20) -> List[Dict[str, Any]]:
-    """Retrieve recent driver corrections for learning analysis."""
+def get_learned_corrections(limit: int = 50) -> List[Dict[str, Any]]:
+    """Retrieve driver corrections from offline audit queue."""
     init_learning_db()
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
-    SELECT id, raw_transcript, original_extraction, driver_correction, 
-           acoustic_trap, corrected_slots, created_at
+    SELECT id, vehicle_id, raw_transcript, original_extraction, driver_correction, 
+           acoustic_trap, corrected_slots, review_status, reviewer_notes, created_at
     FROM learned_corrections 
     ORDER BY id DESC 
     LIMIT ?
@@ -169,11 +183,14 @@ def get_learned_corrections(limit: int = 20) -> List[Dict[str, Any]]:
     return [
         {
             "id": r["id"],
+            "vehicle_id": r["vehicle_id"],
             "raw_transcript": r["raw_transcript"],
             "original_extraction": json.loads(r["original_extraction"]),
             "driver_correction": r["driver_correction"],
             "acoustic_trap": r["acoustic_trap"],
             "corrected_slots": json.loads(r["corrected_slots"]),
+            "review_status": r["review_status"],
+            "reviewer_notes": r["reviewer_notes"],
             "created_at": r["created_at"]
         }
         for r in rows
@@ -181,14 +198,16 @@ def get_learned_corrections(limit: int = 20) -> List[Dict[str, Any]]:
 
 
 def get_adaptive_rules() -> List[Dict[str, Any]]:
-    """Retrieve active adaptive phonetic rules."""
+    """Alias for backwards compatibility: returns offline observed confusion patterns."""
     init_learning_db()
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
-    SELECT id, pattern, correction_rule, frequency, confidence, updated_at
-    FROM adaptive_rules 
-    ORDER BY frequency DESC, confidence DESC
+    SELECT id, pattern, observed_confusion AS correction_rule, frequency, 
+           CASE severity WHEN 'CRITICAL' THEN 0.99 WHEN 'HIGH' THEN 0.95 ELSE 0.85 END AS confidence,
+           updated_at
+    FROM offline_confusion_patterns 
+    ORDER BY frequency DESC
     """)
     rows = cursor.fetchall()
     conn.close()
@@ -199,7 +218,7 @@ def get_adaptive_rules() -> List[Dict[str, Any]]:
             "pattern": r["pattern"],
             "correction_rule": r["correction_rule"],
             "frequency": r["frequency"],
-            "confidence": round(r["confidence"], 2),
+            "confidence": r["confidence"],
             "updated_at": r["updated_at"]
         }
         for r in rows
@@ -208,54 +227,52 @@ def get_adaptive_rules() -> List[Dict[str, Any]]:
 
 def get_few_shot_prompt_context(utterance: str = "") -> str:
     """
-    Builds a dynamic In-Context Few-Shot learning prompt
-    injected with recent driver corrections and active rules.
+    Deprecated / offline analysis only.
+    Intentionally disabled in production extraction to prevent prompt injection
+    and preserve uncorrupted extreme readings.
     """
-    rules = get_adaptive_rules()
-    corrections = get_learned_corrections(limit=4)
-
-    prompt_parts = ["### LEARNED IN-CONTEXT CORRECTIONS & HIGHWAY PHONETIC HEURISTICS:"]
-
-    if rules:
-        prompt_parts.append("\n**Active Disambiguation Rules (Learned from Driver Confirmations):**")
-        for r in rules[:4]:
-            prompt_parts.append(f"- [{r['pattern']}] (Freq: {r['frequency']}, Conf: {r['confidence']}): {r['correction_rule']}")
-
-    if corrections:
-        prompt_parts.append("\n**Recent Driver Corrections (Real Examples):**")
-        for c in corrections:
-            orig_t = c['original_extraction'].get('temperature_c')
-            corr_t = c['corrected_slots'].get('temperature_c')
-            prompt_parts.append(
-                f"- Driver heard '{orig_t}°C' from audio '{c['raw_transcript']}' -> Corrected to '{corr_t}°C' via '{c['driver_correction']}'"
-            )
-
-    return "\n".join(prompt_parts)
+    return ""
 
 
-def synthesize_new_rules() -> Dict[str, Any]:
+def generate_acoustic_confusion_report() -> Dict[str, Any]:
     """
-    Triggers an LLM self-reflection / continuous improvement routine
-    to extract newly discovered phonetic confusion patterns from recent corrections.
+    Generates an offline analytics report summarizing frequent ASR confusion pairs
+    for human ML engineer review and model retraining datasets.
     """
-    corrections = get_learned_corrections(limit=50)
+    init_learning_db()
     conn = get_db_connection()
     cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM learned_corrections WHERE review_status = 'PENDING_SUPERVISOR_AUDIT'")
+    pending_count = cursor.fetchone()[0]
 
-    new_discoveries = 0
-    # Group corrections by acoustic similarity
-    for c in corrections:
-        driver_text = c["driver_correction"].lower()
-        if "nahi" in driver_text:
-            # Update frequency of rules
-            pass
-
-    conn.commit()
+    cursor.execute("SELECT pattern, observed_confusion, frequency, severity FROM offline_confusion_patterns ORDER BY frequency DESC")
+    patterns = [dict(r) for r in cursor.fetchall()]
     conn.close()
 
     return {
-        "status": "LEARNING_SYNTHESIZED",
-        "total_corrections_analyzed": len(corrections),
-        "active_rules_count": len(get_adaptive_rules()),
+        "status": "OFFLINE_AUDIT_REPORT_READY",
+        "pending_supervisor_reviews": pending_count,
+        "documented_confusion_patterns": patterns,
         "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
+
+
+def synthesize_new_rules() -> Dict[str, Any]:
+    """Alias for backwards compatibility: generates offline acoustic confusion audit report."""
+    return generate_acoustic_confusion_report()
+
+
+def update_review_status(item_id: int, status: str, notes: Optional[str] = None) -> bool:
+    """Supervisor marks an audit queue item as APPROVED, REJECTED, or RESOLVED."""
+    init_learning_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    UPDATE learned_corrections
+    SET review_status = ?, reviewer_notes = ?, created_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+    """, (status, notes or "", item_id))
+    rows_affected = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return rows_affected > 0

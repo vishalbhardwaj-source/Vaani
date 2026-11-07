@@ -328,7 +328,7 @@ st.markdown("""
 tab_console, tab_benchmark, tab_learning, tab_training, tab_architecture = st.tabs([
     "🚛 Live Dispatch Console",
     "📊 Empirical Benchmark & Proof",
-    "🧠 Continuous Learning & LLM Memory",
+    "📋 Offline Confusion Audit Queue",
     "📈 Dataset Training Ledger",
     "⚙️ Architecture & Safety Gate"
 ])
@@ -353,7 +353,9 @@ with tab_console:
             options=list(vehicle_map.keys()),
             format_func=lambda x: f"{x} - {vehicle_map[x].driver_name}"
         )
-        st.session_state.selected_vehicle = selected_id
+        if st.session_state.selected_vehicle != selected_id:
+            st.session_state.selected_vehicle = selected_id
+            st.session_state.controller = DialogueController(vehicle_id=selected_id)
         v_data = vehicle_map[selected_id]
 
         # Vehicle Info Card
@@ -428,7 +430,7 @@ with tab_console:
                 cls += " warning"
             elif current_st == "ESCALATING" and s == "DONE":
                 cls += " escalated"
-            hud_html += f'<div class="{cls}">{s}</div>'
+            hud_html += f'<div class="{cls}">{html.escape(s)}</div>'
         hud_html += '</div>'
         st.markdown(hud_html, unsafe_allow_html=True)
 
@@ -786,18 +788,18 @@ with tab_benchmark:
 
 
 # =============================================================
-# TAB 3: CONTINUOUS LEARNING & LLM MEMORY
+# TAB 3: OFFLINE ACOUSTIC CONFUSION AUDIT QUEUE
 # =============================================================
 with tab_learning:
     st.markdown("""
     <div style="margin-bottom: 20px;">
         <h2 style="font-size: 1.4rem; font-weight: 800; margin: 0; color: #F8FAFC;">
-            🧠 In-Context Continuous Learning & LLM Memory Store
+            📋 Offline Acoustic Confusion Logging & Supervisor Audit Queue
         </h2>
         <p style="color: #94A3B8; font-size: 0.85rem; margin-top: 4px;">
-            How Vaani improves over time without costly model fine-tuning. Every time a driver corrects an acoustic error 
-            during read-back confirmation, the feedback pair is captured in the SQLite memory store, automatically updating 
-            phonetic disambiguation rules and dynamic in-context few-shot prompts.
+            Captures read-back discrepancies and driver corrections for offline analytics, error analysis, and supervised model retraining.
+            Unreviewed runtime corrections are strictly quarantined in this supervisor queue (never injected into live extraction prompts)
+            to eliminate stored prompt injection vulnerabilities and preserve true extreme alarms.
         </p>
     </div>
     """, unsafe_allow_html=True)

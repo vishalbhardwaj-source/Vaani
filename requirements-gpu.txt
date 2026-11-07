@@ -1,0 +1,6 @@
+# GPU-Accelerated Requirements (CUDA index)
+# Install via: pip install -r requirements-gpu.txt
+--extra-index-url https://download.pytorch.org/whl/cu130
+torch==2.14.1+cu130
+torchaudio==2.11.0+cu130
+-r requirements.txt
