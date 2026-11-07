@@ -293,6 +293,8 @@ class DialogueController:
         self.pending_vehicle = None
         self.awaiting_vehicle_confirmation = False
         self.last_control_tower_notice: Optional[str] = None
+        self.critical_slots_duration_s: float = 2.2
+        self.minimum_readback_listen_time_s: float = 2.2
 
         # Caller-ID lookup if phone number is provided, falling back to vehicle_id
         if caller_phone:
@@ -368,7 +370,7 @@ class DialogueController:
         ticket_id = enqueue_supervisor_escalation(
             vehicle_id=self.vehicle_id,
             trigger_reason=final_trigger,
-            driver_phone=self.caller_phone,
+            driver_phone=self.caller_phone or (getattr(self.veh_telemetry, "driver_phone", None) if self.veh_telemetry else None),
             unconfirmed_temp_c=spoken_temp,
             telematics_sensor_c=sensor_c,
             audio_recording_path=self.last_audio_path,
@@ -735,7 +737,45 @@ class DialogueController:
             parts.append(telematics_note)
 
         details = ", ".join(parts) if parts else "Diya gaya report"
+        # Dynamically compute duration for spoken critical slots (e.g. words / speech rate)
+        content_words = len(details.split())
+        self.critical_slots_duration_s = max(1.8, round(content_words * 0.35, 2))
         return f"{details}. Sahi hai na Bhaiya?"
+
+    def _is_acoustic_echo(self, raw_reply: str) -> bool:
+        """
+        Detects acoustic echo loops where the driver's microphone picks up the agent's
+        own playback (carrier line echo, speakerphone leakage).
+        Prevents echo tails like 'Sahi hai na Bhaiya?' being transcribed as 'sahi hai' or
+        'sahi hai na bhaiya' and mistakenly self-confirming.
+        """
+        if not raw_reply or not self.last_agent_prompt:
+            return False
+        import difflib, re
+        clean_reply = re.sub(r"[^\w\s]", "", raw_reply.lower()).strip()
+        clean_prompt = re.sub(r"[^\w\s]", "", self.last_agent_prompt.lower()).strip()
+        if not clean_reply:
+            return False
+
+        reply_words = set(clean_reply.split())
+        affirmative_words = {"haan", "theek", "yes", "bilkul", "confirm"}
+
+        # 1. If reply is purely composed of words from prompt question tail without affirmative words
+        tail_words = {"sahi", "hai", "na", "bhaiya"}
+        if reply_words.issubset(tail_words) and not any(w in affirmative_words for w in reply_words):
+            return True
+
+        # 2. Check difflib similarity to the question tail
+        tail_str = "sahi hai na bhaiya"
+        ratio_tail = difflib.SequenceMatcher(None, clean_reply, tail_str).ratio()
+        if ratio_tail >= 0.70 and not any(w in affirmative_words for w in reply_words):
+            return True
+
+        # 3. Check if reply is a multi-word exact substring of the last agent prompt without affirmative words
+        if len(clean_reply.split()) >= 3 and clean_reply in clean_prompt and not any(w in affirmative_words for w in reply_words):
+            return True
+
+        return False
 
     def handle_confirmation_reply(
         self,
@@ -753,8 +793,10 @@ class DialogueController:
         - CORRECT -> transitions to CORRECTING -> CONFIRMING
         - REJECT / UNCLEAR -> treated as not confirmed; retries or escalates
         - If correction_rounds exceeds max_correction_rounds -> ESCALATING to persistent supervisor queue
-        - Early Barge-in Guardrail: If driver cut in before numbers finished playing (<2.2s),
-          a reflexive 'haan' is rejected unless the driver explicitly repeats the number.
+        - Early Barge-in Guardrail: If driver cut in before numbers finished playing (dynamic critical_slots_duration_s),
+          a reflexive 'haan' is rejected unless the driver explicitly repeats the matching number.
+        - Number Mismatch Guardrail: If driver cuts in with a number different from readback (e.g. readback 80°C, driver
+          says 'haan 18 confirm'), routes to CORRECT path instead of accepting misheard number.
         """
         if self.state != DialogueState.CONFIRMING:
             raise RuntimeError(f"Confirmation replies can only be processed from CONFIRMING state, currently: {self.state}")
@@ -772,29 +814,51 @@ class DialogueController:
         self.silence_timeout_count = 0  # Reset on valid driver response
         intent = reply.intent.upper()
 
+        # ACOUSTIC ECHO LOOP DEFENSE:
+        # Prevent prompt tails (e.g. "Sahi hai na Bhaiya?") reflected into microphone
+        # from self-confirming.
+        if self._is_acoustic_echo(raw_reply):
+            self._record_transition(
+                DialogueState.CONFIRMING,
+                trigger="ACOUSTIC_ECHO_REJECTED",
+                payload={"raw_reply": raw_reply, "last_agent_prompt": self.last_agent_prompt}
+            )
+            prompt = "Echo detect hua hai. Kripya 'haan' ya 'naa' saaf bole."
+            self.last_agent_prompt = prompt
+            return DialogueState.CONFIRMING, prompt
+
         # BARGE-IN SAFETY GUARDRAIL:
-        # If driver interrupts via VAD before critical slots have finished playing (default 2.2 s),
+        # If driver interrupts via VAD before critical slots have finished playing,
         # a reflexive confirmation ("haan", "sahi hai") CANNOT be accepted because the driver
         # has not yet heard the temperature or distance.
-        # Only an explicit number repeat (e.g. "haan 18 confirm") is accepted on early barge-in!
-        min_listen_time = getattr(self, "minimum_readback_listen_time_s", 2.2)
+        # Only an explicit matching number repeat (e.g. "haan 18 confirm" when readback was 18) is accepted on early barge-in!
+        # If driver cuts in with an explicit divergent number (e.g. "haan 18 confirm" when readback was 28/80),
+        # this is an active correction and is routed to the CORRECT path.
+        min_listen_time = getattr(self, "critical_slots_duration_s", getattr(self, "minimum_readback_listen_time_s", 2.2))
         if intent == "CONFIRM" and playback_elapsed_s is not None and playback_elapsed_s < min_listen_time:
             from gnani.client import parse_hindi_number
             parsed_num = parse_hindi_number(reply.raw_text or "")
             expected_temp = self.current_record.temperature_c if self.current_record else None
-            has_explicit_number = bool(
-                parsed_num is not None and expected_temp is not None and abs(parsed_num - expected_temp) < 0.1
-            )
-            if not has_explicit_number:
-                self._record_transition(
-                    DialogueState.CONFIRMING,
-                    trigger="EARLY_BARGE_IN_REJECTED",
-                    payload={"elapsed_s": playback_elapsed_s, "raw_reply": reply.raw_text}
+
+            if parsed_num is not None and expected_temp is not None and abs(parsed_num - expected_temp) >= 0.1:
+                logger.info(f"Driver cut in early with divergent number {parsed_num}°C against read-back {expected_temp}°C. Routing to CORRECT.")
+                reply.intent = "CORRECT"
+                reply.corrected_temperature_c = parsed_num
+                intent = "CORRECT"
+            else:
+                has_explicit_number = bool(
+                    parsed_num is not None and expected_temp is not None and abs(parsed_num - expected_temp) < 0.1
                 )
-                temp_str = f"{expected_temp:g} degree" if expected_temp is not None else "report"
-                prompt = f"Bhaiya poora suniye: Temperature {temp_str} bataya tha. Kya yeh sahi hai? Haan ya naa saaf bole."
-                self.last_agent_prompt = prompt
-                return DialogueState.CONFIRMING, prompt
+                if not has_explicit_number:
+                    self._record_transition(
+                        DialogueState.CONFIRMING,
+                        trigger="EARLY_BARGE_IN_REJECTED",
+                        payload={"elapsed_s": playback_elapsed_s, "min_listen_time": min_listen_time, "raw_reply": reply.raw_text}
+                    )
+                    temp_str = f"{expected_temp:g} degree" if expected_temp is not None else "report"
+                    prompt = f"Bhaiya poora suniye: Temperature {temp_str} bataya tha. Kya yeh sahi hai? Haan ya naa saaf bole."
+                    self.last_agent_prompt = prompt
+                    return DialogueState.CONFIRMING, prompt
 
         # CASE 1: DRIVER CONFIRMS -> EVALUATE VIA PURE GATE
         if intent == "CONFIRM":

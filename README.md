@@ -418,7 +418,7 @@ Whisper-tiny (39M parameters) was selected as the operational base acoustic mode
   - Real phone telephony pilot (=20$ numbers, 3 speakers): **37.8% WER**, **17/20 (85.0%) number survival**.
 
 ### 7.2 Scaling Path & Engineering Trade-Offs (Qualitative Analysis)
-The ~37.8% WER and 15% numeric failure rate observed on real phone audio are fundamentally constrained by Whisper-Tiny's 39M-parameter acoustic modeling capacity under bandwidth-limited 8 kHz AMR-WB compression. Upgrading the base checkpoint offers a direct engineering trade-off:
+The ~37.8% WER and ~15% numeric failure rate observed on real phone audio reflect several compounding real-world factors: Whisper-Tiny's small 39M-parameter acoustic modeling capacity, domain mismatch between synthetic training speech (18 gTTS clips) and real Indian freight drivers, and acoustic degradations introduced by mobile telephony codecs. Upgrading the base checkpoint offers a direct engineering trade-off:
 
 1. **Larger Whisper Checkpoints (\whisper-base\ 74M, \whisper-small\ 244M):**
    Scaling the acoustic encoder expands phonetic discrimination between phonologically confusable Hindi numerals (such as *atharah* 18 vs *assi* 80, or *chaudah* 14 vs *challis* 40). A larger ASR model directly shrinks the error budget that the telematics gate and read-back confirmation must absorb, reducing the frequency of challenge prompts and increasing conversational velocity.

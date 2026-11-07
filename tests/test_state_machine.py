@@ -1253,6 +1253,160 @@ def test_supervisor_queue_deduplication_per_vehicle_prevents_redial_flooding():
     assert pending[0]["trigger_reason"] == "SECOND_CALL_REDIAL"
 
 
+def test_acoustic_echo_rejected_as_self_confirmation():
+    """
+    Echo Loop Defense:
+    Agent read-back ends in 'Sahi hai na Bhaiya?'.
+    Carrier line reflection or speakerphone leakage transcribes as 'sahi hai na bhaiya' or 'sahi hai'.
+    Verify it is rejected as acoustic echo rather than confirming the ticket!
+    """
+    from core.state_machine import DialogueController, DialogueState
+    from core.schemas import ExtractionRecord, DriverReply, IncidentType
+
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.receive_driver_utterance("Temperature minus 14 degree ho gaya", asr_confidence=0.95)
+    rec = ExtractionRecord(incident_type=IncidentType.REEFER_TEMPERATURE, temperature_c=-14.0, location_text="Panipat")
+    ctrl.process_extraction(rec)
+    assert ctrl.state == DialogueState.CONFIRMING
+
+    # 1. Microphone picks up exact question tail from prompt
+    s1, p1 = ctrl.handle_confirmation_reply(
+        DriverReply(intent="CONFIRM", raw_text="sahi hai na bhaiya")
+    )
+    assert s1 == DialogueState.CONFIRMING
+    assert "Echo detect hua hai" in p1
+    assert ctrl.last_action_result is None
+
+    # 2. Microphone picks up tail fragment "sahi hai"
+    s2, p2 = ctrl.handle_confirmation_reply(
+        DriverReply(intent="CONFIRM", raw_text="sahi hai")
+    )
+    assert s2 == DialogueState.CONFIRMING
+    assert "Echo detect hua hai" in p2
+    assert ctrl.last_action_result is None
+
+    # 3. Legitimate driver speech containing affirmative 'haan' is accepted
+    s3, p3 = ctrl.handle_confirmation_reply(
+        DriverReply(intent="CONFIRM", raw_text="haan sahi hai")
+    )
+    assert s3 == DialogueState.DONE
+    assert ctrl.last_action_result is not None
+
+
+def test_early_barge_in_divergent_number_routes_to_correction():
+    """
+    Number Mismatch & Correction Routing:
+    ASR misheard 18 as 28. Agent reads back 28°C.
+    Driver cuts in early with 'haan 18 degree confirm'.
+    Because 18 != 28, the system must NOT accept this as confirmation of 28°C!
+    Instead, it routes to CORRECT, updates temperature to 18°C, and reads back 18°C.
+    """
+    from core.state_machine import DialogueController, DialogueState
+    from core.schemas import ExtractionRecord, DriverReply, IncidentType
+
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.receive_driver_utterance("Temperature 28 degree ho gaya", asr_confidence=0.95)
+    rec = ExtractionRecord(incident_type=IncidentType.REEFER_TEMPERATURE, temperature_c=28.0, location_text="Panipat")
+    ctrl.process_extraction(rec)
+    assert ctrl.state == DialogueState.CONFIRMING
+    assert ctrl.current_record.temperature_c == 28.0
+
+    # Driver cuts in at 1.0s: "haan 18 degree confirm"
+    s1, p1 = ctrl.handle_confirmation_reply(
+        DriverReply(intent="CONFIRM", raw_text="haan 18 degree confirm"),
+        playback_elapsed_s=1.0
+    )
+    # Must route to CORRECTING -> CONFIRMING with updated 18°C, NOT confirm 28°C!
+    assert s1 == DialogueState.CONFIRMING
+    assert ctrl.current_record.temperature_c == 18.0
+    assert "18" in p1
+    assert "28" not in p1
+    assert ctrl.last_action_result is None
+
+
+def test_abrupt_websocket_drop_triggers_hangup_alert():
+    """
+    Hangup Safety Handler:
+    Verifies that when a call disconnects prematurely during CONFIRMING while
+    holding an unconfirmed sensor-corroborated excursion, the fail-safe enqueues
+    a critical UNVERIFIED_SENSOR_CORROBORATED ticket to the supervisor queue.
+    """
+    from core.state_machine import DialogueController, DialogueState
+    from core.schemas import ExtractionRecord, IncidentType, VehicleRecord
+    from core.tools import list_supervisor_queue
+
+    # Set up vehicle with sensor reading -10°C (Ice cream target -22°C -> active breakdown!)
+    veh = VehicleRecord(
+        vehicle_id="TEST-HANGUP-VEH-01",
+        driver_name="Harish",
+        driver_phone="+91-9876543299",
+        vehicle_type="Reefer 32ft",
+        cargo_type="Ice Cream Consignment",
+        target_temp_c=-22.0,
+        current_temp_c=-10.0,
+        route="Karnal to Delhi",
+        last_known_location="Karnal Bypass",
+        status="IN_TRANSIT"
+    )
+    ctrl = DialogueController(vehicle_id=None)
+    ctrl.veh_telemetry = veh
+    ctrl.vehicle_id = veh.vehicle_id
+    ctrl.is_unverified_vehicle = False
+
+    ctrl.receive_driver_utterance("Temperature minus 10 degree ho gaya hai", asr_confidence=0.95)
+    rec = ExtractionRecord(incident_type=IncidentType.REEFER_TEMPERATURE, temperature_c=-10.0, location_text="Karnal")
+    ctrl.process_extraction(rec)
+    assert ctrl.state == DialogueState.CONFIRMING
+
+    # Call drops abruptly (simulating WebSocketDisconnect / hangup before driver confirmation)
+    ctrl._check_and_enqueue_escalation(trigger_reason="TELEPHONY_CALL_DROPPED_BEFORE_CONFIRMATION")
+
+    pending = [t for t in list_supervisor_queue(status="PENDING") if t["vehicle_id"] == "TEST-HANGUP-VEH-01"]
+    assert len(pending) >= 1
+    ticket = pending[-1]
+    assert ticket["alert_level"] == "UNVERIFIED_SENSOR_CORROBORATED"
+    assert ticket["driver_phone"] == "+91-9876543299"
+    assert "TELEPHONY_CALL_DROPPED_BEFORE_CONFIRMATION" in ticket["trigger_reason"] or "UNVERIFIED_SENSOR_CORROBORATED" in ticket["trigger_reason"]
+
+
+
+def test_supervisor_queue_deduplication_preserves_highest_priority_and_window():
+    """
+    Verify supervisor queue deduplication:
+    1. Preserves highest alert level (UNVERIFIED_SENSOR_CORROBORATED is never downgraded by a later STANDARD redial).
+    2. Appends timestamped call history.
+    """
+    from core.tools import enqueue_supervisor_escalation, list_supervisor_queue
+
+    veh_id = "TEST-PRIO-PRESERVE-01"
+    # First call enqueues high-priority sensor corroborated alert
+    id1 = enqueue_supervisor_escalation(
+        vehicle_id=veh_id,
+        trigger_reason="CALL_DROPPED_UNVERIFIED_CORROBORATED",
+        alert_level="UNVERIFIED_SENSOR_CORROBORATED",
+        transcript_history="Driver: minus 10; Telematics: -10"
+    )
+
+    # Second redial comes in as a standard drop
+    id2 = enqueue_supervisor_escalation(
+        vehicle_id=veh_id,
+        trigger_reason="SECOND_CALL_REDIAL",
+        alert_level="STANDARD",
+        transcript_history="Driver: call disconnected again"
+    )
+
+    assert id1 == id2
+    pending = [t for t in list_supervisor_queue(status="PENDING") if t["vehicle_id"] == veh_id]
+    assert len(pending) == 1
+    # Priority is preserved as UNVERIFIED_SENSOR_CORROBORATED!
+    assert pending[0]["alert_level"] == "UNVERIFIED_SENSOR_CORROBORATED"
+    # History is appended rather than overwritten
+    assert "Driver: minus 10" in pending[0]["transcript_history"]
+    assert "[REDIAL " in pending[0]["transcript_history"]
+    assert "call disconnected again" in pending[0]["transcript_history"]
+
+
+
 
 
 

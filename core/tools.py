@@ -495,34 +495,62 @@ def enqueue_supervisor_escalation(
     cursor = conn.cursor()
 
     # Deduplicate pending tickets per vehicle to prevent redial flooding:
+    # Keeps highest priority, appends call event history, and respects a 120-minute time window.
     if vehicle_id:
         cursor.execute("""
-        SELECT escalation_id FROM supervisor_queue 
+        SELECT escalation_id, alert_level, transcript_history, created_at FROM supervisor_queue 
         WHERE vehicle_id = ? AND status = 'PENDING'
         ORDER BY escalation_id DESC LIMIT 1
         """, (vehicle_id,))
         existing = cursor.fetchone()
         if existing:
-            esc_id = existing["escalation_id"]
-            cursor.execute("""
-            UPDATE supervisor_queue
-            SET trigger_reason = ?, unconfirmed_temp_c = COALESCE(?, unconfirmed_temp_c),
-                telematics_sensor_c = COALESCE(?, telematics_sensor_c),
-                audio_recording_path = COALESCE(?, audio_recording_path),
-                transcript_history = ?, alert_level = ?
-            WHERE escalation_id = ?
-            """, (
-                trigger_reason,
-                unconfirmed_temp_c,
-                telematics_sensor_c,
-                audio_recording_path,
-                transcript_history,
-                alert_level,
-                esc_id
-            ))
-            conn.commit()
-            conn.close()
-            return esc_id
+            created_str = existing["created_at"]
+            is_recent = True
+            if created_str:
+                try:
+                    # SQLite default created_at format is "YYYY-MM-DD HH:MM:SS"
+                    created_dt = datetime.datetime.strptime(created_str.split(".")[0], "%Y-%m-%d %H:%M:%S")
+                    age_minutes = (datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - created_dt).total_seconds() / 60.0
+                    if age_minutes > 120:
+                        is_recent = False
+                except Exception:
+                    pass
+
+            if is_recent:
+                esc_id = existing["escalation_id"]
+                # Keep highest priority: if either is UNVERIFIED_SENSOR_CORROBORATED, preserve it!
+                effective_alert = (
+                    "UNVERIFIED_SENSOR_CORROBORATED" 
+                    if ("UNVERIFIED_SENSOR_CORROBORATED" in (alert_level, existing["alert_level"])) 
+                    else alert_level
+                )
+                # Append each call as a timestamped event rather than replacing history
+                old_hist = existing["transcript_history"] or ""
+                now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                appended_hist = f"{old_hist}\n[REDIAL {now_str}]: {transcript_history}" if old_hist else transcript_history
+
+                cursor.execute("""
+                UPDATE supervisor_queue
+                SET trigger_reason = ?,
+                    driver_phone = COALESCE(?, driver_phone),
+                    unconfirmed_temp_c = COALESCE(?, unconfirmed_temp_c),
+                    telematics_sensor_c = COALESCE(?, telematics_sensor_c),
+                    audio_recording_path = COALESCE(?, audio_recording_path),
+                    transcript_history = ?, alert_level = ?
+                WHERE escalation_id = ?
+                """, (
+                    trigger_reason,
+                    driver_phone,
+                    unconfirmed_temp_c,
+                    telematics_sensor_c,
+                    audio_recording_path,
+                    appended_hist,
+                    effective_alert,
+                    esc_id
+                ))
+                conn.commit()
+                conn.close()
+                return esc_id
 
     cursor.execute("""
     INSERT INTO supervisor_queue (

@@ -124,6 +124,7 @@ async def telephony_audio_stream(
         "audio_base64": base64.b64encode(speak_text(greeting_text)).decode("utf-8")
     })
     last_speech_time = time.time()
+    hangup_handled = False
 
     try:
         while True:
@@ -258,9 +259,15 @@ async def telephony_audio_stream(
         logger.error(f"[Telephony] Error during stream processing: {e}")
     finally:
         # Check if call was dropped with an unconfirmed sensor-corroborated excursion
-        if controller.state not in (DialogueState.DONE, DialogueState.ESCALATING):
-            logger.info("[Telephony] Remote call dropped before completion. Running fail-safe check.")
-            controller._check_and_enqueue_escalation(trigger_reason="TELEPHONY_CALL_DROPPED_BEFORE_CONFIRMATION")
+        # Guarded to run strictly once and catch internal exceptions so socket cleanup is never masked
+        if not hangup_handled:
+            hangup_handled = True
+            try:
+                if controller.state not in (DialogueState.DONE, DialogueState.ESCALATING):
+                    logger.info("[Telephony] Remote call dropped before completion. Running fail-safe check.")
+                    controller._check_and_enqueue_escalation(trigger_reason="TELEPHONY_CALL_DROPPED_BEFORE_CONFIRMATION")
+            except Exception as e:
+                logger.error(f"[Telephony] Error during call hangup fail-safe: {e}")
 
 
 # -------------------------------------------------------------
