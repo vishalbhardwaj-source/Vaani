@@ -137,6 +137,11 @@ def init_db():
     if "priority_source" not in req_cols:
         cursor.execute("ALTER TABLE assistance_requests ADD COLUMN priority_source TEXT DEFAULT 'CONFIRMED_READING'")
 
+    cursor.execute("PRAGMA table_info(supervisor_queue)")
+    sup_cols = {row["name"] for row in cursor.fetchall()}
+    if "alert_level" not in sup_cols:
+        cursor.execute("ALTER TABLE supervisor_queue ADD COLUMN alert_level TEXT DEFAULT 'STANDARD'")
+
     # Seed initial test data if empty
     cursor.execute("SELECT COUNT(*) FROM vehicles")
     if cursor.fetchone()[0] == 0:
@@ -478,10 +483,12 @@ def enqueue_supervisor_escalation(
     unconfirmed_temp_c: Optional[float] = None,
     telematics_sensor_c: Optional[float] = None,
     audio_recording_path: Optional[str] = None,
-    transcript_history: Optional[str] = None
+    transcript_history: Optional[str] = None,
+    alert_level: str = "STANDARD"
 ) -> int:
     """
     Pushes an unresolved or safety-escalated call into the real supervisor dispatch queue.
+    Supports alert_level='UNVERIFIED_SENSOR_CORROBORATED' when sensor corroborates an unconfirmed excursion.
     Returns: escalation_id
     """
     conn = get_db_connection()
@@ -489,8 +496,8 @@ def enqueue_supervisor_escalation(
     cursor.execute("""
     INSERT INTO supervisor_queue (
         vehicle_id, driver_phone, trigger_reason, unconfirmed_temp_c,
-        telematics_sensor_c, audio_recording_path, transcript_history, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING')
+        telematics_sensor_c, audio_recording_path, transcript_history, status, alert_level
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING', ?)
     """, (
         vehicle_id,
         driver_phone,
@@ -498,7 +505,8 @@ def enqueue_supervisor_escalation(
         unconfirmed_temp_c,
         telematics_sensor_c,
         audio_recording_path,
-        transcript_history
+        transcript_history,
+        alert_level
     ))
     esc_id = cursor.lastrowid
     conn.commit()

@@ -21,7 +21,9 @@ from core.schemas import (
     StateTransitionLog,
     CargoClass,
     CARGO_TOLERANCE_MAP,
+    CARGO_SENSOR_MATCH_TOLERANCE_MAP,
     SENSOR_MATCH_TOLERANCE_C,
+    get_cargo_sensor_match_tolerance,
     spell_number_in_hindi_digits,
     get_cargo_tolerance,
     GateDecision,
@@ -116,7 +118,7 @@ def evaluate_confirmation_gate(
     target_c = vehicle_telemetry.target_temp_c
     sensor_c = getattr(vehicle_telemetry, "current_temp_c", None)
     target_tolerance = get_cargo_tolerance(vehicle_telemetry.cargo_type)
-    sensor_match_tolerance = SENSOR_MATCH_TOLERANCE_C
+    sensor_match_tolerance = get_cargo_sensor_match_tolerance(vehicle_telemetry.cargo_type)
     fix_age = getattr(vehicle_telemetry, "gps_fix_age_minutes", 0)
     sensor_fault = getattr(vehicle_telemetry, "sensor_fault_flag", False)
     sensor_is_stale = (fix_age > 15)
@@ -131,14 +133,20 @@ def evaluate_confirmation_gate(
     )
 
     # 1. Sign-Flip Protection
-    # Covers:
-    # A) Target is negative, spoken is positive (e.g. target -22°C, spoken +14°C or +18°C)
-    # B) Target is positive, spoken is negative (e.g. target +4°C, spoken -4°C or -14°C)
-    # C) Magnitude matches live sensor with opposite sign (e.g. sensor -14°C, spoken +14°C - dropped minus sign!)
-    is_target_polarity_flip = (target_c < 0.0 and record.temperature_c > 0.0) or (target_c > 0.0 and record.temperature_c < 0.0)
+    # Covers acoustic dropped/added minus sign confusion (e.g. -14°C vs +14°C, -18°C vs +18°C).
+    # Near 0°C (-2.0°C to +2.0°C), temperature crossings (e.g. +0.5°C vs -1.0°C) represent physical
+    # phase transitions / thawing rather than speech dropped-minus traps.
+    is_near_zero_transition = (abs(record.temperature_c) < 2.0 and abs(sensor_c if sensor_c is not None else target_c) < 2.0)
+
+    is_target_polarity_flip = (
+        not is_near_zero_transition and
+        ((target_c <= -2.0 and record.temperature_c >= 2.0) or (target_c >= 2.0 and record.temperature_c <= -2.0))
+    )
     is_sensor_magnitude_sign_flip = (
+        not is_near_zero_transition and
         sensor_is_valid and sensor_c != 0.0 and
         (record.temperature_c * sensor_c < 0.0) and
+        abs(record.temperature_c) >= 2.0 and abs(sensor_c) >= 2.0 and
         abs(abs(record.temperature_c) - abs(sensor_c)) <= sensor_match_tolerance
     )
 
@@ -282,6 +290,9 @@ class DialogueController:
         self.unconfirmed_excursion: Optional[Tuple[bool, str, DispatchPriority]] = None
         self.confirmed_excursion: Optional[Tuple[bool, str, DispatchPriority]] = None
         self.priority_source: str = "NONE"
+        self.pending_vehicle = None
+        self.awaiting_vehicle_confirmation = False
+        self.last_control_tower_notice: Optional[str] = None
 
         # Caller-ID lookup if phone number is provided, falling back to vehicle_id
         if caller_phone:
@@ -323,6 +334,50 @@ class DialogueController:
         )
         self.history.append(entry)
 
+    def _check_and_enqueue_escalation(
+        self,
+        trigger_reason: str,
+        history_summary: Optional[str] = None
+    ) -> int:
+        """
+        Enqueues supervisor ticket with critical corroboration check:
+        If dialogue ends in ESCALATING or timeout, but the unconfirmed reading was corroborated
+        by the live IoT sensor AND represents a physical cargo excursion, escalates with
+        alert_level='UNVERIFIED_SENSOR_CORROBORATED' and registers a prominent Control Tower notice!
+        """
+        sensor_c = getattr(self.veh_telemetry, "current_temp_c", None) if self.veh_telemetry else None
+        cargo_type = self.veh_telemetry.cargo_type if self.veh_telemetry else None
+        spoken_temp = self.current_record.temperature_c if self.current_record else None
+
+        alert_level = "STANDARD"
+        final_trigger = trigger_reason
+
+        if spoken_temp is not None and sensor_c is not None and cargo_type:
+            match_tol = get_cargo_sensor_match_tolerance(cargo_type)
+            if abs(spoken_temp - sensor_c) <= match_tol:
+                from core.schemas import check_cargo_temperature_excursion
+                is_exc, exc_msg, exc_prio = check_cargo_temperature_excursion(cargo_type, spoken_temp)
+                if is_exc:
+                    alert_level = "UNVERIFIED_SENSOR_CORROBORATED"
+                    final_trigger = f"UNVERIFIED_SENSOR_CORROBORATED: Spoken {spoken_temp:g}°C corroborated by live sensor {sensor_c:g}°C ({exc_msg})"
+                    self.last_control_tower_notice = (
+                        f"[CONTROL TOWER NOTICE - CRITICAL] UNVERIFIED but sensor-corroborated excursion on gaadi {self.vehicle_id or 'UNKNOWN'}! "
+                        f"Spoken {spoken_temp:g}°C matches sensor {sensor_c:g}°C (tolerance ±{match_tol:g}°C, {exc_msg})."
+                    )
+
+        ticket_id = enqueue_supervisor_escalation(
+            vehicle_id=self.vehicle_id,
+            trigger_reason=final_trigger,
+            driver_phone=self.caller_phone,
+            unconfirmed_temp_c=spoken_temp,
+            telematics_sensor_c=sensor_c,
+            audio_recording_path=self.last_audio_path,
+            transcript_history=history_summary or "; ".join([f"{h.from_state}->{h.to_state}: {h.trigger}" for h in self.history[-5:]]),
+            alert_level=alert_level
+        )
+        self.last_ticket_id = f"TICK-{ticket_id}" if isinstance(ticket_id, int) else str(ticket_id)
+        return ticket_id
+
     def handle_silence_or_timeout(self) -> Tuple[DialogueState, str]:
         """
         Models voice activity timeout: driver stays silent, background road noise dominates,
@@ -336,16 +391,7 @@ class DialogueController:
                 trigger="SILENCE_TIMEOUT_EXCEEDED",
                 payload={"silence_count": self.silence_timeout_count}
             )
-            ticket_id = enqueue_supervisor_escalation(
-                vehicle_id=self.vehicle_id,
-                trigger_reason="SILENCE_TIMEOUT_LIMIT_EXCEEDED",
-                driver_phone=self.caller_phone,
-                unconfirmed_temp_c=self.current_record.temperature_c if self.current_record else None,
-                telematics_sensor_c=getattr(self.veh_telemetry, "current_temp_c", None),
-                audio_recording_path=self.last_audio_path,
-                transcript_history="; ".join([f"{h.from_state}->{h.to_state}: {h.trigger}" for h in self.history[-5:]])
-            )
-            self.last_ticket_id = f"TICK-{ticket_id}" if isinstance(ticket_id, int) else str(ticket_id)
+            self._check_and_enqueue_escalation(trigger_reason="SILENCE_TIMEOUT_LIMIT_EXCEEDED")
             prompt = (
                 "Bhaiya, aawaz nahi aa rahi hai. Main call turant human fleet supervisor ko "
                 "connect kar raha hoon. Kripya line par bane rahein."
@@ -496,29 +542,91 @@ class DialogueController:
     def receive_vehicle_identification_reply(self, reply_text: str) -> Tuple[DialogueState, str]:
         """
         Processes driver utterance providing vehicle registration (last 4 digits or full plate).
-        Enforces a retry cap (default 2) to prevent unidentifiable drivers from getting trapped in loops.
+        Enforces:
+        1. When spoken digits match a single vehicle, reads it back to confirm ("HR-55-TC-1102, sahi hai?")
+           before proceeding, preventing incorrect telematics binding.
+        2. When multiple vehicles match the suffix (MULTIPLE_MATCHES), prompts for full plate.
+        3. Enforces a 2-retry cap before escalating to supervisor.
         """
+        clean_text = (reply_text or "").strip().lower()
+
+        # Step 2: Driver answering read-back confirmation of matched vehicle
+        if getattr(self, "awaiting_vehicle_confirmation", False) and self.pending_vehicle:
+            # Positive confirmation
+            if any(w in clean_text for w in ["haan", "sahi", "yes", "theek", "right", "correct", "confirm"]):
+                veh = self.pending_vehicle
+                self.vehicle_id = veh.vehicle_id
+                self.veh_telemetry = veh
+                self.is_unverified_vehicle = False
+                self.unverified_reason = None
+                self.registration_retries = 0
+                self.awaiting_vehicle_confirmation = False
+                self.pending_vehicle = None
+                self._record_transition(
+                    DialogueState.EXTRACTING,
+                    trigger="VEHICLE_CONFIRMED_BY_DRIVER",
+                    payload={"vehicle_id": veh.vehicle_id}
+                )
+                if self.current_record:
+                    self.current_record.vehicle_id = veh.vehicle_id
+                    return self.process_extraction(self.current_record)
+                else:
+                    prompt = f"Gaadi {veh.vehicle_id} verify ho gayi hai. Batayein kya samasya hai?"
+                    self.last_agent_prompt = prompt
+                    return DialogueState.LISTENING, prompt
+            # Negative / rejection
+            elif any(w in clean_text for w in ["nahi", "nahin", "galat", "no", "wrong"]):
+                self.pending_vehicle = None
+                self.awaiting_vehicle_confirmation = False
+                self.registration_retries += 1
+                if self.registration_retries >= self.max_registration_retries:
+                    self._record_transition(
+                        DialogueState.ESCALATING,
+                        trigger="EXCEEDED_MAX_REGISTRATION_RETRIES",
+                        payload={"attempts": self.registration_retries, "last_query": reply_text}
+                    )
+                    self._check_and_enqueue_escalation(trigger_reason="REGISTRATION_RETRY_LIMIT_EXCEEDED")
+                    prompt = (
+                        "Bhaiya, do baar gaadi verify nahi ho paayi. Main call turant human fleet supervisor "
+                        "ko transfer kar raha hoon. Kripya line par bane rahein."
+                    )
+                    self.last_agent_prompt = prompt
+                    return DialogueState.ESCALATING, prompt
+                else:
+                    prompt = "Theek hai. Kripya gaadi ke number plate ke aakhri 4 digit dobara saaf batayein (jaise 1102)."
+                    self.last_agent_prompt = prompt
+                    return DialogueState.ASKING, prompt
+
         from core.tools import lookup_vehicle_by_registration_query
         veh, match_status = lookup_vehicle_by_registration_query(reply_text)
-        if veh:
-            self.vehicle_id = veh.vehicle_id
-            self.veh_telemetry = veh
-            self.is_unverified_vehicle = False
-            self.unverified_reason = None
-            self.registration_retries = 0
-            self._record_transition(
-                DialogueState.EXTRACTING,
-                trigger="VEHICLE_IDENTIFIED",
-                payload={"vehicle_id": veh.vehicle_id, "status": match_status}
-            )
-            if self.current_record:
-                self.current_record.vehicle_id = veh.vehicle_id
-                return self.process_extraction(self.current_record)
-            else:
-                prompt = f"Gaadi {veh.vehicle_id} verify ho gayi hai. Batayein kya samasya hai?"
+
+        if match_status == "MATCH_FOUND" and veh:
+            # Spoken digits fallback: read matched vehicle back to confirm
+            self.pending_vehicle = veh
+            self.awaiting_vehicle_confirmation = True
+            prompt = f"Gaadi {veh.vehicle_id} identify hui hai, sahi hai na Bhaiya?"
+            self.last_agent_prompt = prompt
+            return DialogueState.ASKING, prompt
+        elif match_status == "MULTIPLE_MATCHES":
+            self.registration_retries += 1
+            if self.registration_retries >= self.max_registration_retries:
+                self._record_transition(
+                    DialogueState.ESCALATING,
+                    trigger="EXCEEDED_MAX_REGISTRATION_RETRIES",
+                    payload={"attempts": self.registration_retries, "status": match_status}
+                )
+                self._check_and_enqueue_escalation(trigger_reason="MULTIPLE_MATCHES_RETRY_LIMIT_EXCEEDED")
+                prompt = (
+                    "Bhaiya, fleet mein is suffix ke ek se zyada truck hain. Main call turant human fleet supervisor "
+                    "ko transfer kar raha hoon. Kripya line par bane rahein."
+                )
                 self.last_agent_prompt = prompt
-                return DialogueState.LISTENING, prompt
-        else:
+                return DialogueState.ESCALATING, prompt
+            else:
+                prompt = "Is number ke do ya usse zyada truck hain. Kripya poora number plate batayein (jaise HR-55-TC-1102)."
+                self.last_agent_prompt = prompt
+                return DialogueState.ASKING, prompt
+        else:  # NOT_FOUND
             self.registration_retries += 1
             if self.registration_retries >= self.max_registration_retries:
                 self._record_transition(
@@ -526,6 +634,7 @@ class DialogueController:
                     trigger="EXCEEDED_MAX_REGISTRATION_RETRIES",
                     payload={"attempts": self.registration_retries, "last_query": reply_text}
                 )
+                self._check_and_enqueue_escalation(trigger_reason="REGISTRATION_NOT_FOUND_RETRY_LIMIT_EXCEEDED")
                 prompt = (
                     "Bhaiya, do baar gaadi verify nahi ho paayi. Main call turant human fleet supervisor "
                     "ko transfer kar raha hoon. Kripya line par bane rahein."
@@ -701,15 +810,7 @@ class DialogueController:
                 trigger="EXCEEDED_MAX_CORRECTION_ROUNDS",
                 payload={"rounds": self.correction_rounds, "last_reply": reply.model_dump()}
             )
-            enqueue_supervisor_escalation(
-                vehicle_id=self.vehicle_id,
-                driver_phone=self.caller_phone,
-                trigger_reason="EXCEEDED_MAX_CORRECTION_ROUNDS",
-                unconfirmed_temp_c=self.current_record.temperature_c if self.current_record else None,
-                telematics_sensor_c=getattr(self.veh_telemetry, "current_temp_c", None),
-                audio_recording_path=self.last_audio_path,
-                transcript_history="; ".join([f"{h.from_state}->{h.to_state}: {h.trigger}" for h in self.history[-5:]])
-            )
+            self._check_and_enqueue_escalation(trigger_reason="EXCEEDED_MAX_CORRECTION_ROUNDS")
             prompt = (
                 "Bhaiya, do baar confusion hua hai. Main call turant human fleet supervisor ko "
                 "connect kar raha hoon. Kripya line par bane rahein."

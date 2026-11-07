@@ -43,7 +43,42 @@ CARGO_TOLERANCE_MAP = {
 # Empirical tolerance band for matching driver-spoken display temperature with live IoT sensor telemetry.
 # Accounts for reefer cab display integer rounding (e.g. -21.6°C displayed as -21°C or -22°C),
 # probe calibration offset (±0.5°C), and compartment micro-climatic thermal stratification.
-SENSOR_MATCH_TOLERANCE_C: float = 2.0
+# Tight cargo classes (e.g. vaccines with narrow +2°C to +8°C ranges) require a tighter match window,
+# whereas bulk produce allows standard cab display variance.
+CARGO_SENSOR_MATCH_TOLERANCE_MAP: Dict[CargoClass, float] = {
+    # 1. Pharma/Vaccines (tightest storage tolerance, e.g. +2°C to +8°C): ±0.8°C match window
+    CargoClass.PHARMA_VACCINE: 0.8,
+    # 2. Dairy & Milk (refrigerated <= 8°C): ±1.2°C match window
+    CargoClass.DAIRY_CHILLER: 1.2,
+    # 3. Deep Freeze / Ice Cream (subzero <= -18°C): ±1.5°C match window
+    CargoClass.DEEP_FREEZE: 1.5,
+    # 4. Perishable Produce (fruits/vegetables 0°C to 15°C): ±2.0°C match window
+    CargoClass.PERISHABLE_PRODUCE: 2.0,
+    # 5. Ambient General: ±2.5°C match window
+    CargoClass.AMBIENT_GENERAL: 2.5,
+}
+
+DEFAULT_SENSOR_MATCH_TOLERANCE_C: float = 2.0
+SENSOR_MATCH_TOLERANCE_C: float = 2.0  # Retained for backwards compatibility
+
+
+def get_cargo_sensor_match_tolerance(cargo_type_str: Optional[str]) -> float:
+    """
+    Map cargo description to empirical live IoT sensor match tolerance window (°C).
+    Prevents wide match windows from accepting out-of-tolerance readings in sensitive classes (e.g. vaccines).
+    """
+    if not cargo_type_str:
+        return DEFAULT_SENSOR_MATCH_TOLERANCE_C
+    lower = cargo_type_str.lower()
+    if "vaccine" in lower or "pharma" in lower or "medicine" in lower:
+        return CARGO_SENSOR_MATCH_TOLERANCE_MAP[CargoClass.PHARMA_VACCINE]
+    if "dairy" in lower or "milk" in lower or "chiller" in lower:
+        return CARGO_SENSOR_MATCH_TOLERANCE_MAP[CargoClass.DAIRY_CHILLER]
+    if "ice cream" in lower or "frozen" in lower or "meat" in lower or "deep freeze" in lower:
+        return CARGO_SENSOR_MATCH_TOLERANCE_MAP[CargoClass.DEEP_FREEZE]
+    if "fruit" in lower or "vegetable" in lower or "produce" in lower or "perishable" in lower:
+        return CARGO_SENSOR_MATCH_TOLERANCE_MAP[CargoClass.PERISHABLE_PRODUCE]
+    return CARGO_SENSOR_MATCH_TOLERANCE_MAP[CargoClass.AMBIENT_GENERAL]
 
 # Spoken Hindi digit words for noise-resilient digit-by-digit read-backs over 8 kHz telephony
 HINDI_DIGIT_MAP: Dict[str, str] = {
