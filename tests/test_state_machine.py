@@ -7,8 +7,8 @@ import pytest
 from pathlib import Path
 import pandas as pd
 from pydantic import ValidationError
-from core.schemas import DialogueState, ExtractionRecord, DriverReply, IncidentType
-from core.state_machine import DialogueController
+from core.schemas import DialogueState, ExtractionRecord, DriverReply, IncidentType, GateDecision, VehicleRecord
+from core.state_machine import DialogueController, evaluate_confirmation_gate
 from core.tools import init_db
 
 
@@ -56,6 +56,7 @@ def test_happy_path_confirmation_to_dispatch():
     """Verify full successful pipeline: LISTENING -> EXTRACTING -> CONFIRMING -> ACTING -> DONE."""
     # GJ-01-BX-7201 has target_temp_c = 6.0C (Produce tolerance ±15C), so 18C is within normal plausibility threshold (<= 15C delta)
     controller = DialogueController(vehicle_id="GJ-01-BX-7201")
+    controller.veh_telemetry.current_temp_c = 18.0
     
     # Driver reports
     state, msg = controller.receive_driver_utterance("Reefer temperature 18 degree toll plaza se 42 km aage")
@@ -94,6 +95,7 @@ def test_readback_catches_misheard_number_and_corrects():
     # GJ-01-BX-7201 has target_temp_c = 6.0C (Produce tolerance ±15C):
     # 28C diverges by 22C (> 15C) and is challenged, while corrected 18C (delta 12C <= 15C) is safe.
     controller = DialogueController(vehicle_id="GJ-01-BX-7201")
+    controller.veh_telemetry.current_temp_c = 18.0
     controller.receive_driver_utterance("Bhaiya reefer 18 degree...")
 
     # Misread extraction (28 instead of 18)
@@ -164,6 +166,7 @@ def test_continuous_learning_records_driver_correction():
 
     # GJ-01-BX-7201 has target_temp_c = 6.0C (Produce tolerance ±15C)
     controller = DialogueController(vehicle_id="GJ-01-BX-7201")
+    controller.veh_telemetry.current_temp_c = 18.0
     controller.receive_driver_utterance("Reefer 18 degree toll plaza")
 
     # Erroneous extraction (e.g. 28 instead of 18)
@@ -336,12 +339,13 @@ def test_evaluate_confirmation_gate_exhaustive():
     assert res_v3.decision == GateDecision.ALLOW
     assert res_v3.residual_risk_flag is True
 
-    # 4. Boundary cases on Ice Cream vehicle (Target -22°C, Tolerance ±12°C)
+    # 4. Boundary cases on Ice Cream vehicle (Target -22°C, Tolerance ±12°C, Case 4 stale sensor fallback)
     veh_icecream = VehicleRecord(
         vehicle_id="HR-55-TC-1102", driver_name="Ramesh", driver_phone="+91-9876543210",
         vehicle_type="Reefer 32ft", cargo_type="Ice Cream Consignment",
         target_temp_c=-22.0, current_temp_c=-22.0, route="Karnal to Delhi",
-        last_known_location="NH-44 Toll Plaza km 42", status="IN_TRANSIT"
+        last_known_location="NH-44 Toll Plaza km 42", status="IN_TRANSIT",
+        gps_fix_age_minutes=30  # Stale (>15 min) forces fallback to target tolerance!
     )
 
     # Under boundary: -12°C (delta 10°C < 12°C) -> ALLOW
@@ -381,7 +385,7 @@ def test_unknown_vehicle_id_fails_loudly_and_asks():
 
     # Must transition to ASKING for vehicle confirmation, never guessing or falling back silently!
     assert state == DialogueState.ASKING
-    assert "registration number confirm karein" in prompt.lower()
+    assert "registration number" in prompt.lower() or "4 digit" in prompt.lower()
     assert controller.last_action_result is None
 
 
@@ -512,7 +516,7 @@ def test_caller_id_failure_modes():
     ctrl_unknown.receive_driver_utterance("Reefer 18 degree")
     state, prompt = ctrl_unknown.process_extraction(ExtractionRecord(incident_type=IncidentType.REEFER_TEMPERATURE, temperature_c=18.0, location_text="Highway"))
     assert state == DialogueState.ASKING
-    assert "registration number confirm karein" in prompt
+    assert "registration number" in prompt or "aakhri 4 digit" in prompt
 
     # 2. Single match -> verified vehicle
     ctrl_known = DialogueController(caller_phone="+91-9876543210")
@@ -530,5 +534,247 @@ def test_cargo_excursion_check_independent_of_asr_gate():
     assert is_excursion is True
     assert prio == DispatchPriority.CRITICAL
     assert "-18°C" in reason
+
+
+def test_sensor_match_tolerance_edges_and_boundary_conditions():
+    """
+    Test Rule 1 sensor match tolerance (±2.0°C) exact edge conditions.
+    Driver display rounding vs IoT probe reading:
+    - delta <= 2.0°C -> ALLOW (matches sensor)
+    - delta > 2.0°C -> CHALLENGE (fails sensor match)
+    """
+    from core.schemas import VehicleRecord, GateDecision, SENSOR_MATCH_TOLERANCE_C
+    veh = VehicleRecord(
+        vehicle_id="HR-55-TC-1102", driver_name="Ramesh", driver_phone="+91-9876543210",
+        vehicle_type="Reefer 32ft", cargo_type="Ice Cream Consignment",
+        target_temp_c=-22.0, current_temp_c=-21.6, route="Karnal to Delhi",
+        last_known_location="NH-44", status="IN_TRANSIT"
+    )
+
+    # 1. Spoken -21.0°C against sensor -21.6°C (delta 0.6 <= 2.0) -> ALLOW
+    res_21 = evaluate_confirmation_gate(
+        ExtractionRecord(temperature_c=-21.0, location_text="NH-44"),
+        DriverReply(intent="CONFIRM", raw_text="haan sahi hai"),
+        veh
+    )
+    assert res_21.decision == GateDecision.ALLOW
+    assert res_21.telematics_divergence == pytest.approx(0.6, abs=0.01)
+
+    # 2. Spoken -23.6°C against sensor -21.6°C (delta 2.0 == 2.0 edge) -> ALLOW
+    res_edge_low = evaluate_confirmation_gate(
+        ExtractionRecord(temperature_c=-23.6, location_text="NH-44"),
+        DriverReply(intent="CONFIRM", raw_text="haan sahi hai"),
+        veh
+    )
+    assert res_edge_low.decision == GateDecision.ALLOW
+    assert res_edge_low.telematics_divergence == pytest.approx(2.0, abs=0.01)
+
+    # 3. Spoken -19.6°C against sensor -21.6°C (delta 2.0 == 2.0 edge) -> ALLOW
+    res_edge_high = evaluate_confirmation_gate(
+        ExtractionRecord(temperature_c=-19.6, location_text="NH-44"),
+        DriverReply(intent="CONFIRM", raw_text="haan sahi hai"),
+        veh
+    )
+    assert res_edge_high.decision == GateDecision.ALLOW
+    assert res_edge_high.telematics_divergence == pytest.approx(2.0, abs=0.01)
+
+    # 4. Spoken -19.5°C against sensor -21.6°C (delta 2.1 > 2.0) -> CHALLENGE
+    res_outside = evaluate_confirmation_gate(
+        ExtractionRecord(temperature_c=-19.5, location_text="NH-44"),
+        DriverReply(intent="CONFIRM", raw_text="haan sahi hai"),
+        veh
+    )
+    # -19.5 vs -22.0 target delta is 2.5 <= 8.0 cargo tol, so matches target only -> CHALLENGE (Rule 2)
+    assert res_outside.decision == GateDecision.CHALLENGE
+
+    # 5. Spoken 35.0°C vs sensor 18.0°C (delta 17.0 > 2.0) on dairy truck -> CHALLENGE
+    veh_dairy = VehicleRecord(
+        vehicle_id="DL-01-AA-4092", driver_name="Abdul", driver_phone="+91-9899001122",
+        vehicle_type="Reefer 20ft", cargo_type="Dairy & Milk Products",
+        target_temp_c=4.0, current_temp_c=18.0, route="Jaipur to Delhi",
+        last_known_location="NH-48", status="ALERT"
+    )
+    res_35 = evaluate_confirmation_gate(
+        ExtractionRecord(temperature_c=35.0, location_text="NH-48"),
+        DriverReply(intent="CONFIRM", raw_text="haan sahi hai"),
+        veh_dairy
+    )
+    assert res_35.decision == GateDecision.CHALLENGE
+
+
+def test_rule_1_sensor_match_with_active_excursion_allows_and_sets_critical():
+    """
+    Test Rule 1 combined with an excursion:
+    A cooling breakdown occurred; sensor reads -10.0°C on -22°C ice cream truck.
+    Driver reports -10.0°C.
+    - Gate ALLOWs through (Rule 1: spoken matches sensor within ±2.0°C).
+    - Dispatch executes with CRITICAL priority because -10.0°C > -18.0°C Codex threshold.
+    - Confirmed priority source recorded as CONFIRMED_READING.
+    """
+    from core.schemas import VehicleRecord, GateDecision, DispatchPriority
+    veh_breakdown = VehicleRecord(
+        vehicle_id="HR-55-TC-1102", driver_name="Ramesh", driver_phone="+91-9876543210",
+        vehicle_type="Reefer 32ft", cargo_type="Ice Cream Consignment",
+        target_temp_c=-22.0, current_temp_c=-10.0, route="Karnal to Delhi",
+        last_known_location="NH-44 Milepost 118", status="IN_TRANSIT"
+    )
+
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.veh_telemetry = veh_breakdown
+
+    ctrl.receive_driver_utterance("Temperature minus 10 degree ho gaya hai NH-44 Toll pe")
+    rec = ExtractionRecord(
+        incident_type=IncidentType.REEFER_TEMPERATURE,
+        temperature_c=-10.0,
+        location_text="NH-44 Toll Plaza",
+        distance_km=25.0
+    )
+    ctrl.process_extraction(rec)
+    assert ctrl.state == DialogueState.CONFIRMING
+
+    # Pure gate check
+    reply = DriverReply(intent="CONFIRM", raw_text="haan bhaiya sahi hai")
+    gate_res = evaluate_confirmation_gate(rec, reply, veh_breakdown)
+    assert gate_res.decision == GateDecision.ALLOW
+    assert "matches live sensor" in gate_res.reason
+
+    # Execute confirmation
+    state, prompt = ctrl.handle_confirmation_reply(reply)
+    assert state == DialogueState.DONE
+    assert ctrl.last_action_result is not None
+    assert ctrl.last_action_result["priority"] == DispatchPriority.CRITICAL.value
+    assert ctrl.priority_source == "CONFIRMED_READING"
+    assert ctrl.confirmed_excursion[0] is True
+    assert ctrl.confirmed_excursion[2] == DispatchPriority.CRITICAL
+
+
+def test_sign_flip_magnitude_match_opposite_sensor_dropped_minus():
+    """
+    Test acoustic dropped minus sign failure mode measured on real audio:
+    Sensor reads -14.0°C. Driver/ASR reports +14.0°C.
+    Magnitude matches (|14| == |-14|), but sign is opposite!
+    Must trigger CHALLENGE for polarity verification.
+    """
+    from core.schemas import VehicleRecord, GateDecision
+    veh = VehicleRecord(
+        vehicle_id="MH-12-RN-8819", driver_name="Sukhwinder", driver_phone="+91-9811223344",
+        vehicle_type="Reefer 24ft", cargo_type="Vaccine Cold-Chain",
+        target_temp_c=-20.0, current_temp_c=-14.0, route="Pune to Mumbai",
+        last_known_location="Mumbai-Pune Expressway", status="IN_TRANSIT"
+    )
+
+    # Driver reports +14.0°C (un-repeated)
+    rec = ExtractionRecord(temperature_c=14.0, location_text="Expressway")
+    reply = DriverReply(intent="CONFIRM", raw_text="haan sahi hai")
+    res = evaluate_confirmation_gate(rec, reply, veh)
+
+    assert res.decision == GateDecision.CHALLENGE
+    assert "Sign-flip/dropped-minus detected" in res.reason or "Polarity flip" in res.reason
+    assert "minus" in res.challenge_prompt.lower()
+
+    # When driver explicitly repeats "14 degree confirm"
+    reply_repeated = DriverReply(intent="CONFIRM", raw_text="14 degree confirm")
+    res_rep = evaluate_confirmation_gate(rec, reply_repeated, veh)
+    # Repeated number passes through with residual risk flag
+    assert res_rep.decision == GateDecision.ALLOW
+    assert res_rep.residual_risk_flag is True
+
+
+def test_sign_flip_positive_target_with_negative_spoken_value():
+    """Test reverse polarity flip: positive target +4°C with negative spoken -4°C."""
+    from core.schemas import VehicleRecord, GateDecision
+    veh_dairy = VehicleRecord(
+        vehicle_id="DL-01-AA-4092", driver_name="Abdul", driver_phone="+91-9899001122",
+        vehicle_type="Reefer 20ft", cargo_type="Dairy & Milk Products",
+        target_temp_c=4.0, current_temp_c=4.5, route="Jaipur to Delhi",
+        last_known_location="NH-48", status="IN_TRANSIT"
+    )
+
+    rec = ExtractionRecord(temperature_c=-4.0, location_text="NH-48")
+    reply = DriverReply(intent="CONFIRM", raw_text="haan sahi hai")
+    res = evaluate_confirmation_gate(rec, reply, veh_dairy)
+
+    assert res.decision == GateDecision.CHALLENGE
+    assert "Polarity flip detected" in res.reason
+
+
+def test_caller_id_registration_verification_and_retry_cap_escalation():
+    """
+    Test that an unverified caller:
+    1. Can provide the last 4 digits (e.g. '1102') to identify the vehicle.
+    2. If providing invalid digits repeatedly, hits the retry cap (2) and escalates to human.
+    """
+    from core.state_machine import DialogueController, DialogueState
+    from core.schemas import ExtractionRecord, IncidentType
+
+    # Case A: Success via 4-digit identification
+    ctrl = DialogueController(caller_phone="+91-9999999999", vehicle_id=None)
+    assert ctrl.is_unverified_vehicle is True
+    ctrl.receive_driver_utterance("Temperature 18 degree ho gaya")
+    rec = ExtractionRecord(incident_type=IncidentType.REEFER_TEMPERATURE, temperature_c=18.0, location_text="Highway")
+    ctrl.process_extraction(rec)
+    assert ctrl.state == DialogueState.ASKING
+
+    # Driver says last 4 digits
+    state_id, prompt_id = ctrl.receive_vehicle_identification_reply("gadi ka number 1102 hai bhaiya")
+    assert ctrl.is_unverified_vehicle is False
+    assert ctrl.vehicle_id == "HR-55-TC-1102"
+    assert state_id == DialogueState.CONFIRMING
+
+    # Case B: Failure with retry cap escalation to supervisor
+    ctrl_fail = DialogueController(caller_phone="+91-9999999999", vehicle_id=None)
+    ctrl_fail.receive_driver_utterance("Breakdown ho gaya")
+    ctrl_fail.process_extraction(ExtractionRecord(incident_type=IncidentType.BREAKDOWN, location_text="Highway"))
+    assert ctrl_fail.state == DialogueState.ASKING
+
+    # Attempt 1: Unknown digits
+    s1, p1 = ctrl_fail.receive_vehicle_identification_reply("9999")
+    assert s1 == DialogueState.ASKING
+    assert ctrl_fail.registration_retries == 1
+
+    # Attempt 2: Unknown digits -> Exceeds max retries (2) -> ESCALATING
+    s2, p2 = ctrl_fail.receive_vehicle_identification_reply("8888")
+    assert s2 == DialogueState.ESCALATING
+    assert "human fleet supervisor" in p2
+
+
+def test_unconfirmed_vs_confirmed_excursion_priority():
+    """
+    Verify that excursion priority is tracked as UNCONFIRMED_INITIAL during extraction,
+    and confirmed value determines CONFIRMED_READING upon dispatch.
+    """
+    from core.state_machine import DialogueController, DialogueState
+    from core.schemas import ExtractionRecord, DriverReply, IncidentType, DispatchPriority
+
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")  # Ice cream, target -22°C
+    ctrl.veh_telemetry.current_temp_c = -21.0
+    ctrl.receive_driver_utterance("Temperature 18 degree ho gaya")
+    rec = ExtractionRecord(incident_type=IncidentType.REEFER_TEMPERATURE, temperature_c=18.0, location_text="Highway")
+    ctrl.process_extraction(rec)
+
+    # Initial extraction shows preliminary unconfirmed excursion
+    assert ctrl.priority_source == "UNCONFIRMED_INITIAL"
+    assert ctrl.unconfirmed_excursion[0] is True
+    assert ctrl.unconfirmed_excursion[2] == DispatchPriority.CRITICAL
+
+    # Driver corrects the misheard temperature to safe -21°C
+    ctrl.handle_confirmation_reply(DriverReply(intent="CORRECT", corrected_temperature_c=-21.0))
+    assert ctrl.current_record.temperature_c == -21.0
+
+    # Driver confirms the corrected safe reading
+    state, prompt = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="-21 degree confirm"))
+    assert state == DialogueState.DONE
+    assert ctrl.priority_source == "CONFIRMED_READING"
+    # -21°C is <= -18°C ceiling, so NOT an excursion
+    assert ctrl.confirmed_excursion[0] is False
+    assert ctrl.last_action_result["priority"] == DispatchPriority.HIGH.value
+
+
+def test_pinned_adapter_and_model_hashes_match_committed_files():
+    """Verify that committed local adapters and denoiser weights match pinned SHA256 hashes."""
+    from models.download_adapters import verify_adapters, verify_denoiser
+    assert verify_adapters(enforce_hash=True) is True
+    assert verify_denoiser(enforce_hash=True) is True
+
 
 

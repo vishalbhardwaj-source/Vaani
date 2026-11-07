@@ -236,7 +236,11 @@ def stage_and_train_chunk(
 
     # --- Phase 2: Load Model and Train on Chunk ---
     print(f"\n🧠 [Phase 2/4] Training Whisper-LoRA on Chunk ({epochs} epochs on GPU)...")
-    base_model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny")
+    base_model = WhisperForConditionalGeneration.from_pretrained(
+        "openai/whisper-tiny",
+        revision="169d4a4341b33bc18d8881c4b69c2e104e1cc0af",
+        trust_remote_code=False
+    )
     model = PeftModel.from_pretrained(base_model, str(MODEL_DIR), is_trainable=True)
     model.to(device)
     model.train()

@@ -33,6 +33,11 @@ Our empirical benchmark evaluates **100 audio clips** across 4 acoustic conditio
 > **Fleet Telemetry Stand-in (Oracle Mapping):** Each utterance is mapped to its matching fleet cargo vehicle (`HR-55-TC-1102` for sub-zero ice cream target −22°C, `DL-01-AA-4092` for dairy target +4°C, `GJ-01-BX-7201` for fresh produce target +6°C, `MH-12-RN-8819` for vaccine target -20°C). In production, cargo targets come from fleet telematics data, independent of driver utterances.
 > **Heuristic Tolerance Bands vs. Storage Standards:** Tolerance bands (Pharma/Vaccines: ±4°C, Chilled Dairy: ±8°C, Deep Freeze: ±12°C, Produce: ±15°C) are configurable engineering heuristics chosen by the author, informed by storage ranges in cold-chain guidelines (WHO PQS E003/001, FSSAI Schedule 4, Codex Stan 92-1981, APEDA). They are NOT statutory standards for speech recognition plausibility.
 > **Decoupled Physical Cargo Excursion Monitoring:** The ASR gate answers: *'Was this transcribed correctly?'*. Physical cargo degradation risk is evaluated independently by `check_cargo_temperature_excursion` (which answers: *'Is the cargo at active risk?'*). For instance, with ice cream target at −22°C and a ±12°C ASR plausibility band, a spoken −10°C is verified as correctly transcribed, but immediately triggers a `CRITICAL` dispatch priority alarm because −10°C breaches the −18°C Codex physical storage ceiling.
+> **Sensor Match Tolerance (±2.0°C):** Rule 1 verifies spoken readings against the live IoT sensor (`current_temp_c`) with an empirical tolerance of `±2.0°C` (`SENSOR_MATCH_TOLERANCE_C`). This accommodates reefer cab display integer rounding (e.g., −21.6°C displayed as −21°C), probe sensor calibration variance (±0.5°C), and micro-climatic thermal stratification within the compartment. In contrast, target tolerances are wider (±4°C to ±15°C) to allow for legitimate refrigeration setpoint drift.
+> **Rule 1 with Active Cargo Excursion:** If a driver reports a true cooling unit failure that matches the live sensor (e.g., reported −10°C matches sensor −10.0°C on a −22°C ice cream truck), the gate ALLOWs the report without an unnecessary repeat challenge, and upon confirmation `check_cargo_temperature_excursion` immediately flags `CRITICAL` priority with `priority_source = 'CONFIRMED_READING'`. This is the central operational scenario the system is built to handle.
+> **Bi-Directional Sign-Flip & Dropped-Minus Protection:** The gate checks: (a) sub-zero target with positive spoken value, (b) positive target with negative spoken value, and (c) sensor magnitude match with opposite sign (e.g., spoken +14°C vs sensor −14.0°C, the exact dropped-minus failure measured on real audio). In all cases, un-repeated confirmations trigger an immediate challenge prompt.
+> **Confirmed vs. Unconfirmed Priority Tracking:** To prevent control tower alert fatigue from unconfirmed ASR noise (such as 18→80 slips), excursion priority is logged as `priority_source = 'UNCONFIRMED_INITIAL'` during preliminary extraction, and evaluated on the confirmed reading upon dispatch with `priority_source = 'CONFIRMED_READING'`.
+> **Caller ID 4-Digit Fallback & Retry Cap:** When caller ID is unverified (`NOT_FOUND` or `MULTIPLE_MATCHES`), the system prompts for the last 4 digits (e.g., '1102') or full plate, and strictly caps retries at 2 before transferring to a human supervisor, preventing drivers from getting trapped in endless loops.
 > **Condition 5 Simulation Label:** Condition 5 (`real_telephony_pilot`) is a dialogue-layer stress simulation calibrated to the empirical 15% numeric error rate observed in the real-phone pilot, showing how the safety gate handles that error load. It is NOT an unassisted end-to-end field measurement.
 > Specific phonetic confusion traps (18↔80, 14↔40, negative polarity loss) are injected into the input to stress-test the state machine's interception capability.
 > Driver replies model human factors: in loud cabin noise, drivers have an assumed reflexive error probability (0% in clean up to 15% in harsh telephony noise).
@@ -67,17 +72,17 @@ In each scenario, temperatures are physically possible for reefers (−40°C to 
 | adv_01 | HR-55-TC-1102 | Ice Cream | -22.0 | 12.0 | 34.0 | True | True | True | Large Divergence |
 | adv_02 | HR-55-TC-1102 | Ice Cream | -22.0 | 18.0 | 40.0 | True | True | True | Large Divergence |
 | adv_03 | HR-55-TC-1102 | Ice Cream | -22.0 | 25.0 | 47.0 | True | True | True | Large Divergence |
-| adv_04 | HR-55-TC-1102 | Ice Cream | -22.0 | -8.0 | 14.0 | True | False | True | Boundary Above (Delta 14 > 12) |
+| adv_04 | HR-55-TC-1102 | Ice Cream | -22.0 | -8.0 | 14.0 | True | True | True | Boundary Above (Delta 14 > 12) |
 | adv_05 | HR-55-TC-1102 | Ice Cream | -22.0 | -10.0 | 12.0 | False | N/A (Within Tolerance) | True | Exact Boundary (Delta 12 == 12) |
 | adv_06 | HR-55-TC-1102 | Ice Cream | -22.0 | -12.0 | 10.0 | False | N/A (Within Tolerance) | True | Boundary Under (Delta 10 < 12) |
 | adv_07 | MH-12-RN-8819 | Vaccine Cold-Chain | -20.0 | -14.0 | 6.0 | True | True | True | Pharma Tight Boundary (Delta 6 > 4) |
 | adv_08 | MH-12-RN-8819 | Vaccine Cold-Chain | -20.0 | -18.0 | 2.0 | False | N/A (Within Tolerance) | True | Pharma Safe (Delta 2 <= 4) |
 | adv_09 | DL-01-AA-4092 | Dairy & Milk Products | 4.0 | -24.0 | 28.0 | True | True | True | Negative Anomaly |
-| adv_10 | DL-01-AA-4092 | Dairy & Milk Products | 4.0 | 14.0 | 10.0 | True | False | True | Dairy Boundary Above (Delta 10 > 8) |
+| adv_10 | DL-01-AA-4092 | Dairy & Milk Products | 4.0 | 14.0 | 10.0 | True | True | True | Dairy Boundary Above (Delta 10 > 8) |
 | adv_11 | DL-01-AA-4092 | Dairy & Milk Products | 4.0 | 11.0 | 7.0 | False | N/A (Within Tolerance) | True | Dairy Boundary Under (Delta 7 < 8) |
 | adv_12 | DL-01-AA-4092 | Dairy & Milk Products | 4.0 | 40.0 | 36.0 | True | True | True | Severe Heat Anomaly |
 | adv_13 | GJ-01-BX-7201 | Fresh Perishables | 6.0 | -22.0 | 28.0 | True | True | True | Freezing Produce Anomaly |
-| adv_14 | GJ-01-BX-7201 | Fresh Perishables | 6.0 | 24.0 | 18.0 | True | False | True | Produce Boundary (Delta 18 > 15) |
+| adv_14 | GJ-01-BX-7201 | Fresh Perishables | 6.0 | 24.0 | 18.0 | True | True | True | Produce Boundary (Delta 18 > 15) |
 | adv_15 | GJ-01-BX-7201 | Fresh Perishables | 6.0 | 19.0 | 13.0 | False | N/A (Within Tolerance) | True | Produce Boundary Under (Delta 13 < 15) |
 | adv_16 | DL-01-AA-4092 | Dairy & Milk Products | 4.0 | 40.0 | 36.0 | True | True | True | Known Residual Risk: Human Confirmed Misheard Reading |
 
@@ -89,17 +94,19 @@ To replace unmeasured latency assumptions with empirical data, `benchmark/measur
 
 | Stage | Units | Min | p50 (Median) | p90 | p95 | Max |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| Local Whisper-LoRA ASR | ms | 867.8 | 883.1 | 931.8 | 7790.9 | 23785.9 |
-| NLU Slot Extraction | ms | 1.5 | 2.9 | 3.1 | 3.3 | 3.9 |
-| Safety Gate + Telematics Lookup | ms | 15.1 | 16.8 | 17.6 | 18.9 | 22.0 |
-| Total Turnaround Latency (ASR+NLU+Gate) | ms | 885.6 | 902.4 | 951.9 | 7812.1 | 23809.4 |
-| Concise Read-Back Duration (Normal) | seconds | 5.2 | 5.2 | 5.2 | 5.2 | 5.2 |
-| Challenged Read-Back Duration (Digit Spelling) | seconds | 9.2 | 9.2 | 9.2 | 9.2 | 9.2 |
+| Local Whisper-LoRA ASR | ms | 366.0 | 384.0 | 407.2 | 23801.2 | 78384.8 |
+| NLU Slot Extraction | ms | 2.3 | 2.6 | 2.9 | 30.2 | 94.0 |
+| Safety Gate + Telematics Lookup | ms | 13.7 | 15.0 | 16.7 | 17.2 | 18.2 |
+| Internal Compute Turnaround (ASR+NLU+Gate) | ms | 383.2 | 402.1 | 426.0 | 23848.6 | 78497.0 |
+| Estimated Driver-Perceived Wait (Compute + Est. Telephony/TTS Buffers) | ms (estimated) | 683.2 | 702.1 | 726.0 | 24148.6 | 78797.0 |
+| TTS Audio Synthesis | ms | 1.3 | 1.4 | 1.7 | 255.3 | 847.1 |
+| Concise Read-Back Synthesized Audio Duration (Normal) | seconds | 4.8 | 4.8 | 4.8 | 4.8 | 4.8 |
+| Split Challenged Turn 1 Synthesized Audio Duration | seconds | 4.37 | 4.37 | 4.37 | 4.37 | 4.37 |
 
 > **Latency Diagnostics & Decomposition:**
-> 1. **Internal Compute Turnaround:** ASR inference (median 883.1 ms) + NLU slot extraction (median 2.9 ms) + pure Python safety gate & SQLite telematics lookup (median 16.8 ms) totals **902.4 ms median internal turnaround**.
-> 2. **Driver-Perceived Wait Decomposition:** Total driver wait before audio streaming begins includes internal compute (~902 ms) + TTS synthesis (~180 ms) + telephony packet buffering (~120 ms), totaling **~1.2–1.3 seconds** total turnaround.
-> 3. **Spoken Read-Back Duration:** Normal concise read-back is **~2.8–3.0 seconds** (< 3 s, ~8 words: `"Temp minus 14 degree, Toll Plaza pe. Sahi hai na Bhaiya?"`). To avoid fatigue on phone calls, challenged prompts are split into two short turns (Turn 1: readback with digits ~2.1 s; Turn 2: explicit challenge prompt ~2.7 s) rather than a 9-second monologue.
+> 1. **Internal Compute Turnaround:** ASR inference + NLU slot extraction + pure Python safety gate & SQLite telematics lookup totals **~400–900 ms internal compute turnaround** depending on GPU vs CPU.
+> 2. **Estimated Driver-Perceived Wait (Decomposition):** Total driver wait before audio streaming begins includes internal compute + assumed TTS initial packet synthesis (~180 ms) + assumed telephony network buffering (~120 ms), giving an **estimated ~700 ms to ~1.2 s driver-perceived wait**. This is explicitly labeled as an **estimate** because a true end-to-end turnaround requires live trunk audio-in to audio-out timing on a real telephony call.
+> 3. **Spoken Read-Back Duration:** Synthesized audio duration measured directly from waveform bytes is **~4.8 seconds** for concise normal read-back (`"Temp 18 degree, Panipat Toll pe. Sahi hai Bhaiya?"`), and **~4.3 seconds** for Split Challenged Turn 1 (`"Temp minus 14 degree, ek-chaar. Sahi hai?"`). To avoid driver fatigue on phone calls, challenged prompts are split into two short turns rather than an unbroken monologue.
 > 4. **Barge-In Status:** Full duplex barge-in (VAD interruption during playback) is an **architectural planned interface feature** for the SIP/RTP telephony trunk (Asterisk/FreeSWITCH), not implemented in the local offline audio player.
 
 ---
@@ -177,21 +184,21 @@ The table below lists all 7 held-out clips, their ground truth numeric slots, an
    - **End-to-End Pipeline Evaluation:** On real Whisper-LoRA transcripts of the 28 held-out clips, end-to-end slot accuracy achieved **82.1% on clean, 78.6% on 8 kHz, 75.0% on 10 dB, and 60.7% on 5 dB SNR**.
 7. **Live-Sensor Decision Rules:**
    The pure confirmation gate checks both live IoT sensor (`current_temp_c`) and setpoint (`target_temp_c`) with 4 deterministic rules:
-   - *Case 1: Matches Sensor (within tolerance):* Strong evidence ASR is accurate, even if far from target (real refrigeration failure). Gate allows.
-   - *Case 2: Matches Target Only (sensor diverges):* Weak evidence. Gate challenges with display confirmation prompt.
-   - *Case 3: Matches Neither:* Strong anomaly / acoustic trap. Gate challenges, requiring explicit repetition.
-   - *Case 4: Stale or Faulty Sensor (>15m fix age or fault flag):* Falls back to target-only check with audit trail.
-   - *Sign-Flip Protection:* If target is negative and reported is positive (e.g. target −22°C, reported +14°C), immediate `SIGN_FLIP_DETECTED` challenge is issued.
+   - *Rule 1: Matches Sensor (within ±2.0°C tolerance):* Strong evidence spoken report matches reefer cab display. Gate ALLOWs. If reading exceeds physical storage limits, `check_cargo_temperature_excursion()` independently escalates dispatch priority to `CRITICAL` with `priority_source = 'CONFIRMED_READING'`.
+   - *Rule 2: Matches Target Only (sensor diverges):* Weak evidence. Gate challenges with display confirmation prompt requiring explicit number repeat.
+   - *Rule 3: Matches Neither:* Strong anomaly / acoustic trap. Gate challenges, requiring explicit number repetition.
+   - *Rule 4: Stale or Faulty Sensor (>15m fix age or fault flag):* Falls back to target-only check with audit trail.
+   - *Bi-Directional Sign-Flip & Dropped-Minus Protection:* Positive spoken against sub-zero target, negative spoken against positive target, or sensor magnitude match with opposite sign (e.g. +14°C vs sensor −14.0°C) triggers immediate `SIGN_FLIP_DETECTED` challenge.
 8. **Decoupled Physical Cargo Excursion Risk Monitoring:**
-   `check_cargo_temperature_excursion()` evaluates physical cargo spoilage risk independently of ASR plausibility. Excursions (e.g. Deep Freeze > −18°C, Vaccines outside 2°C–8°C, Dairy > 8°C) escalate dispatch priority to `CRITICAL`.
-9. **Caller-ID Telematics Vehicle Lookup & Failure Modes:**
-   Identifies vehicles from driver telephony caller ID (`lookup_vehicle_by_phone`). Handles: (a) number not in table $\rightarrow$ falls back to asking registration (never defaults silently), (b) multiple trucks linked to same phone $\rightarrow$ prompts driver for registration, (c) spoofed/forwarded call defense $\rightarrow$ read-back states vehicle registration for driver confirmation.
-10. **Security on Model Weights:**
-    `weights_only=True` is enforced across all `torch.load` calls. All adapter files and denoiser weights have cryptographically pinned SHA256 hashes in `models/download_adapters.py`, which enforces HTTPS downloads and exits loudly with code 1 on mismatch.
-11. **Adaptive Read-Back Duration & Turnaround Latency:**
-    Normal read-back is concise (~2.8–3.0 s, ~8 words). Challenged read-backs are split into two short turns (~2.1 s read-back, ~2.7 s challenge prompt). Full barge-in is a planned telephony interface feature for the SIP/RTP trunk.
+   `check_cargo_temperature_excursion()` evaluates physical cargo spoilage risk independently of ASR plausibility. Excursions escalate dispatch priority to `CRITICAL`. Excursion priority is tracked as `UNCONFIRMED_INITIAL` during preliminary extraction and `CONFIRMED_READING` upon confirmed dispatch, preventing alert fatigue.
+9. **Caller-ID Telematics Vehicle Lookup & 4-Digit Registration Fallback:**
+   Identifies vehicles from telephony caller ID (`lookup_vehicle_by_phone`). For `NOT_FOUND` or `MULTIPLE_MATCHES`, prompts driver for the registration number or last 4 digits (e.g., '1102'). Enforces a strict 2-attempt retry cap before escalating to a human fleet supervisor.
+10. **Security on Base Models and Weights:**
+    `weights_only=True` is enforced across all `torch.load` calls. Base Whisper (`openai/whisper-tiny` revision `169d4a4341b33bc18d8881c4b69c2e104e1cc0af`) and Flan-T5 (`google/flan-t5-small` revision `0fc9ddf78a1e988dac52e2dac162b0ede4fd74ab`) are pinned to immutable commit hashes with `trust_remote_code=False`. All LoRA adapters and denoiser weights have cryptographically pinned SHA256 hashes in `models/download_adapters.py` verified by automated regression test `test_pinned_adapter_and_model_hashes_match_committed_files`.
+11. **Adaptive Read-Back Duration & Estimated Turnaround Latency:**
+    Measured synthesized audio duration is ~4.8 s for normal concise read-back and ~4.3 s for Split Challenged Turn 1. Estimated driver-perceived wait is ~700 ms to ~1.2 s (explicitly labeled an estimate; live audio-in to audio-out SIP/RTP timing required for end-to-end phone measurement).
 12. **Reproduction Protocol:**
-    Exact command: `python -m pytest tests/ -v` (36 tests pass). Environment: Python 3.12.10, PyTorch 2.6+, Transformers 4.49+, PEFT 0.14+, JiWER 3.1+, Pydantic 2.10+.
+    Exact command: `python -m pytest tests/ -v` (43 tests pass). Environment: Python 3.12.10, PyTorch 2.6+, Transformers 4.49+, PEFT 0.14+, JiWER 3.1+, Pydantic 2.10+.
 
 ---
 
@@ -402,5 +409,7 @@ streamlit run app/dashboard.py
 2. **Small Real Speaker Pilot (=3$ Speakers, 20 Clips):** Real-world phone evaluation was conducted on an initial pilot cohort of 3 speakers (=20$ clips, 17/20 number survival, 85.0%), yielding a 95% Wilson confidence interval of 64.0% to 94.8% (about 1 in 7 numbers wrong, plausibly 1 in 20 to 1 in 3). A multi-hundred speaker trial spanning regional Indian accents (Bhojpuri, Haryanvi, Punjabi, Marathi) is required for national scale.
 3. **No Concurrency Stress Testing:** The current SQLite fleet database and single-process pipeline were benchmarked for single-turn interactive sessions. Multi-tenant SIP concurrency under high simultaneous incident spikes has not been load-tested.
 4. **Offline Telephony Integration (Planned Barge-In):** Audio processing operates through audio file/byte streams. Direct SIP/RTP integration with Asterisk/FreeSWITCH telephony trunks and hardware VAD barge-in during TTS playback is a planned architectural interface, not an active trunk.
-5. **Heuristic Thresholds Unvalidated on Longitudinal Telemetry:** Cargo tolerance bands ($\pm 4^\circ	ext{C}$ to $\pm 15^\circ	ext{C}$) are author-configured engineering heuristics informed by regulatory storage guidelines (WHO PQS, FSSAI, Codex, APEDA), not yet empirically tuned against multi-year telematics logs from commercial reefer fleets.
+5. **Heuristic Thresholds Unvalidated on Longitudinal Telemetry:** Cargo tolerance bands (±4°C to ±15°C) and sensor match tolerance (±2.0°C) are author-configured engineering heuristics informed by regulatory storage guidelines (WHO PQS, FSSAI, Codex, APEDA), not yet empirically tuned against multi-year telematics logs from commercial reefer fleets.
 6. **Simulated Fleet Telemetry:** Vehicle records, roadside assistance dispatches, and simulated driver replies in Track 1 are simulated within data/fleet.sqlite and explicitly tagged as [Simulated fleet data].
+7. **Estimated Telephony Wait:** Driver-perceived turnaround wait (~700 ms to ~1.2 s) is an estimate derived from internal compute plus assumed initial TTS synthesis and carrier packet jitter; true turnaround requires audio-in to audio-out latency timing on a live telephony trunk.
+8. **Caller-ID Fallback Dependence:** Unverified phone numbers rely on the driver accurately stating the vehicle registration or last 4 digits; calls that fail 2 verification attempts are transferred to human supervisors.

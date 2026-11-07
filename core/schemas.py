@@ -40,6 +40,11 @@ CARGO_TOLERANCE_MAP = {
     CargoClass.AMBIENT_GENERAL: 25.0,
 }
 
+# Empirical tolerance band for matching driver-spoken display temperature with live IoT sensor telemetry.
+# Accounts for reefer cab display integer rounding (e.g. -21.6°C displayed as -21°C or -22°C),
+# probe calibration offset (±0.5°C), and compartment micro-climatic thermal stratification.
+SENSOR_MATCH_TOLERANCE_C: float = 2.0
+
 
 def get_cargo_tolerance(cargo_type_str: Optional[str]) -> float:
     """Map cargo description to telematics safety tolerance threshold (°C)."""
@@ -258,6 +263,7 @@ class AssistanceRequest(BaseModel):
     gps_fix_timestamp: Optional[str] = None
     supervisor_alert_flag: bool = False
     residual_risk_flag: bool = False
+    priority_source: str = "CONFIRMED_READING"  # "CONFIRMED_READING" or "UNCONFIRMED_INITIAL"
     created_at: Optional[str] = None
     status: str = "DISPATCHED"
 

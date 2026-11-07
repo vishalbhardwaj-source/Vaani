@@ -136,8 +136,16 @@ def train_asr(epochs: int = 5, batch_size: int = 4, lr: float = 5e-4):
     print(f"Epochs: {epochs} | Batch Size: {batch_size} | LR: {lr}")
     print(f"========================================================\n")
 
-    processor = WhisperProcessor.from_pretrained(MODEL_NAME)
-    base_model = WhisperForConditionalGeneration.from_pretrained(MODEL_NAME)
+    processor = WhisperProcessor.from_pretrained(
+        MODEL_NAME,
+        revision="169d4a4341b33bc18d8881c4b69c2e104e1cc0af",
+        trust_remote_code=False
+    )
+    base_model = WhisperForConditionalGeneration.from_pretrained(
+        MODEL_NAME,
+        revision="169d4a4341b33bc18d8881c4b69c2e104e1cc0af",
+        trust_remote_code=False
+    )
 
     # Configure LoRA parameter-efficient fine-tuning
     lora_config = LoraConfig(

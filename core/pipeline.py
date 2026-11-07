@@ -46,7 +46,11 @@ class TrainedVaaniPipeline:
         # 3. Load Model 3: NLU Slot Extractor
         nlu_dir = BASE_DIR / "models" / "nlu_slot_extractor"
         self.nlu_tokenizer = AutoTokenizer.from_pretrained(str(nlu_dir))
-        base_nlu = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-small")
+        base_nlu = AutoModelForSeq2SeqLM.from_pretrained(
+            "google/flan-t5-small",
+            revision="0fc9ddf78a1e988dac52e2dac162b0ede4fd74ab",
+            trust_remote_code=False
+        )
         self.nlu_model = PeftModel.from_pretrained(base_nlu, str(nlu_dir))
         self.nlu_model.to(self.device).eval()
         print("Model 3 (NLU Slot Extractor Flan-T5+LoRA) loaded.")

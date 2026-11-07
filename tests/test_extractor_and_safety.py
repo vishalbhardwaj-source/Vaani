@@ -150,6 +150,7 @@ def test_adaptive_rules_do_not_silently_rewrite_temperatures():
 
     # Spoken read-back must speak 40 degree, never rewrite to 14 degree
     ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.veh_telemetry.current_temp_c = -18.0
     prompt = ctrl.generate_readback_prompt(rec_40)
     assert "40" in prompt
     assert "Temperature 14 degree" not in prompt
@@ -180,6 +181,7 @@ def test_telematics_plausibility_forces_firm_confirmation():
     """
     # HR-55-TC-1102 has target_temp_c = -20C (Ice Cream)
     ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.veh_telemetry.current_temp_c = -18.0
     ctrl.receive_driver_utterance("Temperature 25 degree ho gaya hai Toll Plaza pe")
     rec = ExtractionRecord(
         incident_type=IncidentType.REEFER_TEMPERATURE,
@@ -232,6 +234,7 @@ def test_correction_path_enforces_bounds():
     5. Valid clarification reply restores actionability.
     """
     ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.veh_telemetry.current_temp_c = -18.0
     ctrl.receive_driver_utterance("Reefer minus 18 degree")
     ctrl.process_extraction(ExtractionRecord(
         incident_type=IncidentType.REEFER_TEMPERATURE,
@@ -332,6 +335,7 @@ def test_substring_bypass_rejected_and_strict_comparison():
     # Vehicle HR-55-TC-1102 has target_temp -22.0C
     # Case A: Reported temp = 5.0C (|5 - (-22)| = 27C > 25C)
     ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.veh_telemetry.current_temp_c = -18.0
     ctrl.receive_driver_utterance("Temperature 5 degree hai")
     ctrl.process_extraction(ExtractionRecord(
         incident_type=IncidentType.REEFER_TEMPERATURE,
@@ -384,6 +388,7 @@ def test_negative_telematics_plausibility_and_confirmation():
 def test_flag_lifetime_resets_on_session_reset_and_escalation():
     """requires_forced_confirmation must not leak across sessions or escalations."""
     ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.veh_telemetry.current_temp_c = -18.0
     ctrl.receive_driver_utterance("Temperature 25 degree")
     ctrl.process_extraction(ExtractionRecord(
         incident_type=IncidentType.REEFER_TEMPERATURE,
@@ -616,6 +621,7 @@ def test_gate_expected_temperature_five_rejects_and_accepts():
     # Vehicle HR-55-TC-1102 has target_temp_c = -22.0C.
     # Expected temperature 5.0C diverges by 27.0C (> 25C), activating forced confirmation.
     ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.veh_telemetry.current_temp_c = -18.0
     ctrl.receive_driver_utterance("Temperature 5 degree hai Toll Plaza pe")
     ctrl.process_extraction(ExtractionRecord(
         incident_type=IncidentType.REEFER_TEMPERATURE,

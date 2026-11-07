@@ -33,7 +33,11 @@ class HinglishWhisperASR:
         from peft import PeftModel
 
         self.processor = WhisperProcessor.from_pretrained(str(MODEL_DIR))
-        base_model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny")
+        base_model = WhisperForConditionalGeneration.from_pretrained(
+            "openai/whisper-tiny",
+            revision="169d4a4341b33bc18d8881c4b69c2e104e1cc0af",
+            trust_remote_code=False
+        )
         self.model = PeftModel.from_pretrained(base_model, str(MODEL_DIR))
         self.model.to(self.device).eval()
         print("Whisper-LoRA ASR loaded successfully!")

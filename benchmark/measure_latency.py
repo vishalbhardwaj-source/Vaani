@@ -95,10 +95,15 @@ def measure_pipeline_latency(num_trials: int = 15) -> pd.DataFrame:
         audio_bytes = speak_text(concise_prompt)
         tts_latencies.append((time.perf_counter() - t0) * 1000.0)
 
-        # Duration of spoken prompts at conversational telephony pace (~170 wpm)
-        concise_dur = round((len(concise_prompt.split()) / 170.0) * 60.0, 2)
-        challenged_dur = round((len(challenged_turn1.split()) / 170.0) * 60.0, 2)
+        # Synthesized audio duration measured directly from waveform bytes
+        import io
+        data_c, sr_c = sf.read(io.BytesIO(audio_bytes))
+        concise_dur = round(len(data_c) / sr_c, 2)
         readback_durations_concise.append(concise_dur)
+
+        ch_bytes = speak_text(challenged_turn1)
+        data_ch, sr_ch = sf.read(io.BytesIO(ch_bytes))
+        challenged_dur = round(len(data_ch) / sr_ch, 2)
         readback_durations_challenged.append(challenged_dur)
 
     metrics = [
@@ -139,6 +144,15 @@ def measure_pipeline_latency(num_trials: int = 15) -> pd.DataFrame:
             "Max": round(np.max(turnaround_latencies), 1)
         },
         {
+            "Stage": "Estimated Driver-Perceived Wait (Compute + Est. Telephony/TTS Buffers)",
+            "Units": "ms (estimated)",
+            "Min": round(np.min(turnaround_latencies) + 300.0, 1),
+            "p50 (Median)": round(np.percentile(turnaround_latencies, 50) + 300.0, 1),
+            "p90": round(np.percentile(turnaround_latencies, 90) + 300.0, 1),
+            "p95": round(np.percentile(turnaround_latencies, 95) + 300.0, 1),
+            "Max": round(np.max(turnaround_latencies) + 300.0, 1)
+        },
+        {
             "Stage": "TTS Audio Synthesis",
             "Units": "ms",
             "Min": round(np.min(tts_latencies), 1),
@@ -148,7 +162,7 @@ def measure_pipeline_latency(num_trials: int = 15) -> pd.DataFrame:
             "Max": round(np.max(tts_latencies), 1)
         },
         {
-            "Stage": "Concise Read-Back Audio Duration (Normal)",
+            "Stage": "Concise Read-Back Synthesized Audio Duration (Normal)",
             "Units": "seconds",
             "Min": round(np.min(readback_durations_concise), 2),
             "p50 (Median)": round(np.percentile(readback_durations_concise, 50), 2),
@@ -157,7 +171,7 @@ def measure_pipeline_latency(num_trials: int = 15) -> pd.DataFrame:
             "Max": round(np.max(readback_durations_concise), 2)
         },
         {
-            "Stage": "Split Challenged Turn 1 Audio Duration",
+            "Stage": "Split Challenged Turn 1 Synthesized Audio Duration",
             "Units": "seconds",
             "Min": round(np.min(readback_durations_challenged), 2),
             "p50 (Median)": round(np.percentile(readback_durations_challenged, 50), 2),

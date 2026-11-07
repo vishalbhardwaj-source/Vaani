@@ -131,8 +131,16 @@ def train_nlu(epochs: int = 6, batch_size: int = 8, lr: float = 1e-3):
     print(f"Epochs: {epochs} | Batch Size: {batch_size} | LR: {lr}")
     print(f"========================================================\n")
 
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    base_model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+    tokenizer = AutoTokenizer.from_pretrained(
+        MODEL_NAME,
+        revision="0fc9ddf78a1e988dac52e2dac162b0ede4fd74ab",
+        trust_remote_code=False
+    )
+    base_model = AutoModelForSeq2SeqLM.from_pretrained(
+        MODEL_NAME,
+        revision="0fc9ddf78a1e988dac52e2dac162b0ede4fd74ab",
+        trust_remote_code=False
+    )
 
     lora_config = LoraConfig(
         r=16,

@@ -99,6 +99,8 @@ def init_db():
         cursor.execute("ALTER TABLE assistance_requests ADD COLUMN supervisor_alert_flag INTEGER DEFAULT 0")
     if "residual_risk_flag" not in req_cols:
         cursor.execute("ALTER TABLE assistance_requests ADD COLUMN residual_risk_flag INTEGER DEFAULT 0")
+    if "priority_source" not in req_cols:
+        cursor.execute("ALTER TABLE assistance_requests ADD COLUMN priority_source TEXT DEFAULT 'CONFIRMED_READING'")
 
     # Seed initial test data if empty
     cursor.execute("SELECT COUNT(*) FROM vehicles")
@@ -207,6 +209,60 @@ def lookup_vehicle_by_phone(phone_number: str) -> Tuple[Optional[VehicleRecord],
         return matching_vehicles[0], "MATCH_FOUND"
 
 
+def lookup_vehicle_by_registration_query(query: str) -> Tuple[Optional[VehicleRecord], str]:
+    """
+    Identifies a vehicle when caller-ID is unverified.
+    Supports driver stating:
+    - Last 4 digits of registration (e.g., '1102', 'gadi number 1102')
+    - Full plate with or without hyphens/spaces (e.g., 'HR-55-TC-1102', 'HR 55 TC 1102', 'HR55TC1102')
+    - Digits-only representation (e.g. '551102')
+
+    Returns:
+    - (VehicleRecord, 'MATCH_FOUND') if exactly one match.
+    - (None, 'MULTIPLE_MATCHES') if query matches multiple vehicles.
+    - (None, 'NOT_FOUND') if no vehicle matches.
+    """
+    raw = (query or "").strip()
+    if not raw:
+        return None, "NOT_FOUND"
+
+    all_vehs = list_vehicles()
+    if not all_vehs:
+        return None, "NOT_FOUND"
+
+    clean_alnum = re.sub(r"[^A-Za-z0-9]", "", raw).upper()
+    digits_only = re.sub(r"\D", "", raw)
+
+    matches = []
+    for veh in all_vehs:
+        veh_alnum = re.sub(r"[^A-Za-z0-9]", "", veh.vehicle_id).upper()
+        veh_digits = re.sub(r"\D", "", veh.vehicle_id)
+
+        # 1. Exact match on full registration string
+        if veh.vehicle_id.upper() == raw.upper() or veh_alnum == clean_alnum:
+            matches.append(veh)
+            continue
+
+        # 2. Match on 4-digit suffix (e.g. "1102")
+        if len(digits_only) >= 4 and veh_digits.endswith(digits_only[-4:]):
+            matches.append(veh)
+            continue
+
+        # 3. Match on full digits if at least 4 digits
+        if len(digits_only) >= 4 and digits_only in veh_digits:
+            matches.append(veh)
+            continue
+
+    # Deduplicate matches by vehicle_id
+    unique_matches = {v.vehicle_id: v for v in matches}
+    if len(unique_matches) == 1:
+        return list(unique_matches.values())[0], "MATCH_FOUND"
+    elif len(unique_matches) > 1:
+        return None, "MULTIPLE_MATCHES"
+    else:
+        return None, "NOT_FOUND"
+
+
 def list_vehicles() -> List[VehicleRecord]:
     """Return all vehicles in simulated fleet."""
     conn = get_db_connection()
@@ -246,7 +302,8 @@ def dispatch_assistance(
     supervisor_alert_flag: bool = False,
     residual_risk_flag: bool = False,
     gps_lat: Optional[float] = None,
-    gps_lng: Optional[float] = None
+    gps_lng: Optional[float] = None,
+    priority_source: str = "CONFIRMED_READING"
 ) -> Dict[str, Any]:
     """
     Records a simulated roadside assistance and technician dispatch.
@@ -268,8 +325,8 @@ def dispatch_assistance(
     INSERT INTO assistance_requests (
         vehicle_id, incident_type, priority, location_reported, distance_km,
         reported_temp_c, notes, gps_lat, gps_lng, gps_fix_timestamp,
-        supervisor_alert_flag, residual_risk_flag
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        supervisor_alert_flag, residual_risk_flag, priority_source
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         vehicle_id,
         incident_type,
@@ -277,12 +334,13 @@ def dispatch_assistance(
         location_reported,
         distance_km,
         reported_temp_c,
-        f"[Simulated fleet data] {notes or 'Spoken dispatch triggered via Vaani'}",
+        f"[Simulated fleet data] {notes or 'Spoken dispatch triggered via Vaani'} [Priority source: {priority_source}]",
         gps_lat,
         gps_lng,
         now_iso,
         1 if supervisor_alert_flag else 0,
-        1 if residual_risk_flag else 0
+        1 if residual_risk_flag else 0,
+        priority_source
     ))
 
     ticket_id = cursor.lastrowid
