@@ -86,16 +86,18 @@ def measure_pipeline_latency(num_trials: int = 15) -> pd.DataFrame:
         turnaround_latencies.append(asr_lat + ext_lat + gate_lat)
 
         # D. TTS Generation Latency & Spoken Audio Duration
-        concise_prompt = "Temperature 18 degree, Panipat Toll se 42 km aage. Sahi hai na Bhaiya?"
-        challenged_prompt = "Temperature 80 degree (8, 0), Panipat Toll se 42 (4, 2) km aage. Dhyan dein: Sensor 18 degree tha. Sahi hai na Bhaiya?"
+        # Split short turns: Normal read-back is concise (< 3s)
+        concise_prompt = "Temp 18 degree, Panipat Toll pe. Sahi hai Bhaiya?"
+        # Challenged turn 1: short readback with digits
+        challenged_turn1 = "Temp minus 14 degree, ek-chaar. Sahi hai?"
 
         t0 = time.perf_counter()
         audio_bytes = speak_text(concise_prompt)
         tts_latencies.append((time.perf_counter() - t0) * 1000.0)
 
-        # Duration of spoken prompts at conversational pace (~150 wpm in Hinglish telephony)
-        concise_dur = round((len(concise_prompt.split()) / 150.0) * 60.0, 2)
-        challenged_dur = round((len(challenged_prompt.split()) / 150.0) * 60.0, 2)
+        # Duration of spoken prompts at conversational telephony pace (~170 wpm)
+        concise_dur = round((len(concise_prompt.split()) / 170.0) * 60.0, 2)
+        challenged_dur = round((len(challenged_turn1.split()) / 170.0) * 60.0, 2)
         readback_durations_concise.append(concise_dur)
         readback_durations_challenged.append(challenged_dur)
 
@@ -128,7 +130,7 @@ def measure_pipeline_latency(num_trials: int = 15) -> pd.DataFrame:
             "Max": round(np.max(gate_latencies), 1)
         },
         {
-            "Stage": "Total Turnaround Latency (ASR+NLU+Gate)",
+            "Stage": "Internal Compute Turnaround (ASR+NLU+Gate)",
             "Units": "ms",
             "Min": round(np.min(turnaround_latencies), 1),
             "p50 (Median)": round(np.percentile(turnaround_latencies, 50), 1),
@@ -137,7 +139,16 @@ def measure_pipeline_latency(num_trials: int = 15) -> pd.DataFrame:
             "Max": round(np.max(turnaround_latencies), 1)
         },
         {
-            "Stage": "Concise Read-Back Duration (Normal)",
+            "Stage": "TTS Audio Synthesis",
+            "Units": "ms",
+            "Min": round(np.min(tts_latencies), 1),
+            "p50 (Median)": round(np.percentile(tts_latencies, 50), 1),
+            "p90": round(np.percentile(tts_latencies, 90), 1),
+            "p95": round(np.percentile(tts_latencies, 95), 1),
+            "Max": round(np.max(tts_latencies), 1)
+        },
+        {
+            "Stage": "Concise Read-Back Audio Duration (Normal)",
             "Units": "seconds",
             "Min": round(np.min(readback_durations_concise), 2),
             "p50 (Median)": round(np.percentile(readback_durations_concise, 50), 2),
@@ -146,7 +157,7 @@ def measure_pipeline_latency(num_trials: int = 15) -> pd.DataFrame:
             "Max": round(np.max(readback_durations_concise), 2)
         },
         {
-            "Stage": "Challenged Read-Back Duration (Digit Spelling)",
+            "Stage": "Split Challenged Turn 1 Audio Duration",
             "Units": "seconds",
             "Min": round(np.min(readback_durations_challenged), 2),
             "p50 (Median)": round(np.percentile(readback_durations_challenged, 50), 2),

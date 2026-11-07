@@ -2,16 +2,16 @@ Scenario ID,Vehicle ID,Cargo Type,Cargo Target (°C),Reported Temp (°C),Target 
 adv_01,HR-55-TC-1102,Ice Cream,-22.0,12.0,34.0,True,True,True,Large Divergence
 adv_02,HR-55-TC-1102,Ice Cream,-22.0,18.0,40.0,True,True,True,Large Divergence
 adv_03,HR-55-TC-1102,Ice Cream,-22.0,25.0,47.0,True,True,True,Large Divergence
-adv_04,HR-55-TC-1102,Ice Cream,-22.0,-8.0,14.0,True,True,True,Boundary Above (Delta 14 > 12)
+adv_04,HR-55-TC-1102,Ice Cream,-22.0,-8.0,14.0,True,False,True,Boundary Above (Delta 14 > 12)
 adv_05,HR-55-TC-1102,Ice Cream,-22.0,-10.0,12.0,False,N/A (Within Tolerance),True,Exact Boundary (Delta 12 == 12)
 adv_06,HR-55-TC-1102,Ice Cream,-22.0,-12.0,10.0,False,N/A (Within Tolerance),True,Boundary Under (Delta 10 < 12)
 adv_07,MH-12-RN-8819,Vaccine Cold-Chain,-20.0,-14.0,6.0,True,True,True,Pharma Tight Boundary (Delta 6 > 4)
 adv_08,MH-12-RN-8819,Vaccine Cold-Chain,-20.0,-18.0,2.0,False,N/A (Within Tolerance),True,Pharma Safe (Delta 2 <= 4)
 adv_09,DL-01-AA-4092,Dairy & Milk Products,4.0,-24.0,28.0,True,True,True,Negative Anomaly
-adv_10,DL-01-AA-4092,Dairy & Milk Products,4.0,14.0,10.0,True,True,True,Dairy Boundary Above (Delta 10 > 8)
+adv_10,DL-01-AA-4092,Dairy & Milk Products,4.0,14.0,10.0,True,False,True,Dairy Boundary Above (Delta 10 > 8)
 adv_11,DL-01-AA-4092,Dairy & Milk Products,4.0,11.0,7.0,False,N/A (Within Tolerance),True,Dairy Boundary Under (Delta 7 < 8)
 adv_12,DL-01-AA-4092,Dairy & Milk Products,4.0,40.0,36.0,True,True,True,Severe Heat Anomaly
 adv_13,GJ-01-BX-7201,Fresh Perishables,6.0,-22.0,28.0,True,True,True,Freezing Produce Anomaly
-adv_14,GJ-01-BX-7201,Fresh Perishables,6.0,24.0,18.0,True,True,True,Produce Boundary (Delta 18 > 15)
+adv_14,GJ-01-BX-7201,Fresh Perishables,6.0,24.0,18.0,True,False,True,Produce Boundary (Delta 18 > 15)
 adv_15,GJ-01-BX-7201,Fresh Perishables,6.0,19.0,13.0,False,N/A (Within Tolerance),True,Produce Boundary Under (Delta 13 < 15)
 adv_16,DL-01-AA-4092,Dairy & Milk Products,4.0,40.0,36.0,True,True,True,Known Residual Risk: Human Confirmed Misheard Reading

@@ -315,7 +315,7 @@ def test_evaluate_confirmation_gate_exhaustive():
     veh_vaccine = VehicleRecord(
         vehicle_id="MH-12-RN-8819", driver_name="Sukhwinder", driver_phone="+91-9811223344",
         vehicle_type="Reefer 24ft", cargo_type="Vaccine Cold-Chain",
-        target_temp_c=-20.0, current_temp_c=-18.0, route="Pune to Mumbai",
+        target_temp_c=-20.0, current_temp_c=-19.0, route="Pune to Mumbai",
         last_known_location="Mumbai-Pune Expressway km 68", status="IN_TRANSIT"
     )
 
@@ -340,7 +340,7 @@ def test_evaluate_confirmation_gate_exhaustive():
     veh_icecream = VehicleRecord(
         vehicle_id="HR-55-TC-1102", driver_name="Ramesh", driver_phone="+91-9876543210",
         vehicle_type="Reefer 32ft", cargo_type="Ice Cream Consignment",
-        target_temp_c=-22.0, current_temp_c=-14.0, route="Karnal to Delhi",
+        target_temp_c=-22.0, current_temp_c=-22.0, route="Karnal to Delhi",
         last_known_location="NH-44 Toll Plaza km 42", status="IN_TRANSIT"
     )
 
@@ -401,5 +401,134 @@ def test_generic_location_fragments_rejected_and_anchored_to_gps():
     # State machine anchors to vehicle's telematics GPS
     assert state == DialogueState.CONFIRMING
     assert "GPS" in prompt and ("Corridor" in prompt or "NH-44" in prompt)
+
+
+def test_live_sensor_rule_exhaustive_cases():
+    """
+    Unit test covering the 4 live sensor decision rules:
+    - Case 1: Matches sensor -> ALLOW (Strong evidence ASR is right, even when far from target)
+    - Case 2: Matches target ONLY -> CHALLENGE (Weak evidence, sensor indicates divergence)
+    - Case 3: Matches neither -> CHALLENGE (Acoustic trap)
+    - Case 4: Stale or faulty sensor -> Falls back to target-only check
+    """
+    from core.state_machine import evaluate_confirmation_gate
+    from core.schemas import GateDecision, VehicleRecord
+
+    # Truck with target -22°C, tolerance 12°C (Ice cream)
+    # Case 1: Reefer warmed up, sensor reads -12°C. Driver reports -13°C.
+    # Delta from sensor = 1°C (<= 12°C). Delta from target = 9°C.
+    veh_breakdown = VehicleRecord(
+        vehicle_id="HR-55-TC-1102", driver_name="Ramesh", driver_phone="+91-9876543210",
+        vehicle_type="Reefer 32ft", cargo_type="Ice Cream Consignment",
+        target_temp_c=-22.0, current_temp_c=-12.0, route="Karnal to Delhi",
+        last_known_location="NH-44 Corridor Milepost 118", status="IN_TRANSIT",
+        gps_fix_age_minutes=3
+    )
+    res_c1 = evaluate_confirmation_gate(
+        ExtractionRecord(temperature_c=-13.0, location_text="Highway"),
+        DriverReply(intent="CONFIRM", raw_text="haan sahi hai"),
+        veh_breakdown
+    )
+    assert res_c1.decision == GateDecision.ALLOW
+    assert "Strong evidence" in res_c1.reason
+
+    # Case 2: Matches target only (Weak evidence).
+    # Sensor reads -2.0°C (severe failure, 20°C delta from target). Driver reports -21.0°C (matches target).
+    # Delta sensor = 19°C (> 12°C). Delta target = 1°C (<= 12°C).
+    veh_divergent = VehicleRecord(
+        vehicle_id="HR-55-TC-1102", driver_name="Ramesh", driver_phone="+91-9876543210",
+        vehicle_type="Reefer 32ft", cargo_type="Ice Cream Consignment",
+        target_temp_c=-22.0, current_temp_c=-2.0, route="Karnal to Delhi",
+        last_known_location="NH-44 Corridor Milepost 118", status="IN_TRANSIT",
+        gps_fix_age_minutes=3
+    )
+    res_c2 = evaluate_confirmation_gate(
+        ExtractionRecord(temperature_c=-21.0, location_text="Highway"),
+        DriverReply(intent="CONFIRM", raw_text="haan sahi hai"),
+        veh_divergent
+    )
+    assert res_c2.decision == GateDecision.CHALLENGE
+    assert "Weak evidence" in res_c2.reason
+
+    # Case 3: Matches neither sensor nor target.
+    # Sensor reads -10°C, target -22°C. Driver reports 25°C (acoustic trap / out of cold chain).
+    res_c3 = evaluate_confirmation_gate(
+        ExtractionRecord(temperature_c=25.0, location_text="Highway"),
+        DriverReply(intent="CONFIRM", raw_text="haan sahi hai"),
+        veh_breakdown
+    )
+    assert res_c3.decision == GateDecision.CHALLENGE
+    assert "Matches neither" in res_c3.reason or "Polarity flip" in res_c3.reason
+
+    # Case 4: Stale sensor (fix age = 25 minutes > 15m threshold).
+    # Sensor value ignored; falls back to target check.
+    veh_stale = VehicleRecord(
+        vehicle_id="HR-55-TC-1102", driver_name="Ramesh", driver_phone="+91-9876543210",
+        vehicle_type="Reefer 32ft", cargo_type="Ice Cream Consignment",
+        target_temp_c=-22.0, current_temp_c=-10.0, route="Karnal to Delhi",
+        last_known_location="NH-44 Corridor Milepost 118", status="IN_TRANSIT",
+        gps_fix_age_minutes=25  # Stale!
+    )
+    res_c4 = evaluate_confirmation_gate(
+        ExtractionRecord(temperature_c=-20.0, location_text="Highway"),
+        DriverReply(intent="CONFIRM", raw_text="haan sahi hai"),
+        veh_stale
+    )
+    assert res_c4.decision == GateDecision.ALLOW
+    assert "stale" in res_c4.reason
+
+
+def test_sign_flip_detection_subzero_target():
+    """Verify that a dropped minus sign (-14 -> +14) on a sub-zero cargo is immediately challenged."""
+    from core.state_machine import evaluate_confirmation_gate
+    from core.schemas import GateDecision, VehicleRecord
+
+    veh_vaccine = VehicleRecord(
+        vehicle_id="MH-12-RN-8819", driver_name="Sukhwinder", driver_phone="+91-9811223344",
+        vehicle_type="Reefer 24ft", cargo_type="Vaccine Cold-Chain",
+        target_temp_c=-20.0, current_temp_c=-18.0, route="Pune to Mumbai",
+        last_known_location="Mumbai-Pune Expressway Section 4", status="IN_TRANSIT"
+    )
+
+    # Driver says +14°C (due to dropped minus sign in ASR)
+    res_flip = evaluate_confirmation_gate(
+        ExtractionRecord(temperature_c=14.0, location_text="Pune Highway"),
+        DriverReply(intent="CONFIRM", raw_text="haan sahi hai"),
+        veh_vaccine
+    )
+    assert res_flip.decision == GateDecision.CHALLENGE
+    assert "Polarity flip" in res_flip.reason
+
+
+def test_caller_id_failure_modes():
+    """Test caller ID failure modes: phone not in table, multiple matches, single match."""
+    from core.state_machine import DialogueController, DialogueState
+    from core.schemas import ExtractionRecord, IncidentType
+
+    # 1. Phone not in table -> enters ASKING, never defaults to a fallback vehicle!
+    ctrl_unknown = DialogueController(caller_phone="+91-9999999999", vehicle_id=None)
+    assert ctrl_unknown.is_unverified_vehicle is True
+    assert ctrl_unknown.vehicle_id is None
+    ctrl_unknown.receive_driver_utterance("Reefer 18 degree")
+    state, prompt = ctrl_unknown.process_extraction(ExtractionRecord(incident_type=IncidentType.REEFER_TEMPERATURE, temperature_c=18.0, location_text="Highway"))
+    assert state == DialogueState.ASKING
+    assert "registration number confirm karein" in prompt
+
+    # 2. Single match -> verified vehicle
+    ctrl_known = DialogueController(caller_phone="+91-9876543210")
+    assert ctrl_known.is_unverified_vehicle is False
+    assert ctrl_known.vehicle_id == "HR-55-TC-1102"
+
+
+def test_cargo_excursion_check_independent_of_asr_gate():
+    """Verify that cargo physical excursion risk is decoupled from ASR plausibility."""
+    from core.schemas import check_cargo_temperature_excursion, DispatchPriority
+
+    # Deep freeze target is -22°C. A reported -10°C might pass an ASR plausibility check against a -10°C sensor,
+    # but represents a critical physical cargo excursion (> -18°C threshold)!
+    is_excursion, reason, prio = check_cargo_temperature_excursion("Ice Cream Consignment", -10.0)
+    assert is_excursion is True
+    assert prio == DispatchPriority.CRITICAL
+    assert "-18°C" in reason
 
 

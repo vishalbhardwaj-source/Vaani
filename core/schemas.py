@@ -5,7 +5,7 @@ Ensures strict validation before any action tool can be executed.
 """
 
 from enum import Enum
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
@@ -26,14 +26,15 @@ class CargoClass(str, Enum):
 
 
 CARGO_TOLERANCE_MAP = {
-    # Referenced from industry cold-chain standards and food safety regulations:
-    # 1. WHO PQS (Performance, Quality, Safety) / Good Distribution Practices (GDP): Vaccine storage (+2°C to +8°C or -20°C): ±4°C max breach tolerance
+    # Engineering heuristics chosen by the author, informed by cold-chain storage ranges:
+    # (Note: Standard documents specify physical storage ceilings, not ASR plausibility bands).
+    # 1. Pharma/Vaccines (informed by WHO PQS E003/001 storage range +2°C to +8°C / -20°C): ±4°C heuristic
     CargoClass.PHARMA_VACCINE: 4.0,
-    # 2. FSSAI Schedule 4 / HACCP Milk Processing & Cold Storage Norms: Dairy products (+4°C target): ±8°C breach threshold
+    # 2. Dairy & Milk (informed by FSSAI Schedule 4 / HACCP storage norm <= 8°C): ±8°C heuristic
     CargoClass.DAIRY_CHILLER: 8.0,
-    # 3. Codex Alimentarius / FSSAI Quick Frozen Food Code: Deep freeze (-18°C to -22°C): ±12°C breach threshold
+    # 3. Deep Freeze / Ice Cream (informed by Codex Stan 92-1981 quick frozen food ceiling <= -18°C): ±12°C heuristic
     CargoClass.DEEP_FREEZE: 12.0,
-    # 4. APEDA Horticultural Cold Chain Standards: Fresh produce & fruits (+6°C to +12°C): ±15°C breach threshold
+    # 4. Horticultural Produce (informed by APEDA Cold Chain Guidelines 0°C to 15°C): ±15°C heuristic
     CargoClass.PERISHABLE_PRODUCE: 15.0,
     # 5. Configurable default for general ambient freight
     CargoClass.AMBIENT_GENERAL: 25.0,
@@ -54,6 +55,40 @@ def get_cargo_tolerance(cargo_type_str: Optional[str]) -> float:
     if "fruit" in lower or "vegetable" in lower or "perishable" in lower:
         return CARGO_TOLERANCE_MAP[CargoClass.PERISHABLE_PRODUCE]
     return CARGO_TOLERANCE_MAP[CargoClass.AMBIENT_GENERAL]
+
+
+def check_cargo_temperature_excursion(cargo_type_str: Optional[str], temp_c: Optional[float]) -> Tuple[bool, str, "DispatchPriority"]:
+    """
+    Evaluates physical cargo thermal excursion independent of speech recognition plausibility.
+    Answers: 'Is the cargo at active spoilage/degradation risk?'
+    (The ASR Gate answers separately: 'Was this transcribed correctly?').
+
+    Storage thresholds informing excursion detection:
+    - Vaccine: safe range +2°C to +8°C (WHO PQS E003/001). Any reading < 0°C (freeze damage) or > 8°C is CRITICAL excursion.
+    - Deep Freeze / Ice Cream: critical storage ceiling -18°C (Codex Stan 92-1981, Clause 5.2). Any reading > -18°C is CRITICAL excursion (e.g. -10°C is an excursion!).
+    - Dairy & Milk: safe storage <= 8°C (FSSAI Schedule 4, Part II). Reading > 8°C is HIGH excursion; > 12°C is CRITICAL.
+    - Fresh Produce: safe storage <= 12°C (APEDA Guidelines). Reading > 15°C is HIGH excursion.
+    """
+    if temp_c is None:
+        return False, "No temperature reported", DispatchPriority.MEDIUM
+
+    cargo = (cargo_type_str or "").lower()
+    if "vaccine" in cargo or "pharma" in cargo or "medicine" in cargo:
+        if temp_c < 0.0 or temp_c > 8.0:
+            return True, f"Vaccine excursion: {temp_c:g}°C outside safe +2°C to +8°C range (WHO PQS E003/001)", DispatchPriority.CRITICAL
+    elif "ice cream" in cargo or "frozen" in cargo or "meat" in cargo or "deep freeze" in cargo:
+        if temp_c > -18.0:
+            return True, f"Deep freeze excursion: {temp_c:g}°C exceeds -18°C storage ceiling (Codex Stan 92-1981)", DispatchPriority.CRITICAL
+    elif "dairy" in cargo or "milk" in cargo or "chiller" in cargo:
+        if temp_c > 12.0:
+            return True, f"Dairy severe excursion: {temp_c:g}°C exceeds 12°C spoil threshold (FSSAI Schedule 4)", DispatchPriority.CRITICAL
+        elif temp_c > 8.0:
+            return True, f"Dairy moderate excursion: {temp_c:g}°C exceeds 8°C storage ceiling (FSSAI Schedule 4)", DispatchPriority.HIGH
+    elif "fruit" in cargo or "vegetable" in cargo or "perishable" in cargo:
+        if temp_c > 15.0:
+            return True, f"Perishable produce excursion: {temp_c:g}°C exceeds 15°C APEDA ceiling", DispatchPriority.HIGH
+
+    return False, "Temperature within safe storage range", DispatchPriority.HIGH
 
 
 class GateDecision(str, Enum):
@@ -205,6 +240,7 @@ class VehicleRecord(BaseModel):
     gps_lng: Optional[float] = 77.2090
     gps_fix_age_minutes: int = 4
     speed_kmh: float = 60.0
+    sensor_fault_flag: bool = False
 
 
 class AssistanceRequest(BaseModel):

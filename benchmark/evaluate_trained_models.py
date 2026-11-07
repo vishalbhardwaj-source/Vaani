@@ -80,7 +80,7 @@ def evaluate():
     denoiser = TelephonyDenoiser()
     denoiser_path = PROJECT_ROOT / "models" / "denoiser_8khz.pt"
     if denoiser_path.exists():
-        denoiser.load_state_dict(torch.load(str(denoiser_path), map_location=device))
+        denoiser.load_state_dict(torch.load(str(denoiser_path), map_location=device, weights_only=True))
     denoiser.to(device).eval()
 
     # 2. Load Model 2 (Hinglish ASR via unified service)

@@ -10,7 +10,7 @@ import sqlite3
 import datetime
 import re
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 from core.schemas import VehicleRecord, AssistanceRequest, DispatchPriority
 
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "fleet.sqlite"
@@ -152,17 +152,21 @@ def lookup_vehicle(vehicle_id: str) -> Optional[VehicleRecord]:
     )
 
 
-def lookup_vehicle_by_phone(phone_number: str) -> Optional[VehicleRecord]:
+def lookup_vehicle_by_phone(phone_number: str) -> Tuple[Optional[VehicleRecord], str]:
     """
     Caller-ID telematics lookup: identify vehicle from driver's mobile phone number.
-    Extracts trailing 10 digits to robustly match telephony formats (+91, leading 0, spaces).
-    Source: Simulated fleet data
+    Extracts trailing 10 digits to match telephony formats (+91, leading 0, spaces).
+
+    Safety Failure Modes Handled:
+    1. Phone not in database -> returns (None, 'NOT_FOUND') -> forces prompt for registration.
+    2. Phone shared across multiple trucks (or driver switched trucks) -> returns (None, 'MULTIPLE_MATCHES') -> forces prompt.
+    3. Exactly one vehicle found -> returns (VehicleRecord, 'MATCH_FOUND').
     """
     clean_digits = re.sub(r"\D", "", str(phone_number))
     if len(clean_digits) >= 10:
         match_digits = clean_digits[-10:]
     else:
-        return None
+        return None, "INVALID_PHONE_FORMAT"
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -170,11 +174,12 @@ def lookup_vehicle_by_phone(phone_number: str) -> Optional[VehicleRecord]:
     rows = cursor.fetchall()
     conn.close()
 
+    matching_vehicles = []
     for r in rows:
         stored_digits = re.sub(r"\D", "", str(r["driver_phone"]))
         if stored_digits.endswith(match_digits):
             r_keys = r.keys()
-            return VehicleRecord(
+            veh = VehicleRecord(
                 vehicle_id=r["vehicle_id"],
                 driver_name=r["driver_name"],
                 driver_phone=r["driver_phone"],
@@ -190,7 +195,16 @@ def lookup_vehicle_by_phone(phone_number: str) -> Optional[VehicleRecord]:
                 gps_fix_age_minutes=r["gps_fix_age_minutes"] if "gps_fix_age_minutes" in r_keys else 4,
                 speed_kmh=r["speed_kmh"] if "speed_kmh" in r_keys else 60.0
             )
-    return None
+            matching_vehicles.append(veh)
+
+    if len(matching_vehicles) == 0:
+        return None, "NOT_FOUND"
+    elif len(matching_vehicles) > 1:
+        # Multiple trucks associated with the same phone (shared SIM or driver reassignment)
+        # Never guess silently; must prompt driver for exact registration
+        return None, "MULTIPLE_MATCHES"
+    else:
+        return matching_vehicles[0], "MATCH_FOUND"
 
 
 def list_vehicles() -> List[VehicleRecord]:

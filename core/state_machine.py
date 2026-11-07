@@ -23,7 +23,8 @@ from core.schemas import (
     CARGO_TOLERANCE_MAP,
     get_cargo_tolerance,
     GateDecision,
-    GateResult
+    GateResult,
+    DispatchPriority
 )
 from core.tools import dispatch_assistance, update_eta, lookup_vehicle, lookup_vehicle_by_phone
 
@@ -106,55 +107,122 @@ def evaluate_confirmation_gate(
     target_c = vehicle_telemetry.target_temp_c
     sensor_c = getattr(vehicle_telemetry, "current_temp_c", None)
     tolerance = get_cargo_tolerance(vehicle_telemetry.cargo_type)
+    fix_age = getattr(vehicle_telemetry, "gps_fix_age_minutes", 0)
+    sensor_fault = getattr(vehicle_telemetry, "sensor_fault_flag", False)
+    sensor_is_stale = (fix_age > 15)
+    sensor_is_valid = (sensor_c is not None and not sensor_fault and not sensor_is_stale)
 
-    # Telematics divergence: compares against both setpoint target and live sensor reading
-    target_diff = abs(record.temperature_c - target_c)
-    sensor_diff = abs(record.temperature_c - sensor_c) if sensor_c is not None else target_diff
-    temp_diff = max(target_diff, sensor_diff)
+    from gnani.client import parse_hindi_number
+    lower_reply = (reply.raw_text or "").lower()
+    parsed_reply_num = parse_hindi_number(lower_reply)
+    has_repeated_num = bool(
+        parsed_reply_num is not None and
+        abs(parsed_reply_num - record.temperature_c) < 0.1
+    )
 
-    if temp_diff > tolerance:
-        from gnani.client import parse_hindi_number
-        lower_reply = (reply.raw_text or "").lower()
-        parsed_reply_num = parse_hindi_number(lower_reply)
-
-        has_repeated_num = bool(
-            parsed_reply_num is not None and
-            abs(parsed_reply_num - record.temperature_c) < 0.1
+    # 1. Sign-Flip Protection (Dropped minus sign is the most dangerous acoustic hazard: e.g. -14 -> +14)
+    is_polarity_flip = (target_c < 0.0 and record.temperature_c > 0.0) or (target_c > 0.0 and record.temperature_c < 0.0)
+    if is_polarity_flip and not has_repeated_num:
+        expected_str = f"{record.temperature_c:g}"
+        sign_clarify = "minus " if target_c < 0.0 else ""
+        return GateResult(
+            decision=GateDecision.CHALLENGE,
+            reason=f"Polarity flip detected: Reported {record.temperature_c:g}°C against sub-zero target {target_c:g}°C. Requires explicit sign verification.",
+            challenge_prompt=f"Negative temperature target hai ({target_c:g}°C). Kya aapka matlab {sign_clarify}{expected_str} degree tha? Kripya number repeat karein: '{record.temperature_c:g} degree confirm'.",
+            telematics_divergence=abs(record.temperature_c - target_c),
+            threshold_applied=tolerance,
+            residual_risk_flag=False
         )
 
-        if not has_repeated_num:
-            expected_num_str = f"{record.temperature_c:g}"
-            comp_label = f"sensor {sensor_c:g}°C / target {target_c:g}°C" if sensor_c is not None else f"target {target_c:g}°C"
-            challenge_prompt = (
-                f"Telematics {comp_label} se kaafi antar hai. "
-                f"Kripya number repeat karein: '{expected_num_str} degree confirm'."
-            )
+    # 2. Live Sensor Decision Rule:
+    # - Case 1: Matches Sensor (within tolerance) -> Strong Evidence ASR is accurate (even if target is far, indicating real breakdown).
+    # - Case 2: Matches Target ONLY -> Weak Evidence (sensor indicates divergence, driver spoken target). CHALLENGE.
+    # - Case 3: Matches Neither -> Acoustic Trap / Out of bounds. CHALLENGE.
+    # - Case 4: Stale or Faulty Sensor -> Fallback to Target-only check.
+    if sensor_is_valid:
+        delta_sensor = abs(record.temperature_c - sensor_c)
+        delta_target = abs(record.temperature_c - target_c)
+        matches_sensor = (delta_sensor <= tolerance)
+        matches_target = (delta_target <= tolerance)
+
+        if matches_sensor:
+            # Case 1: Strong evidence that spoken report accurately matches reefer display
             return GateResult(
-                decision=GateDecision.CHALLENGE,
-                reason=f"Divergence {temp_diff:.1f}°C exceeds {tolerance:.1f}°C threshold for {vehicle_telemetry.cargo_type}. Explicit number repetition required.",
-                challenge_prompt=challenge_prompt,
-                telematics_divergence=temp_diff,
+                decision=GateDecision.ALLOW,
+                reason=f"Spoken {record.temperature_c:g}°C matches live sensor {sensor_c:g}°C (delta {delta_sensor:.1f}°C <= {tolerance:g}°C). Strong evidence ASR is accurate.",
+                telematics_divergence=delta_sensor,
+                threshold_applied=tolerance,
+                residual_risk_flag=False
+            )
+        elif matches_target:
+            # Case 2: Weak evidence - matches target, but sensor is divergent!
+            if not has_repeated_num:
+                return GateResult(
+                    decision=GateDecision.CHALLENGE,
+                    reason=f"Weak evidence: Spoken {record.temperature_c:g}°C matches target {target_c:g}°C but diverges from live sensor {sensor_c:g}°C (delta {delta_sensor:.1f}°C). Explicit repeat required.",
+                    challenge_prompt=f"Sensor {sensor_c:g}°C dikha raha hai par report {record.temperature_c:g}°C aayi hai. Kripya display confirm karein: '{record.temperature_c:g} degree confirm'.",
+                    telematics_divergence=delta_sensor,
+                    threshold_applied=tolerance,
+                    residual_risk_flag=False
+                )
+            else:
+                return GateResult(
+                    decision=GateDecision.ALLOW,
+                    reason=f"Driver verified {record.temperature_c:g}°C override against divergent sensor {sensor_c:g}°C.",
+                    telematics_divergence=delta_sensor,
+                    threshold_applied=tolerance,
+                    residual_risk_flag=True
+                )
+        else:
+            # Case 3: Matches Neither
+            if not has_repeated_num:
+                comp_label = f"sensor {sensor_c:g}°C / target {target_c:g}°C"
+                return GateResult(
+                    decision=GateDecision.CHALLENGE,
+                    reason=f"Matches neither live sensor ({delta_sensor:.1f}°C) nor target ({delta_target:.1f}°C) within {tolerance:g}°C tolerance.",
+                    challenge_prompt=f"Telematics {comp_label} se kaafi antar hai. Kripya number repeat karein: '{record.temperature_c:g} degree confirm'.",
+                    telematics_divergence=max(delta_sensor, delta_target),
+                    threshold_applied=tolerance,
+                    residual_risk_flag=False
+                )
+            else:
+                return GateResult(
+                    decision=GateDecision.ALLOW,
+                    reason=f"Driver explicitly confirmed override of {record.temperature_c:g}°C against telematics ({sensor_c}°C / {target_c}°C).",
+                    telematics_divergence=max(delta_sensor, delta_target),
+                    threshold_applied=tolerance,
+                    residual_risk_flag=True
+                )
+    else:
+        # Case 4: Sensor missing, stale (>15m), or marked faulty -> Fall back to target
+        delta_target = abs(record.temperature_c - target_c)
+        stale_note = " (sensor stale/faulty)" if sensor_c is not None else ""
+        if delta_target <= tolerance:
+            return GateResult(
+                decision=GateDecision.ALLOW,
+                reason=f"Reported {record.temperature_c:g}°C within tolerance ({tolerance:g}°C) of target {target_c:g}°C{stale_note}.",
+                telematics_divergence=delta_target,
                 threshold_applied=tolerance,
                 residual_risk_flag=False
             )
         else:
-            # Driver explicitly repeated and confirmed the number.
-            # Residual risk: driver confirmed an anomalous divergent value -> requires supervisor review.
-            return GateResult(
-                decision=GateDecision.ALLOW,
-                reason=f"Driver explicitly repeated and verified {record.temperature_c:g}°C override against telematics ({sensor_c}°C sensor / {target_c}°C target).",
-                telematics_divergence=temp_diff,
-                threshold_applied=tolerance,
-                residual_risk_flag=True
-            )
-
-    return GateResult(
-        decision=GateDecision.ALLOW,
-        reason=f"Reported {record.temperature_c:g}°C is within safe tolerance ({tolerance:g}°C) of telematics (sensor {sensor_c}°C / target {target_c}°C).",
-        telematics_divergence=temp_diff,
-        threshold_applied=tolerance,
-        residual_risk_flag=False
-    )
+            if not has_repeated_num:
+                return GateResult(
+                    decision=GateDecision.CHALLENGE,
+                    reason=f"Divergence {delta_target:.1f}°C from target {target_c:g}°C exceeds {tolerance:g}°C threshold{stale_note}.",
+                    challenge_prompt=f"Telematics target {target_c:g}°C se kaafi antar hai. Kripya number repeat karein: '{record.temperature_c:g} degree confirm'.",
+                    telematics_divergence=delta_target,
+                    threshold_applied=tolerance,
+                    residual_risk_flag=False
+                )
+            else:
+                return GateResult(
+                    decision=GateDecision.ALLOW,
+                    reason=f"Driver verified {record.temperature_c:g}°C override against target {target_c:g}°C{stale_note}.",
+                    telematics_divergence=delta_target,
+                    threshold_applied=tolerance,
+                    residual_risk_flag=True
+                )
 
 
 class DialogueController:
@@ -177,14 +245,17 @@ class DialogueController:
 
         # Caller-ID lookup if phone number is provided, falling back to vehicle_id
         if caller_phone:
-            self.veh_telemetry = lookup_vehicle_by_phone(caller_phone)
+            self.veh_telemetry, phone_reason = lookup_vehicle_by_phone(caller_phone)
             self.vehicle_id = self.veh_telemetry.vehicle_id if self.veh_telemetry else None
+            self.unverified_reason = phone_reason if not self.veh_telemetry else None
         elif vehicle_id:
             self.vehicle_id = vehicle_id
             self.veh_telemetry = lookup_vehicle(vehicle_id)
+            self.unverified_reason = "VEHICLE_NOT_FOUND" if not self.veh_telemetry else None
         else:
             self.vehicle_id = None
             self.veh_telemetry = None
+            self.unverified_reason = "NO_VEHICLE_OR_PHONE_PROVIDED"
 
         self.is_unverified_vehicle: bool = (self.veh_telemetry is None)
 
@@ -244,9 +315,12 @@ class DialogueController:
             self._record_transition(
                 DialogueState.ASKING,
                 trigger="UNVERIFIED_VEHICLE_ID",
-                payload={"provided_vehicle_id": self.vehicle_id}
+                payload={"provided_vehicle_id": self.vehicle_id, "reason": getattr(self, "unverified_reason", None)}
             )
-            prompt = "Bhaiya gaadi ka registration number confirm karein taaki telematics verify ho sake."
+            if getattr(self, "unverified_reason", None) == "MULTIPLE_MATCHES":
+                prompt = "Aapka phone number ek se zyada gaadiyon se linked hai. Kripya registration number batayein."
+            else:
+                prompt = "Bhaiya gaadi ka registration number confirm karein taaki telematics verify ho sake."
             self.last_agent_prompt = prompt
             return self.state, prompt
 
@@ -513,9 +587,24 @@ class DialogueController:
         if not rec:
             raise ValueError("No valid record to dispatch")
 
+        # Physical cargo thermal excursion check independent of ASR plausibility
+        veh = self.veh_telemetry or lookup_vehicle(rec.vehicle_id or self.vehicle_id)
+        from core.schemas import check_cargo_temperature_excursion
+        is_excursion, excursion_msg, excursion_prio = check_cargo_temperature_excursion(
+            veh.cargo_type if veh else None,
+            rec.temperature_c
+        )
+
         # Check if gate had residual risk (e.g. override confirmed on divergent reading)
         residual = getattr(self, "last_gate_residual_risk", False)
-        veh = self.veh_telemetry or lookup_vehicle(rec.vehicle_id or self.vehicle_id)
+        final_priority = DispatchPriority.CRITICAL if (residual or (is_excursion and excursion_prio == DispatchPriority.CRITICAL)) else (excursion_prio if is_excursion else DispatchPriority.HIGH)
+
+        notes_parts = [f"Confirmed via driver voice read-back. Raw: '{rec.raw_transcript}'"]
+        if is_excursion:
+            notes_parts.append(f"[EXCURSION] {excursion_msg}")
+        if residual:
+            notes_parts.append("[RESIDUAL RISK] Driver confirmed divergent telematics override")
+
         gps_lat = veh.gps_lat if veh else None
         gps_lng = veh.gps_lng if veh else None
 
@@ -526,8 +615,9 @@ class DialogueController:
             location_reported=rec.location_text or "Highway",
             distance_km=rec.distance_km,
             reported_temp_c=rec.temperature_c,
-            notes=f"Confirmed via driver voice read-back. Raw: '{rec.raw_transcript}'",
-            supervisor_alert_flag=residual,
+            priority=final_priority,
+            notes="; ".join(notes_parts),
+            supervisor_alert_flag=residual or (is_excursion and final_priority == DispatchPriority.CRITICAL),
             residual_risk_flag=residual,
             gps_lat=gps_lat,
             gps_lng=gps_lng

@@ -33,7 +33,7 @@ class TrainedVaaniPipeline:
         self.denoiser = TelephonyDenoiser()
         denoiser_path = BASE_DIR / "models" / "denoiser_8khz.pt"
         if denoiser_path.exists():
-            self.denoiser.load_state_dict(torch.load(str(denoiser_path), map_location=self.device))
+            self.denoiser.load_state_dict(torch.load(str(denoiser_path), map_location=self.device, weights_only=True))
         self.denoiser.to(self.device).eval()
         print("Model 1 (8 kHz Denoiser) loaded.")
 
