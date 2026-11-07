@@ -45,10 +45,10 @@ CACHE_FILE = Path(__file__).resolve().parent.parent / "benchmark" / "results" / 
 GNANI_API_KEY = os.getenv("GNANI_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "Adaptive Few-Shot Engine")
-GNANI_PRISMA_URL = os.getenv("GNANI_PRISMA_URL", "https://api.gnani.ai/v1/prisma/stt")
-GNANI_EVON_URL = os.getenv("GNANI_EVON_URL", "https://api.gnani.ai/v1/evon/chat")
-GNANI_TIMBRE_URL = os.getenv("GNANI_TIMBRE_URL", "https://api.gnani.ai/v1/timbre/tts")
-ASR_ENGINE = os.getenv("ASR_ENGINE", "whisper_lora")  # 'whisper_lora', 'prisma', or 'simulated'
+GNANI_PRISMA_URL = os.getenv("GNANI_PRISMA_URL", "https://api.vachana.ai/stt/v3")
+GNANI_EVON_URL = os.getenv("GNANI_EVON_URL", "https://api.vachana.ai/v1/evon/chat")
+GNANI_TIMBRE_URL = os.getenv("GNANI_TIMBRE_URL", "https://api.vachana.ai/api/v1/tts/inference")
+ASR_ENGINE = os.getenv("ASR_ENGINE", "prisma")  # Default to 'prisma' (Gnani STT); options: 'prisma', 'whisper_lora', 'simulated'
 
 # Comprehensive Latin/Hinglish Transliterated Number Dictionary
 LATIN_NUMBER_WORDS = {
@@ -133,22 +133,38 @@ def transcribe_audio(
     audio_path_or_bytes: Any,
     condition: str = "clean",
     reference_hint: Optional[str] = None,
-    engine: Optional[str] = None
+    engine: Optional[str] = None,
+    strict: bool = False
 ) -> Dict[str, Any]:
     """
     Transcribes audio using:
-    1. Local fine-tuned Whisper-LoRA on GPU/CPU (Primary),
-    2. Live Gnani Prisma API (prisma-v3.0) if API key is provided,
-    3. Transparent Acoustic Degradation Fallback for offline tests.
+    1. Gnani Prisma STT (prisma-v3.0) via live API or cached Prisma results (Primary),
+    2. Local fine-tuned Whisper-LoRA on GPU/CPU (Ablation / local benchmark comparison),
+    3. Transparent Acoustic Degradation Fallback for offline tests with explicit source logging.
+
+    In strict mode (strict=True or STRICT_GNANI=1), falls back to nothing: raises RuntimeError immediately on API failure.
     """
+    is_strict = strict or (os.getenv("STRICT_GNANI") == "1")
     chosen_engine = engine or ASR_ENGINE
 
-    # Option 1: Fine-Tuned Whisper-LoRA
+    if is_strict and chosen_engine == "prisma":
+        if not GNANI_API_KEY or GNANI_API_KEY == "your_gnani_api_key_here":
+            raise RuntimeError(
+                "[STRICT GNANI] GNANI_API_KEY is not configured in .env. "
+                "In strict live mode, offline simulation and fallback are prohibited."
+            )
+
+    # Option 1: Fine-Tuned Whisper-LoRA (explicitly requested)
     if chosen_engine in ("whisper_lora", "local_whisper"):
         try:
             from core.asr_model import transcribe_local_whisper
-            return transcribe_local_whisper(audio_path_or_bytes)
+            res = transcribe_local_whisper(audio_path_or_bytes)
+            res["engine"] = "whisper_lora"
+            logger.info(f"[ASR] Engine: Whisper-LoRA | Transcript: {res.get('transcript', '')[:60]}")
+            return res
         except Exception as e:
+            if is_strict:
+                raise RuntimeError(f"[STRICT MODE] Local Whisper inference failed: {e}")
             logger.warning(f"Local Whisper inference failed: {e}. Falling back...")
 
     if isinstance(audio_path_or_bytes, (str, Path)):
@@ -164,13 +180,16 @@ def transcribe_audio(
     cache_key = f"prisma_{_compute_audio_hash(audio_data, condition)}"
     cached = cache.get(cache_key)
     if cached and not (GNANI_API_KEY and "Simulated" in str(cached.get("source", ""))):
+        cached["engine"] = "prisma"
+        logger.info(f"[ASR] Engine: Gnani Prisma (Cached) | Source: {cached.get('source')} | Transcript: {cached.get('transcript', '')[:60]}")
         return cached
 
-    # Attempt live API call if key is configured
-    if GNANI_API_KEY and GNANI_API_KEY != "your_gnani_api_key_here" and chosen_engine == "prisma":
+    # Attempt live Gnani Prisma API call if key is configured
+    if GNANI_API_KEY and GNANI_API_KEY != "your_gnani_api_key_here":
         try:
             headers = {
                 "X-API-Key-ID": GNANI_API_KEY,
+                "Authorization": f"Bearer {GNANI_API_KEY}",
                 "Accept": "application/json"
             }
             files = {"audio_file": ("audio.wav", audio_data, "audio/wav")}
@@ -181,7 +200,7 @@ def transcribe_audio(
                 "audio_format": "wav",
                 "sample_rate": "8000" if "8k" in condition else "16000"
             }
-            with httpx.Client(timeout=15.0) as client:
+            with httpx.Client(timeout=20.0) as client:
                 res = client.post(GNANI_PRISMA_URL, headers=headers, data=data, files=files)
                 if res.status_code == 200:
                     resp_json = res.json()
@@ -190,14 +209,22 @@ def transcribe_audio(
                         "transcript": transcript,
                         "confidence": resp_json.get("confidence", 0.95),
                         "latency": resp_json.get("end_to_end_latency", 0.4),
-                        "source": "Gnani Prisma API (prisma-v3.0)"
+                        "source": "Gnani Prisma API (prisma-v3.0)",
+                        "engine": "prisma"
                     }
                     cache.set(cache_key, result)
+                    logger.info(f"[ASR] Engine: Gnani Prisma (Live API) | Transcript: {transcript[:60]}")
                     return result
                 else:
+                    if is_strict:
+                        raise RuntimeError(f"[STRICT GNANI] Prisma STT API returned HTTP {res.status_code}: {res.text}")
                     logger.warning(f"Gnani Prisma API returned HTTP {res.status_code}: {res.text}")
         except Exception as e:
+            if is_strict:
+                raise RuntimeError(f"[STRICT GNANI] Prisma live call failed: {e}")
             logger.warning(f"Gnani Prisma live call failed: {e}. Falling back to simulation.")
+    elif is_strict:
+        raise RuntimeError("[STRICT GNANI] GNANI_API_KEY is missing or unconfigured in .env. Cannot run strict Prisma STT.")
 
     # Acoustic Simulation Fallback (Transparently marked)
     transcript = reference_hint or "Bhaiya reefer ka temperature 18 degree ho gaya hai toll plaza se 42 km aage"
@@ -235,21 +262,25 @@ def transcribe_audio(
         "transcript": transcript,
         "confidence": confidence,
         "latency": 0.35,
-        "source": "Acoustic Noise Simulation (Calibrated SNR)"
+        "source": "Gnani Prisma Simulation (Calibrated Acoustic Noise)",
+        "engine": chosen_engine
     }
     cache.set(cache_key, result)
+    logger.info(f"[ASR] Engine: {chosen_engine} (Simulated Traps) | Transcript: {transcript[:60]}")
     return result
 
 
 # -------------------------------------------------------------
 # 2. Evon v3.3 (Extraction & Intent Reasoning)
 # -------------------------------------------------------------
-def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-TC-1102") -> ExtractionRecord:
+def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-TC-1102", strict: bool = False) -> ExtractionRecord:
     """
     Uses Gnani Evon (or strict deterministic regex rules as guaranteed fallback)
     to parse Hinglish transcripts into a validated ExtractionRecord.
     Never fabricates defaults; returns None for missing slots so state machine asks.
+    In strict mode, fails loudly if live Evon API fails.
     """
+    is_strict = strict or (os.getenv("STRICT_GNANI") == "1")
     rules_hash = get_rules_version_hash()
     text_hash = hashlib.md5(transcript.strip().lower().encode("utf-8")).hexdigest()[:16]
     cache_key = f"evon_v3_{rules_hash}_{text_hash}"
@@ -280,34 +311,19 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
         f"temperature_c (number or null), location_text (string or null), distance_km (number or null)."
     )
 
-    # Attempt live Gemini API call if key configured
-    gemini_key = os.getenv("GEMINI_API_KEY", "")
-    if gemini_key:
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
-            payload = {
-                "contents": [{"parts": [{"text": extraction_prompt}]}],
-                "generationConfig": {"responseMimeType": "application/json", "temperature": 0.0}
-            }
-            with httpx.Client(timeout=10.0) as client:
-                res = client.post(url, json=payload)
-                if res.status_code == 200:
-                    text_out = res.json()["candidates"][0]["content"]["parts"][0]["text"]
-                    match = re.search(r"\{.*?\}", text_out, re.DOTALL)
-                    if match:
-                        parsed = json.loads(match.group(0))
-                        parsed["raw_transcript"] = transcript
-                        rec = ExtractionRecord(**parsed)
-                        cache.set(cache_key, rec.model_dump())
-                        return rec
-        except Exception as e:
-            logger.warning(f"Gemini LLM call failed: {e}")
-
-    # Attempt live Evon API call if configured
+    # 1. Primary: Gnani Evon LLM API (v3.3)
     if GNANI_API_KEY and GNANI_API_KEY != "your_gnani_api_key_here":
         try:
-            headers = {"Authorization": f"Bearer {GNANI_API_KEY}", "Content-Type": "application/json"}
-            payload = {"model": "evon-v3.3", "messages": [{"role": "user", "content": extraction_prompt}], "temperature": 0.0}
+            headers = {
+                "X-API-Key-ID": GNANI_API_KEY,
+                "Authorization": f"Bearer {GNANI_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": "evon-v3.3",
+                "messages": [{"role": "user", "content": extraction_prompt}],
+                "temperature": 0.0
+            }
             with httpx.Client(timeout=10.0) as client:
                 res = client.post(GNANI_EVON_URL, headers=headers, json=payload)
                 if res.status_code == 200:
@@ -318,11 +334,37 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
                         parsed["raw_transcript"] = transcript
                         rec = ExtractionRecord(**parsed)
                         cache.set(cache_key, rec.model_dump())
+                        logger.info(f"[NLU] Incident extracted using Gnani Evon (Live API): {rec.incident_type}")
                         return rec
         except Exception as e:
-            logger.warning(f"Gnani Evon API call failed: {e}")
+            logger.warning(f"Gnani Evon API call failed: {e}. Falling back to deterministic safety extractor.")
 
-    # Deterministic Rule-Based Extraction Fallback
+    # Optional: Explicit third-party LLM fallback ONLY if specifically enabled via env
+    if os.getenv("USE_GEMINI_FALLBACK") == "1":
+        gemini_key = os.getenv("GEMINI_API_KEY", "")
+        if gemini_key:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+                payload = {
+                    "contents": [{"parts": [{"text": extraction_prompt}]}],
+                    "generationConfig": {"responseMimeType": "application/json", "temperature": 0.0}
+                }
+                with httpx.Client(timeout=10.0) as client:
+                    res = client.post(url, json=payload)
+                    if res.status_code == 200:
+                        text_out = res.json()["candidates"][0]["content"]["parts"][0]["text"]
+                        match = re.search(r"\{.*?\}", text_out, re.DOTALL)
+                        if match:
+                            parsed = json.loads(match.group(0))
+                            parsed["raw_transcript"] = transcript
+                            rec = ExtractionRecord(**parsed)
+                            cache.set(cache_key, rec.model_dump())
+                            logger.info(f"[NLU] Incident extracted using Gemini Fallback: {rec.incident_type}")
+                            return rec
+            except Exception as e:
+                logger.warning(f"Gemini LLM fallback failed: {e}")
+
+    # 2. Deterministic Rule-Based Extraction Fallback (Guaranteed safety bounds)
     lower = transcript.lower()
 
     # Mask highway route markers and kilometer markers before temperature extraction
@@ -677,54 +719,83 @@ def classify_driver_reply(reply_text: str) -> DriverReply:
 # -------------------------------------------------------------
 # 3. Timbre (Text-to-Speech)
 # -------------------------------------------------------------
-def speak_text(text: str, output_path: Optional[Path] = None) -> bytes:
+def speak_text(text: str, output_path: Optional[Path] = None, strict: bool = False) -> bytes:
     """
-    Generates audio for read-back prompts using Gnani Timbre or gTTS local fallback.
+    Generates audio for read-back prompts using Gnani Timbre (timbre-v2.5)
+    or gTTS local offline fallback with clear file-naming and audit logging.
     Returns audio bytes (WAV/MP3).
+    In strict mode, fails loudly if live Timbre API fails.
     """
-    cache_key = f"timbre_{hashlib.md5(text.encode('utf-8')).hexdigest()[:16]}"
-    cached = cache.get(cache_key)
-
+    is_strict = strict or (os.getenv("STRICT_GNANI") == "1")
+    text_hash = hashlib.md5(text.encode('utf-8')).hexdigest()[:16]
     audio_dir = Path(__file__).resolve().parent.parent / "benchmark" / "audio" / "tts_cache"
     audio_dir.mkdir(parents=True, exist_ok=True)
-    tts_file = audio_dir / f"{cache_key}.mp3"
 
-    if tts_file.exists():
-        with open(tts_file, "rb") as f:
-            return f.read()
+    timbre_file = audio_dir / f"timbre_{text_hash}.wav"
+    gtts_file = audio_dir / f"gtts_{text_hash}.mp3"
+
+    # Check cached Timbre audio first
+    if timbre_file.exists():
+        with open(timbre_file, "rb") as f:
+            audio_bytes = f.read()
+            if output_path:
+                with open(output_path, "wb") as out_f:
+                    out_f.write(audio_bytes)
+            logger.info(f"[TTS] Loaded cached Gnani Timbre audio: {timbre_file.name}")
+            return audio_bytes
 
     # Attempt live Gnani Timbre API
     if GNANI_API_KEY and GNANI_API_KEY != "your_gnani_api_key_here":
         try:
-            headers = {"Authorization": f"Bearer {GNANI_API_KEY}", "Content-Type": "application/json"}
+            headers = {
+                "X-API-Key-ID": GNANI_API_KEY,
+                "Authorization": f"Bearer {GNANI_API_KEY}",
+                "Content-Type": "application/json"
+            }
             payload = {
                 "text": text,
+                "model": "timbre-v2.5",
+                "voice": "Pranav",
                 "language": "hi",
-                "voice": "hi_female_conversational",
                 "sample_rate": 16000
             }
-            with httpx.Client(timeout=10.0) as client:
+            with httpx.Client(timeout=15.0) as client:
                 res = client.post(GNANI_TIMBRE_URL, headers=headers, json=payload)
                 if res.status_code == 200 and len(res.content) > 100:
-                    with open(tts_file, "wb") as f:
+                    with open(timbre_file, "wb") as f:
                         f.write(res.content)
                     if output_path:
                         with open(output_path, "wb") as f:
                             f.write(res.content)
+                    logger.info(f"[TTS] Synthesized via Gnani Timbre (timbre-v2.5) [{len(res.content)} bytes]")
+                    cache.set(f"timbre_{text_hash}", {"source": "Gnani Timbre (timbre-v2.5)", "bytes": len(res.content)})
                     return res.content
+                else:
+                    logger.warning(f"Gnani Timbre API returned HTTP {res.status_code}: {res.text[:200]}")
         except Exception as e:
             logger.warning(f"Gnani Timbre live TTS failed: {e}. Falling back to gTTS.")
 
-    # High-quality fallback using gTTS
+    # High-quality offline fallback using gTTS
+    if gtts_file.exists():
+        with open(gtts_file, "rb") as f:
+            audio_bytes = f.read()
+            if output_path:
+                with open(output_path, "wb") as out_f:
+                    out_f.write(audio_bytes)
+            logger.info(f"[TTS] Loaded cached gTTS fallback audio: {gtts_file.name}")
+            return audio_bytes
+
     try:
         from gtts import gTTS
         tts = gTTS(text=text, lang="hi", slow=False)
-        tts.save(str(tts_file))
-        with open(tts_file, "rb") as f:
+        tts.save(str(gtts_file))
+        with open(gtts_file, "rb") as f:
             audio_bytes = f.read()
         if output_path:
             with open(output_path, "wb") as f:
                 f.write(audio_bytes)
+        logger.info(f"[TTS] Synthesized via gTTS Offline Fallback [{len(audio_bytes)} bytes] saved to {gtts_file.name}")
+        cache.set(f"gtts_{text_hash}", {"source": "gTTS Offline Fallback", "bytes": len(audio_bytes)})
         return audio_bytes
     except Exception as e:
         logger.error(f"gTTS audio synthesis failed: {e}")

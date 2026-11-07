@@ -11,3 +11,4 @@ benchmark/audio/tts_cache/
 *.jpg
 models/*.pt
 benchmark/results/*cache.json
+*.zip

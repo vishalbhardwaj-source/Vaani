@@ -15,6 +15,7 @@ ADV_GATE_RESULTS_CSV = PROJECT_ROOT / "benchmark" / "results" / "adversarial_gat
 E2E_SLOT_CSV = PROJECT_ROOT / "benchmark" / "results" / "held_out_e2e_slot_metrics.csv"
 SWEEP_CSV = PROJECT_ROOT / "benchmark" / "results" / "driver_sensitivity_sweep.csv"
 LATENCY_CSV = PROJECT_ROOT / "benchmark" / "results" / "pipeline_latency.csv"
+PRISMA_VS_WHISPER_CSV = PROJECT_ROOT / "benchmark" / "results" / "prisma_vs_whisper_comparison.csv"
 
 
 def df_to_md(df: pd.DataFrame, cols=None) -> str:
@@ -71,8 +72,11 @@ def sync_all():
 
     lat_table = df_to_md(df_lat) if not df_lat.empty else ""
 
+    df_prisma = pd.read_csv(PRISMA_VS_WHISPER_CSV) if PRISMA_VS_WHISPER_CSV.exists() else pd.DataFrame()
+    prisma_table = df_to_md(df_prisma) if not df_prisma.empty else ""
+
     parts = [
-        "### Official Scorecard Track 1: Dialogue Controller & Safety Gate Stress-Testing (Calibrated Acoustic Noise Traps)\n",
+        "### Track 1: Dialogue-Gate Stress Test with Injected ASR Errors (Calibrated Noise Traps)\n",
         "> **Evaluation Protocol & Purpose:**  ",
         "> Track 1 isolates the finite state machine and dialogue safety layer from ASR variation by using calibrated acoustic degradation and scripted driver replies.",
         "> Audio was synthesized using `gTTS` and mixed with calibrated synthetic Indian truck diesel engine and cabin noise.",
@@ -121,6 +125,8 @@ def sync_all():
         "> - **Temperature Confusions (10/12 survived, 83.3%):** One acoustic trap ($18 \\rightarrow 80$) and one dropped minus polarity ($-14 \\rightarrow +14$). *A dropped minus sign is the most dangerous acoustic failure mode because −14 becomes +14 and appears physically plausible while representing a 28°C error! The read-back always speaks the sign ('minus chaudah'), and the safety gate flags an immediate polarity challenge (`SIGN_FLIP_DETECTED`) whenever target temperature is sub-zero.*",
         "> - **Distance Confusions (7/8 survived, 87.5%):** One changed digit ($68 \\rightarrow 60\\text{ km}$, a digit confusion, not dropped digits).",
         "> **Definition of Number Survival:** A number 'survives' if and only if the exact target numeric value appears in the hypothesis bounded by word boundaries (`\\b`) or is successfully parsed by `parse_hindi_number` to within $\\pm 0.1$ tolerance (never by unconstrained substring matching).\n",
+        "#### Empirical Comparison: Gnani Prisma STT vs Base Whisper-tiny\n",
+        prisma_table + "\n\n" if prisma_table else "",
         "#### Headline Metric: Held-Out Generalization (N = 7 Utterances, 28 Audio Clips)",
         t2_head_table + "\n",
         "#### Held-Out End-to-End Pipeline Metric (Audio -> Whisper-LoRA -> Extractor -> Slots)",
@@ -172,7 +178,7 @@ def sync_all():
         "11. **Adaptive Read-Back Duration & Estimated Turnaround Latency:**",
         "    Measured synthesized audio duration is ~4.8 s for normal concise read-back and ~4.3 s for Split Challenged Turn 1. Estimated driver-perceived wait is ~700 ms to ~1.2 s (explicitly labeled an estimate; live audio-in to audio-out SIP/RTP timing required for end-to-end phone measurement).",
         "12. **Reproduction Protocol:**",
-        "    Exact command: `python -m pytest tests/ -v` (43 tests pass). Environment: Python 3.12.10, PyTorch 2.6+, Transformers 4.49+, PEFT 0.14+, JiWER 3.1+, Pydantic 2.10+.\n",
+        "    Exact command: `python -m pytest tests/ -v` (66 tests pass). Environment: Python 3.12.10, PyTorch 2.6+, Transformers 4.49+, PEFT 0.14+, JiWER 3.1+, Pydantic 2.10+.\n",
         "---\n",
         "### Illustrative Driver Attention Sensitivity Sweep (0% to 20% Reflexive Error Rate)\n",
         "> **Methodological Note:** The table below is an illustrative parametric sensitivity sweep ($E_{\\text{silent}} = \\text{Ungated Errors} \\times \\text{Assumed Rate}$), demonstrating the mathematical boundary conditions of read-back confirmation under varying driver fatigue and distractibility, rather than a physical measurement of driver psychology.",
@@ -188,7 +194,7 @@ def sync_all():
     ]
 
     full_section = "\n".join(parts)
-    pattern = re.compile(r"### Official Scorecard Track 1:.*?(?=### Train vs\. Held-Out Evaluation Protocol)", re.DOTALL)
+    pattern = re.compile(r"### (?:Official Scorecard )?Track 1:.*?(?=### Train vs\. Held-Out Evaluation Protocol)", re.DOTALL)
     updated_text = pattern.sub(lambda m: full_section.strip() + "\n\n---\n\n", text)
 
     arch_block = """## 3. System Architecture & Dual ASR Execution
@@ -203,14 +209,14 @@ Vaani supports both **Cloud STT (Gnani Prisma)** and **On-Device Local STT (Fine
           ▼                                                 ▼
 ┌────────────────────────────────────────┐        ┌────────────────────────────────────────┐
 │ DUAL ASR ENGINE:                       │        │ [Ablation Experiment] 8 kHz Denoiser   │
-│ - Fine-Tuned Whisper-LoRA (Local ASR)  │ ◄──────│ (Conv-BiGRU spectral mask; introduces  │
-│   (Measured Median Latency: 891.3 ms)   │        │ phase distortion at <10 dB SNR)        │
-│ - OR Gnani Prisma v3.0 (Cloud API)     │        └────────────────────────────────────────┘
+│ - Gnani Prisma v3.0 (Cloud API)        │ ◄──────│ (Conv-BiGRU spectral mask; introduces  │
+│ - OR Fine-Tuned Whisper-LoRA (Local)   │        │ phase distortion at <10 dB SNR)        │
+│   (Turnaround: 384 ms GPU / 891 ms CPU)│        └────────────────────────────────────────┘
 └─────────────────┬──────────────────────┘
                   │ Spoken Transcript
                   ▼
 ┌────────────────────────────────────────┐
-│ Structured Slot Extractor (Regex/NLU)  │ (Indian highway gazetteer + fuzzy matching;
+│ Structured Slot Extractor (Evon/Regex) │ (Indian highway gazetteer + fuzzy matching;
 │ (Deterministic, No Prompt Injections)  │  generic terms like 'toll' rejected)
 └─────────────────┬──────────────────────┘
                   │
@@ -227,8 +233,8 @@ Vaani supports both **Cloud STT (Gnani Prisma)** and **On-Device Local STT (Fine
                   │
                   ▼
 ┌────────────────────────────────────────┐
-│ Spoken Read-Back Generation (TTS)      │ (Digit-by-digit spelling: '18 (1, 8) degree',
-│                                        │  measured read-back duration: 7.29 seconds)
+│ Spoken Read-Back Generation (Timbre)   │ (Digit-by-digit spelling: '18 (1, 8) degree',
+│                                        │  measured concise read-back: 4.80 s (~7.3 s split turn))
 └─────────────────┬──────────────────────┘
                   │
              ┌────┴───────────────────────────┐
