@@ -15,6 +15,8 @@ from pathlib import Path
 import pandas as pd
 import jiwer
 
+from core.state_machine import get_controller_code_hash
+
 RAW_RESULTS_CSV = Path(__file__).resolve().parent / "results" / "raw_benchmark_results.csv"
 SUMMARY_CSV = Path(__file__).resolve().parent / "results" / "summary_metrics.csv"
 SWEEP_CSV = Path(__file__).resolve().parent / "results" / "driver_sensitivity_sweep.csv"
@@ -67,8 +69,9 @@ def compute_metrics() -> pd.DataFrame:
         # 5. Non-Circular True Dispatch Accuracy
         true_dispatch_acc = ((n_samples - silent_fails) / n_samples) * 100.0
 
-        # 6. Telematics Gate Interceptions
+        # 6. Telematics Gate vs Driver Read-Back Breakdown
         telematics_blocked = int(sub["telematics_blocked"].sum()) if "telematics_blocked" in sub.columns else 0
+        driver_corrected = int(sub[sub["has_extraction_error"]]["driver_corrected"].sum()) if "driver_corrected" in sub.columns else (errors_caught - telematics_blocked)
 
         # Engine source primary
         sources = sub["source"].unique() if "source" in sub.columns else ["Simulation"]
@@ -81,10 +84,12 @@ def compute_metrics() -> pd.DataFrame:
             "WER (%)": round(wer_val, 2),
             "Raw Slot Acc (%)": round(slot_acc_raw, 2),
             "Total Errors": total_errors,
-            "Errors Caught": f"{errors_caught} of {total_errors} ({round(caught_pct, 1)}%)",
-            "Silent Failures": f"{silent_fails} ({round(silent_fail_pct, 1)}%)",
             "Gate Blocked Anomalies": telematics_blocked,
-            "Final Dispatch Accuracy (%)": round(true_dispatch_acc, 2)
+            "Driver Corrected Errors": driver_corrected,
+            "Total Errors Caught": f"{errors_caught} of {total_errors} ({round(caught_pct, 1)}%)",
+            "Silent Failures": f"{silent_fails} ({round(silent_fail_pct, 1)}%)",
+            "Final Dispatch Accuracy (%)": round(true_dispatch_acc, 2),
+            "Controller Code Hash": get_controller_code_hash()
         })
 
     summary_df = pd.DataFrame(summary_rows)
@@ -105,7 +110,12 @@ def compute_sensitivity_sweep(df: pd.DataFrame) -> pd.DataFrame:
     """
     Parametric sensitivity analysis:
     Evaluates final dispatch accuracy across assumed driver reflexive error rates (0% to 20%).
-    Shows how dispatch integrity varies as a function of driver attentiveness and cabin noise.
+    With the telematics gate active, large anomalies (>25C divergence) require explicit number
+    repetition and are blocked even if the driver reflexively agrees ('haan').
+    Only ungated extraction errors (e.g. minor deviations, distance/location slips) can
+    become silent failures if the driver fails to correct the read-back.
+    Note: If a driver genuinely mishears and repeats the wrong number ('haan, assi degree confirm'),
+    the gate accepts it as an intended override.
     """
     sweep_rates = [0.0, 0.05, 0.10, 0.15, 0.20]
     sweep_rows = []
@@ -122,12 +132,20 @@ def compute_sensitivity_sweep(df: pd.DataFrame) -> pd.DataFrame:
             if total_clips == 0:
                 continue
 
-            extraction_errors = int(sub["has_extraction_error"].sum())
+            err_sub = sub[sub["has_extraction_error"] == True]
+            extraction_errors = len(err_sub)
             correct_raw = total_clips - extraction_errors
 
-            # Model expected silent failures under this driver error rate
-            expected_silent_fails = round(extraction_errors * rate, 2)
-            expected_caught = round(extraction_errors * (1.0 - rate), 2)
+            # Gated errors: where telematics gate fires. Reflexive agreement does NOT cause silent failure
+            # because the gate blocks dispatch without explicit number repetition!
+            gated_errors = int(err_sub["telematics_challenged"].sum()) if "telematics_challenged" in err_sub.columns else 0
+            ungated_errors = extraction_errors - gated_errors
+
+            # Ungated errors slip through only if driver reflexively confirms
+            expected_silent_fails = round(ungated_errors * rate, 2)
+            expected_driver_corrected = round(ungated_errors * (1.0 - rate), 2)
+            expected_gate_blocked = gated_errors
+            total_expected_caught = round(expected_gate_blocked + expected_driver_corrected, 2)
             dispatch_acc = round(((total_clips - expected_silent_fails) / total_clips) * 100.0, 1)
 
             sweep_rows.append({
@@ -135,7 +153,11 @@ def compute_sensitivity_sweep(df: pd.DataFrame) -> pd.DataFrame:
                 "Condition": cond,
                 "Raw Slot Acc (%)": round((correct_raw / total_clips) * 100.0, 1),
                 "Total ASR Errors": extraction_errors,
-                "Expected Caught": expected_caught,
+                "Gated Errors (Telematics)": gated_errors,
+                "Ungated Errors": ungated_errors,
+                "Expected Gate Blocked": expected_gate_blocked,
+                "Expected Driver Corrected": expected_driver_corrected,
+                "Total Expected Caught": total_expected_caught,
                 "Expected Silent Failures": expected_silent_fails,
                 "Modeled Dispatch Accuracy (%)": dispatch_acc
             })

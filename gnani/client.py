@@ -13,7 +13,7 @@ import re
 import hashlib
 import logging
 from pathlib import Path
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, List
 import httpx
 from pydantic import ValidationError
 from dotenv import load_dotenv
@@ -306,6 +306,10 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
     # Deterministic Rule-Based Extraction Fallback
     lower = transcript.lower()
 
+    # Mask highway route markers and kilometer markers before temperature extraction
+    # Prevents "NH-44", "NH-48", "km-42" from interfering with temperature parsing
+    lower_temp_masked = re.sub(r"\b(?:nh|sh|route|km|milepost)\s*[-:]?\s*\d+\b", " ", lower)
+
     # 1. Incident Type (Defaults to UNKNOWN if not identified, never fabricated)
     if any(k in lower for k in ["temperature", "temp", "garam", "chiller", "cooling", "degree", "celsius", "ice cream melt"]):
         record_dict["incident_type"] = IncidentType.REEFER_TEMPERATURE
@@ -316,11 +320,11 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
     else:
         record_dict["incident_type"] = IncidentType.UNKNOWN
 
-    # 2. Temperature Extraction
+    # 2. Temperature Extraction (operating on masked transcript)
     temp_val = None
 
     # Handle "80 degree nahi 18 degree" correction pattern
-    corr_pattern = re.search(r"(-?\d+(?:\.\d+)?)\s*(?:degree|deg)?\s*(?:nahi|not)\s*(-?\d+(?:\.\d+)?)\s*(?:degree|deg)?", lower)
+    corr_pattern = re.search(r"(-?\d+(?:\.\d+)?)\s*(?:degree|deg)?\s*(?:nahi|not)\s*(-?\d+(?:\.\d+)?)\s*(?:degree|deg)?", lower_temp_masked)
     if corr_pattern:
         try:
             temp_val = float(corr_pattern.group(2))
@@ -330,7 +334,7 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
     if temp_val is None:
         # Match explicit temperature with optional 'minus' word or '-' sign
         # e.g., "temp minus 14 degree", "minus 20 degree", "temperature 18 degree", "-8 degree"
-        temp_explicit = re.findall(r"(?:temp(?:erature)?\s+)?(minus\s*|-)?\s*(\d+(?:\.\d+)?)\s*(?:degree|deg|celsius|°c|°)", lower)
+        temp_explicit = re.findall(r"(?:temp(?:erature)?\s+)?(minus\s*|(?<![a-zA-Z0-9])-\s*)?(\d+(?:\.\d+)?)\s*(?:degree|deg|celsius|°c|°)", lower_temp_masked)
         if temp_explicit:
             last_sign, last_num = temp_explicit[-1]
             try:
@@ -343,7 +347,7 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
 
     if temp_val is None:
         # Check for "minus X degree" or "temp minus X"
-        minus_match = re.search(r"(?:minus\s*|-)\s*(\d+(?:\.\d+)?)(?:\s*(?:degree|deg))?", lower)
+        minus_match = re.search(r"(?:minus\s*|(?<![a-zA-Z0-9])-\s*)(\d+(?:\.\d+)?)(?:\s*(?:degree|deg))?", lower_temp_masked)
         if minus_match:
             try:
                 temp_val = -float(minus_match.group(1))
@@ -351,21 +355,21 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
                 pass
 
     if temp_val is None and record_dict["incident_type"] == IncidentType.REEFER_TEMPERATURE:
-        # Find numbers not preceded by highway / milestone markers (avoid NH 44, km 68)
-        candidate_numbers = re.finditer(r"\b(\d{1,2})\b", lower)
+        # Find candidate numbers not preceded by highway / milestone markers
+        candidate_numbers = re.finditer(r"\b(\d{1,2})\b", lower_temp_masked)
         for m in candidate_numbers:
             start_idx = m.start()
-            prefix = lower[max(0, start_idx - 10):start_idx]
-            suffix = lower[m.end():min(len(lower), m.end() + 10)]
+            prefix = lower_temp_masked[max(0, start_idx - 10):start_idx]
+            suffix = lower_temp_masked[m.end():min(len(lower_temp_masked), m.end() + 10)]
             if any(k in prefix for k in ["nh", "km", "milepost", "route"]):
                 continue
             if any(k in suffix for k in ["km", "kilometer"]):
                 continue
             try:
-                temp_val = float(m.group(1))
-                # Check if "minus" preceded this candidate
-                if "minus" in prefix:
-                    temp_val = -temp_val
+                cand_val = float(m.group(1))
+                if re.search(r"\b(minus|negative|rin|rinaatmak)\b\s*$", prefix) or re.search(r"(?<![a-zA-Z0-9])-\s*$", prefix):
+                    cand_val = -cand_val
+                temp_val = cand_val
             except ValueError:
                 pass
 
@@ -382,10 +386,10 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
             record_dict["acoustic_warning"] = f"Acoustic trap: Heard {temp_val}°C which is outside reefer bounds (-40 to 50°C)."
             logger.warning(f"Extracted temperature {temp_val}°C is out of reefer physical limits (-40 to 50°C)")
 
-    # 3. Distance Extraction (e.g., "42 km aage", "10 km pehle", "km 68")
+    # 3. Distance Extraction (e.g., "42 km aage", "10 km pehle", "km 68", "km-42")
     dist_match = re.search(r"(\d+(?:\.\d+)?)\s*(?:km|kilometer|kilo meter)", lower)
     if not dist_match:
-        dist_match = re.search(r"km\s*(\d+(?:\.\d+)?)", lower)
+        dist_match = re.search(r"\bkm\s*[-:]?\s*(\d+(?:\.\d+)?)", lower)
     if not dist_match:
         dist_match = re.search(r"se\s*(\d+)\s*(?:aage|pehle)", lower)
     if dist_match:
@@ -434,60 +438,98 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
     return record
 
 
+def parse_all_numbers(text: str) -> List[Tuple[int, int, float]]:
+    """
+    Extracts all candidate numbers (digits, Latin words, Devanagari tokens) from text,
+    returning list of (start_idx, end_idx, numeric_value) sorted by start index.
+    Features strict local polarity/negation:
+    - Hyphens preceded by alphanumeric chars (e.g. NH-48, km-42, 18-degree) are NOT treated as negative signs.
+    - Negative words ('minus', 'negative', 'rin', 'rinaatmak') require strict word boundaries (so 'barish', 'marine', 'mandir' never negate).
+    - Devanagari words match whole tokens only (e.g. 'तीस' never matches inside 'पैंतीस').
+    """
+    lower = text.lower().strip()
+    found = []
+
+    # 1. ASCII Digits with local polarity
+    for m in re.finditer(r'(?:(?<![a-zA-Z0-9])-\s*)?(\d+(?:\.\d+)?)', lower):
+        raw_match = m.group(0)
+        digits = m.group(1)
+        start, end = m.start(), m.end()
+        prefix = lower[:start]
+        is_neg = False
+        if raw_match.startswith('-'):
+            is_neg = True
+        elif re.search(r'\b(minus|negative|rin|rinaatmak)\s*$', prefix) or re.search(r'(?:^|[\s,।!?])(माइनस|ऋण|ऋणात्मक)\s*$', prefix):
+            is_neg = True
+        try:
+            val = -float(digits) if is_neg else float(digits)
+            found.append((start, end, val))
+        except ValueError:
+            pass
+
+    # 2. Latin Number Words with word-boundary matching
+    for word, num in sorted(LATIN_NUMBER_WORDS.items(), key=lambda x: len(x[0]), reverse=True):
+        for m in re.finditer(rf'\b{re.escape(word)}\b', lower):
+            start, end = m.start(), m.end()
+            if any(s <= start < e or s < end <= e for s, e, _ in found):
+                continue
+            prefix = lower[:start]
+            is_neg = bool(
+                re.search(r'(?<![a-zA-Z0-9])-\s*$', prefix) or
+                re.search(r'\b(minus|negative|rin|rinaatmak)\s*$', prefix) or
+                re.search(r'(?:^|[\s,।!?])(माइनस|ऋण|ऋणात्मक)\s*$', prefix)
+            )
+            val = -float(num) if is_neg else float(num)
+            found.append((start, end, val))
+
+    # 3. Devanagari Number Tokens
+    for m in re.finditer(r'[\u0900-\u097F]+', lower):
+        token = m.group(0)
+        start, end = m.start(), m.end()
+        if token in DEVANAGARI_NUMBER_WORDS:
+            if any(s <= start < e or s < end <= e for s, e, _ in found):
+                continue
+            prefix = lower[:start]
+            is_neg = bool(
+                re.search(r'(?<![a-zA-Z0-9])-\s*$', prefix) or
+                re.search(r'(?:^|[\s,।!?])(माइनस|ऋण|ऋणात्मक)\s*$', prefix)
+            )
+            val = -float(DEVANAGARI_NUMBER_WORDS[token]) if is_neg else float(DEVANAGARI_NUMBER_WORDS[token])
+            found.append((start, end, val))
+
+    found.sort(key=lambda x: x[0])
+    return found
+
+
 def parse_hindi_number(text: str) -> Optional[float]:
     """
     Parse digits, Devanagari numerals, or Hindi spoken words into a float.
     Uses regex word boundaries (\b) for Latin words to prevent substring misfires
     (e.g., 'ek' inside 'theek' or 'do' inside 'doori').
     For Devanagari words, matches strictly on whitespace/punctuation delimited tokens.
-    Handles negative polarity ('minus 22', '-22', 'minus baais', 'ऋणात्मक').
+    Handles negative polarity ('minus 22', '-22', 'minus baais', 'ऋणात्मक', 'माइनस बाईस').
+    If a correction phrase contains multiple numbers (e.g. 'nahi 28 nahi 18 degree'),
+    returns the final corrected number.
     """
-    lower = text.lower().strip()
-
-    is_negative = bool(
-        re.search(r"\b(minus|negative|rin|rinaatmak)\b", lower) or 
-        re.search(r"(?:^|\s)-(?:\s*\d)", lower) or
-        "ऋणात्मक" in lower or "माइनस" in lower
-    )
-
-    # 1. Direct ASCII digits
-    digit_match = re.search(r"(-?\d+(?:\.\d+)?)", lower)
-    if digit_match:
-        try:
-            val = float(digit_match.group(1))
-            if is_negative and val > 0:
-                val = -val
-            return val
-        except ValueError:
-            pass
-
-    # 2. Latin word boundary matching (Prevents "ek" matching in "theek", "do" in "doori")
-    # Sort by descending length so "chaubees" matches before "chaar"
-    for word in sorted(LATIN_NUMBER_WORDS.keys(), key=len, reverse=True):
-        if re.search(rf"\b{re.escape(word)}\b", lower):
-            val = float(LATIN_NUMBER_WORDS[word])
-            return -val if is_negative else val
-
-    # 3. Devanagari whole-token matching (Prevents "तीस" matching inside "पैंतीस")
-    deva_tokens = re.findall(r"[\u0900-\u097F]+", lower)
-    for token in deva_tokens:
-        if token in DEVANAGARI_NUMBER_WORDS:
-            val = float(DEVANAGARI_NUMBER_WORDS[token])
-            return -val if is_negative else val
-
-    return None
+    nums = parse_all_numbers(text)
+    if not nums:
+        return None
+    # In corrections or compound utterances, the final mentioned number is the target quantity
+    return nums[-1][2]
 
 
 def classify_driver_reply(reply_text: str) -> DriverReply:
     """
     Classifies driver's spoken reply to read-back:
-    e.g. 'haan sahi hai', 'bilkul', 'nahi 28 nahi 18 degree', 'nahi doori 42 km hai'.
-    Field-aware: distinguishes temperature from distance from location.
+    e.g. 'haan sahi hai', 'bilkul', 'nahi 28 nahi 18 degree', 'nahi doori 42 km hai',
+    'nahi minus 22 nahi 18 degree'.
+    Field-aware: distinguishes temperature from distance from location,
+    and supports two-number correction phrases by extracting the final target value.
     """
     lower = reply_text.lower().strip()
 
     # Affirmative / Confirm
-    confirm_words = ["haan", "ha", "sahi", "bilkul", "correct", "theek", "yes", "barabar", "ok"]
+    confirm_words = ["haan", "ha", "sahi", "bilkul", "correct", "theek", "yes", "barabar", "ok", "confirm", "confirmed", "pakka"]
     # Rejection / Negation
     reject_words = ["nahi", "na", "no", "galat", "wrong", "nhi"]
 
@@ -501,8 +543,9 @@ def classify_driver_reply(reply_text: str) -> DriverReply:
         is_dist = any(k in lower for k in ["km", "kilometer", "kilo meter", "doori", "door"])
         is_loc = any(k in lower for k in ["paas", "toll", "chowk", "plaza", "border", "bypass", "expressway", "milepost"])
 
-        # Extract parsed number (digits or Hindi words)
-        parsed_num = parse_hindi_number(lower)
+        # Extract parsed numbers (handles multi-number 'X nahi Y' and 'nahi X nahi Y' patterns)
+        all_nums = parse_all_numbers(lower)
+        parsed_num = all_nums[-1][2] if all_nums else None
 
         # Case A: Distance correction
         if is_dist and parsed_num is not None:
@@ -514,15 +557,9 @@ def classify_driver_reply(reply_text: str) -> DriverReply:
 
         # Case B: Temperature correction
         if (is_temp or not is_dist) and parsed_num is not None:
-            # Check for "X nahi Y" pattern
-            pair_pattern = re.search(r"(-?\d+)\s*(?:degree)?\s*nahi\s*(-?\d+)", lower)
-            if pair_pattern:
-                corrected_val = float(pair_pattern.group(2))
-            else:
-                corrected_val = parsed_num
             return DriverReply(
                 intent="CORRECT",
-                corrected_temperature_c=corrected_val,
+                corrected_temperature_c=parsed_num,
                 raw_text=reply_text
             )
 
@@ -544,8 +581,9 @@ def classify_driver_reply(reply_text: str) -> DriverReply:
         return DriverReply(intent="CONFIRM", raw_text=reply_text)
 
     # 3. Direct number correction without "nahi"
-    parsed_num = parse_hindi_number(lower)
-    if parsed_num is not None:
+    all_nums = parse_all_numbers(lower)
+    if all_nums:
+        parsed_num = all_nums[-1][2]
         if any(k in lower for k in ["km", "kilometer", "doori"]):
             return DriverReply(intent="CORRECT", corrected_distance_km=abs(parsed_num), raw_text=reply_text)
         return DriverReply(intent="CORRECT", corrected_temperature_c=parsed_num, raw_text=reply_text)

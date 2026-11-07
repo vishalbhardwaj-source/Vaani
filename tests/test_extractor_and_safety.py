@@ -470,3 +470,102 @@ def test_unseen_fresh_sentences_slot_accuracy():
 
     accuracy = correct_slots / total_slots
     assert accuracy >= 0.90, f"Fresh sentences slot accuracy {accuracy:.2%} below 90%"
+
+
+# -------------------------------------------------------------
+# 11. Hyphen and Substring Parsing Safety Regressions
+# -------------------------------------------------------------
+def test_hyphenated_identifiers_do_not_negate_numbers():
+    """
+    Hyphens in alphanumeric codes (NH-48, km-42, 18-degree) must NOT negate numbers.
+    """
+    assert parse_hindi_number("NH-48") == 48.0
+    assert parse_hindi_number("km-42") == 42.0
+    assert parse_hindi_number("18-degree") == 18.0
+
+    # Ensure NH-44 does not corrupt temperature extraction into -44C
+    rec = extract_incident_details("NH-44 toll plaza ke paas reefer temp 18 degree hai")
+    assert rec.temperature_c == 18.0
+    assert rec.anomalous_reading is None
+
+    # Ensure km-42 extracts as positive distance 42 km
+    rec_dist = extract_incident_details("Breakdown at km-42 on highway")
+    assert rec_dist.distance_km == 42.0
+
+
+def test_negative_polarity_and_word_boundaries():
+    """
+    Words like 'barish', 'marine', 'mandir' contain 'rin' or 'in' but must never trigger negation.
+    Only strict word-boundary 'minus', 'negative', 'rin', 'rinaatmak', or unary '-' negate.
+    """
+    assert parse_hindi_number("barish me 18 degree") == 18.0
+    assert parse_hindi_number("marine 18 degree") == 18.0
+    assert parse_hindi_number("mandir ke paas 18 degree") == 18.0
+
+    # Genuine negative inputs
+    assert parse_hindi_number("-22") == -22.0
+    assert parse_hindi_number("- 22") == -22.0
+    assert parse_hindi_number("minus baais") == -22.0
+    assert parse_hindi_number("माइनस बाईस") == -22.0
+
+    # Devanagari 35 should not trigger 30
+    assert parse_hindi_number("पैंतीस (35)") == 35.0
+
+
+def test_two_number_correction_phrases():
+    """
+    In spoken corrections ('nahi X nahi Y degree'), the final target value must be extracted.
+    Adversarial rejections ('nahi theek nahi hai', 'doori toll se aage') must extract no numbers.
+    """
+    r1 = classify_driver_reply("nahi minus 22 nahi 18 degree")
+    assert r1.intent == "CORRECT"
+    assert r1.corrected_temperature_c == 18.0
+
+    r2 = classify_driver_reply("nahi 28 nahi 18 degree")
+    assert r2.intent == "CORRECT"
+    assert r2.corrected_temperature_c == 18.0
+
+    r3 = classify_driver_reply("nahi 18 nahi minus 22 degree")
+    assert r3.intent == "CORRECT"
+    assert r3.corrected_temperature_c == -22.0
+
+    # Adversarial rejections without numbers
+    r_theek = classify_driver_reply("nahi theek nahi hai")
+    assert r_theek.intent == "REJECT"
+    assert r_theek.corrected_temperature_c is None
+
+    r_doori = classify_driver_reply("doori toll se aage")
+    assert r_doori.corrected_distance_km is None
+    assert r_doori.intent in ("REJECT", "UNCLEAR")
+
+
+def test_gate_expected_temperature_five_rejects_and_accepts():
+    """
+    Gate with expected temperature 5:
+    Rejects 'haan 25 pakka' and '25', accepts '5 degree confirm'.
+    """
+    # Vehicle HR-55-TC-1102 has target_temp_c = -22.0C.
+    # Expected temperature 5.0C diverges by 27.0C (> 25C), activating forced confirmation.
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.receive_driver_utterance("Temperature 5 degree hai Toll Plaza pe")
+    ctrl.process_extraction(ExtractionRecord(
+        incident_type=IncidentType.REEFER_TEMPERATURE,
+        temperature_c=5.0,
+        location_text="Toll Plaza",
+        distance_km=10.0
+    ))
+    assert ctrl.state == DialogueState.CONFIRMING
+    assert ctrl.requires_forced_confirmation is True
+
+    # 1. Driver says "haan 25 pakka" -> must be rejected because 25 != 5
+    reply_25 = classify_driver_reply("haan 25 pakka")
+    s_rej, p_rej = ctrl.handle_confirmation_reply(reply_25)
+    assert s_rej == DialogueState.CONFIRMING
+    assert ctrl.requires_forced_confirmation is True
+    assert "5 degree confirm" in p_rej
+
+    # 2. Driver says "5 degree confirm" -> accepted
+    reply_5 = classify_driver_reply("5 degree confirm")
+    s_acc, _ = ctrl.handle_confirmation_reply(reply_5)
+    assert s_acc == DialogueState.DONE
+    assert ctrl.requires_forced_confirmation is False

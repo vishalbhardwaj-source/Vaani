@@ -221,13 +221,16 @@ def test_committed_benchmark_results_consistency_with_controller():
     assert summary_csv_path.exists(), "summary_metrics.csv missing!"
     assert sweep_csv_path.exists(), "driver_sensitivity_sweep.csv missing!"
 
-    # 1. Timestamp freshness check: results must not be older than controller code
-    ctrl_mtime = controller_path.stat().st_mtime
-    raw_mtime = raw_csv_path.stat().st_mtime
-    # Allow 2 second margin for filesystem resolution
-    assert raw_mtime >= (ctrl_mtime - 2.0), (
-        f"Committed benchmark results ({raw_mtime}) are older than controller code ({ctrl_mtime})! "
-        "Run python benchmark/run_benchmark.py to synchronize."
+    # 1. Cryptographic Hash Guardrail: results must strictly match active controller logic and vehicle mapping
+    # (Avoids flaky mtime assertions that break on fresh git clones or CI checkouts)
+    from core.state_machine import get_controller_code_hash
+    current_code_hash = get_controller_code_hash()
+    summary_df = pd.read_csv(summary_csv_path)
+    assert "Controller Code Hash" in summary_df.columns, "summary_metrics.csv missing 'Controller Code Hash' column!"
+    committed_hash = str(summary_df["Controller Code Hash"].iloc[0]).strip()
+    assert committed_hash == current_code_hash, (
+        f"Committed benchmark results hash ({committed_hash}) does not match controller source hash ({current_code_hash})! "
+        "The controller code or vehicle mapping has changed. Run python benchmark/run_benchmark.py to synchronize."
     )
 
     # 2. Results content integrity

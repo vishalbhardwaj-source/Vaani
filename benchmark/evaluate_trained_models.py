@@ -189,12 +189,12 @@ def evaluate():
             "Held-Out N": len(refs_heldout),
             "Held-Out Raw WER (%)": round(wer_heldout_raw, 2),
             "Held-Out Denoised WER (%)": round(wer_heldout_denoised, 2),
-            "Held-Out Raw Number Acc (%)": round(heldout_num_acc_raw, 1),
-            "Held-Out Denoised Number Acc (%)": round(heldout_num_acc_denoised, 1),
+            "Held-Out Raw Number Acc": f"{h_surv_raw}/{h_tot_raw} ({round(heldout_num_acc_raw, 1)}%)",
+            "Held-Out Denoised Number Acc": f"{h_surv_den}/{h_tot_den} ({round(heldout_num_acc_denoised, 1)}%)",
             "In-Domain N": len(refs_indomain),
             "In-Domain Raw WER (%)": round(wer_indomain_raw, 2),
             "In-Domain Denoised WER (%)": round(wer_indomain_denoised, 2),
-            "In-Domain Raw Number Acc (%)": round(indomain_num_acc_raw, 1),
+            "In-Domain Raw Number Acc": f"{i_surv_raw}/{i_tot_raw} ({round(indomain_num_acc_raw, 1)}%)",
         })
 
     eval_df = pd.DataFrame(summary_rows)

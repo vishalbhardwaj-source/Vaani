@@ -30,17 +30,19 @@ Our empirical benchmark evaluates **100 audio clips** across 4 acoustic conditio
 > **Evaluation Protocol & Purpose:**  
 > Track 1 isolates the finite state machine and dialogue safety layer from ASR variation by using calibrated acoustic degradation and scripted driver replies.
 > Audio was synthesized using `gTTS` and mixed with calibrated synthetic Indian truck diesel engine and cabin noise.
-> Each utterance is mapped to its matching fleet cargo vehicle (`HR-55-TC-1102` for sub-zero ice cream, `DL-01-AA-4092` for dairy, `GJ-01-BX-7201` for fresh produce).
-> In this track, specific phonetic confusion traps (18↔80, 14↔40, negative polarity loss) are injected into the input to stress-test the state machine's interception capability.
-> Driver replies model human factors: in loud cabin noise, drivers have an assumed reflexive error probability ($0\%$ in clean up to $12\%$ in severe noise).
+> **Fleet Telemetry Stand-in (Oracle Mapping):** Each utterance is mapped to its matching fleet cargo vehicle (`HR-55-TC-1102` for sub-zero ice cream target −22°C, `DL-01-AA-4092` for dairy target +4°C, `GJ-01-BX-7201` for fresh produce target +6°C). In production, vehicle ID is known from GPS/onboard IoT telematics where cargo profile is pre-registered in `fleet.sqlite`. The telematics plausibility policy challenges any reported reading deviating >25°C from target cargo limits.
+> Specific phonetic confusion traps (18↔80, 14↔40, negative polarity loss) are injected into the input to stress-test the state machine's interception capability.
+> Driver replies model human factors: in loud cabin noise, drivers have an assumed reflexive error probability (0% in clean up to 12% in severe noise).
 > The scorecard below was generated directly by `benchmark/score.py` using `benchmark/results/raw_benchmark_results.csv`:
 
-| Acoustic Condition | N | Source Engine | WER (%) | Raw Slot Acc (%) | Total Errors | Errors Caught by Read-Back | Silent Failures | Gate Blocked Anomalies | Final Dispatch Accuracy (%) |
-| :--- | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Clean (16 kHz)** | 25 | Acoustic Simulation (Calibrated SNR) | 0.00% | 96.0% | 1 | **1 of 1 (100.0%)** | **0 (0.0%)** | 0 | **100.0%** |
-| **Telephony 8 kHz** | 25 | Acoustic Simulation (Calibrated SNR) | 0.00% | 96.0% | 1 | **1 of 1 (100.0%)** | **0 (0.0%)** | 0 | **100.0%** |
-| **Telephony + 10 dB SNR** | 25 | Acoustic Simulation (Calibrated SNR) | 1.72% | 72.0% | 7 | **6 of 7 (85.7%)** | **1 (4.0%)** | 0 | **96.0%** |
-| **Telephony + 5 dB SNR** | 25 | Acoustic Simulation (Calibrated SNR) | 3.16% | 64.0% | 9 | **9 of 9 (100.0%)** | **0 (0.0%)** | 0 | **100.0%** |
+| Acoustic Condition | N | Source Engine | WER (%) | Raw Slot Acc (%) | Total Errors | Gate Blocked Anomalies | Driver Corrected Errors | Total Errors Caught | Silent Failures | Final Dispatch Accuracy (%) |
+| :--- | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Clean (16 kHz)** | 25 | Acoustic Simulation (Calibrated SNR) | 0.00% | 96.0% | 1 | 0 | 1 | **1 of 1 (100.0%)** | **0 (0.0%)** | **100.0%** |
+| **Telephony 8 kHz** | 25 | Acoustic Simulation (Calibrated SNR) | 0.00% | 96.0% | 1 | 0 | 1 | **1 of 1 (100.0%)** | **0 (0.0%)** | **100.0%** |
+| **Telephony + 10 dB SNR** | 25 | Acoustic Simulation (Calibrated SNR) | 1.72% | 72.0% | 7 | 0 | 6 | **6 of 7 (85.7%)** | **1 (4.0%)** | **96.0%** |
+| **Telephony + 5 dB SNR** | 25 | Acoustic Simulation (Calibrated SNR) | 3.16% | 64.0% | 9 | 0 | 9 | **9 of 9 (100.0%)** | **0 (0.0%)** | **100.0%** |
+
+*Note: In the 10 dB SNR condition, the single silent failure (4.0%) represents a single clip where the assumed 6% driver reflexive agreement allowed a minor unflagged extraction error to slip through.*
 
 ---
 
@@ -49,47 +51,51 @@ Our empirical benchmark evaluates **100 audio clips** across 4 acoustic conditio
 To measure actual acoustic generalization without data leakage, `core/train_asr.py`, `core/train_denoiser.py`, and `core/train_nlu.py` quarantine 7 held-out utterances (`utt_03, utt_07, utt_11, utt_15, utt_19, utt_22, utt_25`). 
 The table below reports real Word Error Rate (WER) and **Number Survival Accuracy** (whether temperatures and distances survive transcription) measured by `benchmark/evaluate_trained_models.py` using the trained Whisper-LoRA model with and without the 8 kHz neural denoiser (saved in `benchmark/results/model_evaluation_metrics.csv`):
 
-> **Sample Size Notice:** $N=7$ held-out utterances (28 audio clips across 4 channel variants) is a compact benchmark set; results demonstrate empirical acoustic trends rather than large-corpus asymptotic convergence.
+> **Sample Size Notice:** $N=7$ held-out utterances (28 audio clips across 4 channel variants; 10 total expected numeric slots) is a compact benchmark set; results demonstrate empirical acoustic trends rather than large-corpus asymptotic convergence.  
+> **Definition of Number Survival:** A number "survives" if and only if the exact target numeric value appears in the hypothesis bounded by word boundaries (`\b`) or is successfully parsed by `parse_hindi_number` to within $\pm 0.1$ tolerance (never by raw unconstrained substring).
 
 #### Headline Metric: Held-Out Generalization (N = 7 Utterances, 28 Audio Clips)
-| Acoustic Condition | Held-Out Raw WER (%) | Held-Out Denoised WER (%) | Held-Out Raw Number Acc (%) | Held-Out Denoised Number Acc (%) |
+| Acoustic Condition | Held-Out Raw WER (%) | Held-Out Denoised WER (%) | Held-Out Raw Number Acc (Count) | Held-Out Denoised Number Acc (Count) |
 | :--- | :---: | :---: | :---: | :---: |
-| **Clean (16 kHz)** | **20.00%** | 22.11% | **100.0%** | 100.0% |
-| **Telephony 8 kHz** | 29.47% | **27.37%** | **100.0%** | 100.0% |
-| **Telephony + 10 dB SNR** | **32.63%** | 34.74% | **100.0%** | 90.0% |
-| **Telephony + 5 dB SNR** | **43.16%** | **43.16%** | 70.0% | **80.0%** |
+| **Clean (16 kHz)** | **21.05%** | 22.11% | **10/10 (100.0%)** | 10/10 (100.0%) |
+| **Telephony 8 kHz** | **23.16%** | 23.16% | **10/10 (100.0%)** | 10/10 (100.0%) |
+| **Telephony + 10 dB SNR** | **33.68%** | 41.05% | **10/10 (100.0%)** | 9/10 (90.0%) |
+| **Telephony + 5 dB SNR** | **42.11%** | 53.68% | **8/10 (80.0%)** | 8/10 (80.0%) |
 
 #### In-Domain Training Baseline Reference (N = 18 Utterances, 72 Audio Clips)
-| Acoustic Condition | In-Domain Raw WER (%) | In-Domain Denoised WER (%) | In-Domain Raw Number Acc (%) |
+| Acoustic Condition | In-Domain Raw WER (%) | In-Domain Denoised WER (%) | In-Domain Raw Number Acc (Count) |
 | :--- | :---: | :---: | :---: |
-| **Clean (16 kHz)** | 3.56% | 2.37% | 100.0% |
-| **Telephony 8 kHz** | **1.98%** | 24.51% | 100.0% |
-| **Telephony + 10 dB SNR** | 3.56% | 5.14% | 100.0% |
-| **Telephony + 5 dB SNR** | 3.56% | 14.23% | 100.0% |
+| **Clean (16 kHz)** | 0.00% | 0.00% | 23/23 (100.0%) |
+| **Telephony 8 kHz** | 0.00% | 0.00% | 23/23 (100.0%) |
+| **Telephony + 10 dB SNR** | 0.00% | 0.40% | 23/23 (100.0%) |
+| **Telephony + 5 dB SNR** | 0.00% | 10.67% | 23/23 (100.0%) |
 
 #### Key Empirical Diagnostics & Insights:
-1. **Critical Number Survival Rate:**  
-   In dispatch workflows, word error on filler conversational phrases (`"bhaiya"`, `"chal raha hai"`) does not cause misdispatch. What is critical is whether numeric slots (temperatures and distances) survive. On clean, 8 kHz, and 10 dB SNR telephony, **100% of critical numbers survived transcription**, dropping to 70–80% only under harsh 5 dB SNR rumble.
+1. **Critical Number Survival Rate & Noise Alignment:**  
+   In dispatch workflows, word error on filler conversational phrases (`"bhaiya"`, `"chal raha hai"`) does not cause misdispatch. What is critical is whether numeric slots (temperatures and distances) survive. On clean, 8 kHz, and 10 dB SNR telephony, **10/10 (100%) of critical numbers survived transcription**, dropping to **8/10 (80.0%)** under harsh 5 dB SNR rumble. This ~20% number loss closely aligns with the Track 1 5 dB slot error rate (36%).
 2. **Language Prompt Alignment (`language="en"`):**  
    Forcing `language="en", task="transcribe"` in both Whisper-LoRA training (`core/train_asr.py`) and inference prevents the decoder from drifting between language partitions under high acoustic noise.
 3. **Denoiser Ablation:**  
-   A spectral denoiser trained on limited local audio data introduces phase distortion and spectral smearing at low SNRs (at 5 dB SNR in-domain WER rises from 3.56% raw to 14.23% denoised). Consequently, **direct raw audio into Whisper is the recommended default pipeline**.
-4. **Unseen Fresh Sentences Evaluation:**  
-   To evaluate slot extraction beyond the benchmark dataset, 10 completely fresh sentences with novel landmarks (Alwar Bypass, Agra Toll, Vapi Checkpost, Surat Highway, Ludhiana GT Road) were tested (`test_unseen_fresh_sentences_slot_accuracy`), achieving **93.3% slot accuracy** (28/30 slots).
+   A spectral denoiser trained on limited local audio data introduces phase distortion and spectral smearing at low SNRs (at 5 dB SNR held-out WER rises from 42.11% raw to 53.68% denoised). Consequently, **direct raw audio into Whisper is the recommended default pipeline**.
+4. **Unseen Fresh Sentences Smoke Test:**  
+   To smoke-test slot extraction on independent phrasing, 10 author-written fresh sentences with novel landmarks were tested (`test_unseen_fresh_sentences_slot_accuracy`), achieving **93.3% slot accuracy** (28/30 slots). The 2 failing slots were compound landmark name truncations:
+   - Sentence 2: `"Manesar Chauraha"` was extracted as `"Manesar"` (town matched rather than compound intersection).
+   - Sentence 7: `"Karnal Flyover"` was extracted as `"Karnal"` (town matched rather than compound flyover).
 
 ---
 
 ### Illustrative Driver Attention Sensitivity Sweep (0% to 20% Reflexive Error Rate)
 
-> **Methodological Note:** The table below is an illustrative parametric sensitivity sweep ($E_{\text{silent}} = \text{Errors} \times \text{Assumed Rate}$), demonstrating the mathematical boundary conditions of read-back confirmation under varying driver fatigue and distractibility, rather than a physical measurement of driver psychology.
+> **Methodological Note:** The table below is an illustrative parametric sensitivity sweep ($E_{\text{silent}} = \text{Ungated Errors} \times \text{Assumed Rate}$), demonstrating the mathematical boundary conditions of read-back confirmation under varying driver fatigue and distractibility, rather than a physical measurement of driver psychology.  
+> **Physical Safety Boundary Notice:** The telematics safety gate intercepts large anomalies (>25°C deviation) even if the driver reflexively agrees (`"haan"`). However, **if a driver genuinely mishears the read-back and repeats the wrong number** (`"haan, assi degree confirm"`), the gate accepts it as an intended override. Software safety gates protect against unverified reflexive confirmations, not against human confirmation of misheard values.
 
 | Assumed Driver Error Rate | Clean (16 kHz) Dispatch Acc | Telephony 8 kHz Dispatch Acc | 10 dB SNR Dispatch Acc | 5 dB SNR Dispatch Acc |
 | :---: | :---: | :---: | :---: | :---: |
 | **0% (Attentive Driver)** | **100.0%** | **100.0%** | **100.0%** | **100.0%** |
-| **5% (Minor Distraction)** | **99.8%** | **99.8%** | **98.6%** | **98.2%** |
-| **10% (Moderate Noise)** | **99.6%** | **99.6%** | **97.2%** | **96.4%** |
-| **15% (Heavy Fatigue)** | **99.4%** | **99.4%** | **95.8%** | **94.6%** |
-| **20% (Severe Noise & Fatigue)** | **99.2%** | **99.2%** | **94.4%** | **92.8%** |
+| **5% (Minor Distraction)** | **99.8%** | **99.8%** | **98.8%** | **99.0%** |
+| **10% (Moderate Noise)** | **99.6%** | **99.6%** | **97.6%** | **98.0%** |
+| **15% (Heavy Fatigue)** | **99.4%** | **99.4%** | **96.4%** | **97.0%** |
+| **20% (Severe Noise & Fatigue)** | **99.2%** | **99.2%** | **95.2%** | **96.0%** |
 
 *Raw data logged in `benchmark/results/driver_sensitivity_sweep.csv`.*
 

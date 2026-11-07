@@ -144,6 +144,7 @@ def run_benchmark_row(
         state, readback_prompt = controller.receive_missing_slot_reply("Driver clarification provided", extraction)
 
     error_caught = False
+    driver_corrected = False
     silent_failure = False
     action_executed = False
     telematics_challenged = bool(controller.requires_forced_confirmation)
@@ -198,6 +199,7 @@ def run_benchmark_row(
 
                 state, updated_prompt = controller.handle_confirmation_reply(reply)
                 error_caught = True
+                driver_corrected = True
 
                 # Driver confirms corrected read-back with number repeat if gate is active
                 corr_temp_val = f"{controller.current_record.temperature_c:g}" if controller.current_record and controller.current_record.temperature_c is not None else ""
@@ -241,6 +243,7 @@ def run_benchmark_row(
         "true_loc": true_loc,
         "has_extraction_error": has_extraction_error,
         "error_caught": error_caught,
+        "driver_corrected": driver_corrected,
         "silent_failure": silent_failure,
         "telematics_challenged": telematics_challenged,
         "telematics_blocked": telematics_blocked,

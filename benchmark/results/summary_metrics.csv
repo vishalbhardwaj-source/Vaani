@@ -1,5 +1,5 @@
-Condition,Sample Size (N),Source Engine,WER (%),Raw Slot Acc (%),Total Errors,Errors Caught,Silent Failures,Gate Blocked Anomalies,Final Dispatch Accuracy (%)
-clean,25,Acoustic Noise Simulation (Calibrated SNR),0.0,96.0,1,1 of 1 (100.0%),0 (0.0%),0,100.0
-telephony_8khz,25,Acoustic Noise Simulation (Calibrated SNR),0.0,96.0,1,1 of 1 (100.0%),0 (0.0%),0,100.0
-telephony_10db,25,Acoustic Noise Simulation (Calibrated SNR),1.72,72.0,7,6 of 7 (85.7%),1 (4.0%),0,96.0
-telephony_5db,25,Acoustic Noise Simulation (Calibrated SNR),3.16,64.0,9,9 of 9 (100.0%),0 (0.0%),0,100.0
+Condition,Sample Size (N),Source Engine,WER (%),Raw Slot Acc (%),Total Errors,Gate Blocked Anomalies,Driver Corrected Errors,Total Errors Caught,Silent Failures,Final Dispatch Accuracy (%),Controller Code Hash
+clean,25,Acoustic Noise Simulation (Calibrated SNR),0.0,96.0,1,0,1,1 of 1 (100.0%),0 (0.0%),100.0,36099620fd468462850f0baed82382a038e431ec474cf56708dc70f98721fe09
+telephony_8khz,25,Acoustic Noise Simulation (Calibrated SNR),0.0,96.0,1,0,1,1 of 1 (100.0%),0 (0.0%),100.0,36099620fd468462850f0baed82382a038e431ec474cf56708dc70f98721fe09
+telephony_10db,25,Acoustic Noise Simulation (Calibrated SNR),1.72,72.0,7,0,6,6 of 7 (85.7%),1 (4.0%),96.0,36099620fd468462850f0baed82382a038e431ec474cf56708dc70f98721fe09
+telephony_5db,25,Acoustic Noise Simulation (Calibrated SNR),3.16,64.0,9,0,9,9 of 9 (100.0%),0 (0.0%),100.0,36099620fd468462850f0baed82382a038e431ec474cf56708dc70f98721fe09

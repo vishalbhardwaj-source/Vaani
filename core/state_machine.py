@@ -9,6 +9,9 @@ LISTENING -> EXTRACTING -> (ASKING) -> CONFIRMING -> (CORRECTING) -> ACTING -> D
 
 import datetime
 import logging
+import hashlib
+import re
+from pathlib import Path
 from typing import Optional, List, Dict, Any, Tuple
 from core.schemas import (
     DialogueState,
@@ -20,6 +23,26 @@ from core.schemas import (
 from core.tools import dispatch_assistance, update_eta, lookup_vehicle
 
 logger = logging.getLogger("vaani.state_machine")
+
+
+def get_controller_code_hash() -> str:
+    """
+    Computes a cryptographic SHA256 hash of the controller logic and vehicle mapping.
+    Used as a CI guardrail to ensure benchmark results strictly reflect the active controller.
+    """
+    state_machine_path = Path(__file__).resolve()
+    with open(state_machine_path, "rb") as f:
+        content = f.read()
+
+    bench_path = state_machine_path.parent.parent / "benchmark" / "run_benchmark.py"
+    if bench_path.exists():
+        with open(bench_path, "rb") as f:
+            bench_content = f.read()
+            m = re.search(rb"def get_vehicle_for_utterance\(.*?\n(?=\ndef |\Z)", bench_content, re.DOTALL)
+            if m:
+                content += m.group(0)
+
+    return hashlib.sha256(content).hexdigest()
 
 
 class DialogueController:

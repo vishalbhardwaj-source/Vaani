@@ -115,14 +115,14 @@
     "<|notimestamps|>"
   ],
   "is_local": false,
-  "language": null,
+  "language": "en",
   "local_files_only": false,
   "model_max_length": 1024,
   "pad_token": "<|endoftext|>",
   "predict_timestamps": false,
   "processor_class": "WhisperProcessor",
   "return_attention_mask": false,
-  "task": null,
+  "task": "transcribe",
   "tokenizer_class": "WhisperTokenizer",
   "unk_token": "<|endoftext|>"
 }

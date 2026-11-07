@@ -14494,6 +14494,18 @@
       },
       {
         "SpecialToken": {
+          "id": "<|en|>",
+          "type_id": 0
+        }
+      },
+      {
+        "SpecialToken": {
+          "id": "<|transcribe|>",
+          "type_id": 0
+        }
+      },
+      {
+        "SpecialToken": {
           "id": "<|notimestamps|>",
           "type_id": 0
         }
@@ -14515,6 +14527,18 @@
       {
         "SpecialToken": {
           "id": "<|startoftranscript|>",
+          "type_id": 0
+        }
+      },
+      {
+        "SpecialToken": {
+          "id": "<|en|>",
+          "type_id": 0
+        }
+      },
+      {
+        "SpecialToken": {
+          "id": "<|transcribe|>",
           "type_id": 0
         }
       },
@@ -14553,6 +14577,15 @@
           "<|endoftext|>"
         ]
       },
+      "<|en|>": {
+        "id": "<|en|>",
+        "ids": [
+          50259
+        ],
+        "tokens": [
+          "<|en|>"
+        ]
+      },
       "<|notimestamps|>": {
         "id": "<|notimestamps|>",
         "ids": [
@@ -14569,6 +14602,15 @@
         ],
         "tokens": [
           "<|startoftranscript|>"
+        ]
+      },
+      "<|transcribe|>": {
+        "id": "<|transcribe|>",
+        "ids": [
+          50359
+        ],
+        "tokens": [
+          "<|transcribe|>"
         ]
       }
     }
