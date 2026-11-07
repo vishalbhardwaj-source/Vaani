@@ -93,18 +93,8 @@ def check_database():
 def check_audio_corpus():
     print(f"\n{BOLD}[3/5] Inspecting Acoustic Audio Datasets...{RESET}")
     bench_audio = PROJECT_ROOT / "benchmark" / "audio"
-    phone_dataset = PROJECT_ROOT / "data" / "phone_dataset"
-
     bench_wavs = list(bench_audio.glob("*.wav")) if bench_audio.exists() else []
-    print(f"  • Benchmark Multi-SNR Audio Clips: {GREEN}{len(bench_wavs)} clips present{RESET}")
-
-    phone_wavs = list(phone_dataset.glob("*.wav")) if phone_dataset.exists() else []
-    print(f"  • Real-World Telephony Corpus (data/phone_dataset): {GREEN}{len(phone_wavs)}/50 clips present{RESET}")
-
-    manifest_file = phone_dataset / "phone_manifest.csv"
-    consent_file = phone_dataset / "CONSENT_NOTE.md"
-    print(f"  • Telephony Manifest (phone_manifest.csv): {GREEN}✔ PRESENT{RESET}" if manifest_file.exists() else f"  • {RED}✖ MISSING{RESET}")
-    print(f"  • Ethics & Consent Registry (CONSENT_NOTE.md): {GREEN}✔ PRESENT{RESET}" if consent_file.exists() else f"  • {RED}✖ MISSING{RESET}")
+    print(f"  • Benchmark Multi-SNR Audio Clips: {GREEN}{len(bench_wavs)} clips present{RESET} (Clean, 8kHz, 10dB, 5dB SNR)")
     return True
 
 

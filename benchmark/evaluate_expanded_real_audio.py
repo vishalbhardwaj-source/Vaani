@@ -4,9 +4,9 @@ Evaluates Whisper-LoRA and dialogue safety gate number survival across a simulat
 stress corpus (N=80 numeric slots across 40 simulated corridor scenarios: 40 temperatures, 40 distances).
 
 Calibration Note:
-This is a software benchmark simulation calibrated to the empirical 15% numeric error rate
-observed on real noisy phone calls, demonstrating how the finite-state machine (FSM) safety gate
-intercepts ASR errors under controlled telematics loads.
+This is a software benchmark simulation with an injected 15% numeric error rate,
+demonstrating how the finite-state machine (FSM) safety gate intercepts ASR errors
+under controlled telematics loads.
 """
 
 import math

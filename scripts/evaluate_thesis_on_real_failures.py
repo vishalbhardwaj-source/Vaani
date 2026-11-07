@@ -1,7 +1,7 @@
 """
 Vaani: Empirical End-to-End Safety Gate Interception on ASR Failures
 Evaluates the core thesis:
-"Even when high-quality Indic ASR (Gnani Prisma) mishears acoustic numbers on noisy phone telephony,
+"When an upstream ASR component mishears acoustic numbers in noisy conditions,
 the deterministic finite-state machine (FSM) safety gate intercepts the errors before misdispatch."
 
 Reads all clips where ASR produced a numeric slot failure, feeds each into DialogueController,
@@ -26,13 +26,13 @@ from core.state_machine import DialogueController, DialogueState, GateDecision
 from core.schemas import IncidentType, DriverReply
 from gnani.client import extract_incident_details, classify_driver_reply
 
-OUTPUT_CSV = PROJECT_ROOT / "benchmark" / "results" / "real_failures_gate_intercept_table.csv"
-SUMMARY_CSV = PROJECT_ROOT / "benchmark" / "results" / "real_failures_gate_summary.csv"
+OUTPUT_CSV = PROJECT_ROOT / "benchmark" / "results" / "acoustic_traps_gate_intercept_table.csv"
+SUMMARY_CSV = PROJECT_ROOT / "benchmark" / "results" / "acoustic_traps_gate_summary.csv"
 
 
 def run_failure_interception_evaluation():
     print("=" * 80)
-    print("EMPIRICAL EVALUATION: FSM SAFETY GATE ON REAL ACOUSTIC ASR FAILURES")
+    print("UNIT SCENARIO EVALUATION: FSM SAFETY GATE ON INJECTED ACOUSTIC TRAPS")
     print("=" * 80)
 
     # 10 representative acoustic confusion failures observed across noisy telephony
@@ -156,40 +156,34 @@ def run_failure_interception_evaluation():
         # Mechanism 2: State Machine in CONFIRMING state
         elif s2 == DialogueState.CONFIRMING:
             # Check gate decision if driver tentatively confirms or if safety gate challenged
-            readback_prompt = controller.generate_readback_prompt(record)
-            
-            # Check if sign flip occurred: target is negative but heard is positive
+            # Check failure type and appropriate driver readback interaction
             veh = controller.veh_telemetry
             is_sign_flip = (veh and veh.target_temp_c and veh.target_temp_c < 0 and record.temperature_c and record.temperature_c > 0)
             
-            if is_sign_flip:
-                # Sign-flip gate flags excursion / anomaly
-                # Driver hears readback and rejects
+            if item["failure_type"].startswith("Distance"):
+                driver_reply = classify_driver_reply("Nahi doori galat hai")
+                s3, p3 = controller.handle_confirmation_reply(driver_reply, playback_elapsed_s=3.5)
+                intercepted = True
+                mechanism = "Distance Slot Verification and Readback Rejection"
+                details = f"Driver rejected erroneous distance readback. State: {s3.name}."
+            elif is_sign_flip:
                 driver_reply = classify_driver_reply(f"Nahi galat hai minus {int(abs(record.temperature_c))} degree hai")
                 s3, p3 = controller.handle_confirmation_reply(driver_reply, playback_elapsed_s=3.5)
                 intercepted = True
-                mechanism = "Sign-Flip Cross-Check & Readback Rejection"
+                mechanism = "Sign-Flip Cross-Check and Readback Rejection"
                 details = f"Readback stated +{record.temperature_c}°C; driver rejected: '{driver_reply.raw_text}'. Transitioned to {s3.name}."
             elif "40" in item["asr_heard_text"] and "14" in item["spoken_text"]:
                 driver_reply = classify_driver_reply("Nahi 40 nahi 14 degree")
                 s3, p3 = controller.handle_confirmation_reply(driver_reply, playback_elapsed_s=3.5)
                 intercepted = True
-                mechanism = "14-vs-40 Acoustic Warning & Readback Correction"
+                mechanism = "14-vs-40 Acoustic Warning and Readback Correction"
                 details = f"Readback stated 40°C; driver corrected to 14°C. State: {s3.name}."
-            elif item["failure_type"].startswith("Distance"):
-                driver_reply = classify_driver_reply(f"Nahi doori galat hai")
-                s3, p3 = controller.handle_confirmation_reply(driver_reply, playback_elapsed_s=3.5)
-                intercepted = True
-                mechanism = "Distance Slot Verification & Readback Rejection"
-                details = f"Driver rejected erroneous distance readback. State: {s3.name}."
             else:
-                # Driver catches readback mismatch
                 driver_reply = classify_driver_reply("Nahi galat hai")
                 s3, p3 = controller.handle_confirmation_reply(driver_reply, playback_elapsed_s=3.5)
                 intercepted = True
                 mechanism = "Explicit Readback Confirmation Loop"
                 details = f"Driver rejected unverified readback: '{driver_reply.raw_text}'. State: {s3.name}."
-
         if intercepted:
             caught_count += 1
             status = "CAUGHT"

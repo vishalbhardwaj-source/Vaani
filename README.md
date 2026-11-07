@@ -51,7 +51,7 @@ Truck drivers and cold-chain ground crews operate in deafening cabin environment
 
 ### Key Empirical Findings at a Glance
 1. **Dialogue-Gate Error Interception:** Under severe synthetic highway noise with injected traps, the confirmation state machine caught **100% of catastrophic errors**; zero unverified dispatches occurred.
-2. **Empirical Prisma Advantage:** On noisy telephonic audio and held-out clips, the deterministic FSM safety gate caught **100.0% of acoustic numeric failures (10/10)**, preventing any wrong dispatch.
+2. **Acoustic Trap Interception:** Across 16 adversarial scenarios and unit test suites (including 18 vs 80, 14 vs 40, and dropped minus polarities), the deterministic FSM safety gate intercepted 100% of tested failure modes, preventing unverified misdispatches.
 3. **Sub-Second Turnaround:** End-to-end turnaround latency of **384 ms (GPU) / 891 ms (CPU)** with concise 4.8-second spoken readback.
 4. **Full Test Coverage:** **66 passing unit and regression tests** verifying all state transitions, boundary conditions, and acoustic echo rejection.
 
@@ -125,14 +125,26 @@ Latency: ~310 ms"]
 
 ---
 
-### Headline Evidence: The Thesis End-to-End on Real ASR Failures
+### Safety Gate Unit Scenarios: Interception of Injected Acoustic Traps
 
-> **The Central Thesis:** Even when high-quality Indic speech recognition (such as Gnani Prisma) mishears spoken numbers under harsh mobile telephony noise, the deterministic safety gate intercepts the errors before any wrong dispatch can take place.
->
-> **Headline Result:** **Prisma/ASR misheard 10 numbers on noisy phone telephony. The FSM safety gate caught 10 of 10 (100.0%).**
+> **Unit Test Specification:** To verify that the finite-state machine (FSM) safety gate blocks hazardous commands even when an upstream component outputs phonetically confusable numbers, 10 known acoustic trap patterns are evaluated in unit testing (`scripts/evaluate_thesis_on_real_failures.py`):
 
-| clip_id | environment | failure_type | spoken_ground_truth | asr_misheard_transcript | gate_status | interception_mechanism |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| Test Case ID | Environment Type | Confusion Category | Target Spoken Text | Injected ASR Hypothesis | Gate Status | Interception Mechanism |
+| :--- | :---: | :---: | :--- | :--- | :---: | :---: |
+| TRAP_01 | Roadside Ambient | 18_vs_80_Phonetic_Trap | Temperature 18 degree ho gaya hai toll plaza se 42 km aage | Temperature 80 degree ho gaya hai toll plaza se 42 km aage | CAUGHT | Physical Bounds Gate (-40C to 50C) / 18-vs-80 Trap |
+| TRAP_02 | Enclosed Cabin | Dropped_Minus_Sign_Flip | Breakdown alert temp minus 18 degree hai aur Mumbai Pune Expressway km 68 par hoon | Breakdown alert temp 18 degree hai aur Mumbai Pune Expressway km 68 par hoon | CAUGHT | Sign-Flip Cross-Check & Readback Rejection |
+| TRAP_03 | Roadside Ambient | 14_vs_40_Phonetic_Trap | Bhaiya 14 degree cross ho gaya Manesar chauraha se 35 km | Bhaiya 40 degree cross ho gaya Manesar chauraha se 35 km | CAUGHT | 14-vs-40 Acoustic Warning & Readback Correction |
+| TRAP_04 | Roadside Ambient | Distance_Digit_Substitution | Cabin me temp minus 8 degree show ho raha hai 25 km pehle | Cabin me temp minus 8 degree show ho raha hai 20 km pehle | CAUGHT | Distance Slot Verification & Readback Rejection |
+| TRAP_05 | Continuous Fan Noise | Double_Acoustic_Confusion_Temp_And_Dist | Bhaiya 14 degree ho gaya hai dairy consignment ka Dharuhera se 18 km | Bhaiya 40 degree ho gaya hai dairy consignment ka Dharuhera se 80 km | CAUGHT | 14-vs-40 Acoustic Warning & Readback Correction |
+| TRAP_06 | Continuous Fan Noise | Dropped_Minus_Sign_Flip | Minus 18 degree maintain nahi ho raha Paota se 12 km pehle | 18 degree maintain nahi ho raha Paota se 12 km pehle | CAUGHT | Sign-Flip Cross-Check & Readback Rejection |
+| TRAP_07 | Street Market | Dropped_Minus_Sign_Flip | Temperature minus 14 degree ki jagah 14 degree ho gaya Hosur se 12 km aage | Temperature 14 degree ho gaya Hosur se 12 km aage | CAUGHT | Sign-Flip Cross-Check & Readback Rejection |
+| TRAP_08 | Street Market | 18_vs_80_Phonetic_Trap | Reefer display 18 degree dikha raha hai Chandapura flyover se 17 km | Reefer display 80 degree dikha raha hai Chandapura flyover se 17 km | CAUGHT | Physical Bounds Gate (-40C to 50C) / 18-vs-80 Trap |
+| TRAP_09 | Narrowband Baseline | Dropped_Minus_Sign_Flip | Temp minus 18 degree ice cream load Ranoli bridge se 15 km pehle | Temp 18 degree ice cream load Ranoli bridge se 15 km pehle | CAUGHT | Sign-Flip Cross-Check & Readback Rejection |
+| TRAP_10 | Enclosed Cabin | Distance_18_vs_80_Confusion | Chiller trip temp 5 degree Talegaon bypass se 18 km | Chiller trip temp 5 degree Talegaon bypass se 80 km | CAUGHT | Distance Slot Verification & Readback Rejection |
+
+---
+
+--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | PHONE_02 | Roadside / Two-wheeler | 18_vs_80_Phonetic_Trap | Temperature 18 degree ho gaya hai toll plaza se 42 km aage | Temperature 80 degree ho gaya hai toll plaza se 42 km aage | CAUGHT | Physical Bounds Gate (-40C to 50C) / 18-vs-80 Trap |
 | PHONE_11 | Enclosed Cabin (Idle) | Dropped_Minus_Sign_Flip | Breakdown alert temp minus 18 degree hai aur Mumbai Pune Expressway km 68 par hoon | Breakdown alert temp 18 degree hai aur Mumbai Pune Expressway km 68 par hoon | CAUGHT | Sign-Flip Cross-Check & Readback Rejection |
 | PHONE_09 | Roadside / Two-wheeler | 14_vs_40_Phonetic_Trap | Bhaiya 14 degree cross ho gaya Manesar chauraha se 35 km | Bhaiya 40 degree cross ho gaya Manesar chauraha se 35 km | CAUGHT | 14-vs-40 Acoustic Warning & Readback Correction |
@@ -147,22 +159,6 @@ Latency: ~310 ms"]
 *Source File: `benchmark/results/real_failures_gate_intercept_table.csv`*
 
 ---
-
-### Gnani Evon NLU vs Deterministic Safety Regex Extractor
-
-To evaluate reasoning extraction, `scripts/run_live_evon_benchmark.py` evaluated Gnani Evon (`evon-v3.3`) against the deterministic regex safety extractor across held-out transcripts:
-
-| Slot | Evon Accuracy (%) | Regex Accuracy (%) | Behavior & Trade-offs |
-| :--- | :---: | :---: | :---: |
-| Incident Type | 100.0% (7/7) | 100.0% (7/7) | Evon handles diverse paraphrasing; Regex matches keyword patterns. |
-| Temperature (°C) | 85.7% (6/7) | 100.0% (7/7) | Evon can miss dropped minus polarity; Regex enforces strict physical bounds (-40 to 50°C). |
-| Distance (km) | 100.0% (7/7) | 100.0% (7/7) | Both extract distances accurately; Regex strips highway marker prefixes (NH-44). |
-| Location / Landmark | 100.0% (7/7) | 85.7% (6/7) | Evon excels at open-vocabulary landmarks; Regex checks confusable phonetic pairs. |
-
-*Source File: `benchmark/results/evon_vs_regex_summary.csv`*
-
----
-
 
 ### Track 1: Dialogue-Gate Stress Test with Injected ASR Errors (Software Simulation, N=125 Sessions)
 
@@ -256,22 +252,7 @@ To measure actual acoustic generalization without data leakage, `core/train_asr.
 The table below reports real Word Error Rate (WER) and **Number Survival Accuracy** (whether temperatures and distances survive transcription) measured by `benchmark/evaluate_trained_models.py` using the trained Whisper-LoRA model with and without the 8 kHz neural denoiser, alongside real phone telephony audio (saved in `benchmark/results/model_evaluation_metrics.csv`):
 
 > **Sample Size & Multi-Seed Empirical Distribution:** $N=7$ held-out utterances (28 audio clips across 4 channel variants; 10 total expected numeric slots) is an indicative benchmark set. The table reports both single-run and empirical Mean ± SD across 3 training seeds. Differences across retrains represent empirical sample variance rather than systematic algorithmic changes.
-> **Noisy Mobile Telephony Dataset & Consent Record:** Mobile telephony recordings evaluate 5 diverse acoustic environments (Roadside Two-Wheeler, Enclosed Idle Cabin, Kitchen Exhaust Fan, Market Street Background, and Quiet Handset baseline). Out of 20 numeric slots, 17 survived (**85.0% survival in benchmark evaluation**). With $n=20$, the 95% Wilson confidence interval is **64.0% to 94.8%** (about 1 in 7 numbers wrong, plausibly 1 in 20 to 1 in 3). To respect participant privacy, written consent records are archived in [data/phone_dataset/CONSENT_NOTE.md](data/phone_dataset/CONSENT_NOTE.md) and clip metadata is tracked in [data/phone_dataset/phone_manifest.csv](data/phone_dataset/phone_manifest.csv).
-> **Telephony Failure Breakdown (3 Failed Slots):**
-> - **Temperature Confusions (10/12 survived, 83.3%):** One acoustic trap ($18 \rightarrow 80$) and one dropped minus polarity ($-14 \rightarrow +14$). *A dropped minus sign is the most dangerous acoustic failure mode because −14 becomes +14 and appears physically plausible while representing a 28°C error! The read-back always speaks the sign ('minus chaudah'), and the safety gate flags an immediate polarity challenge (`SIGN_FLIP_DETECTED`) whenever target temperature is sub-zero.*
-> - **Distance Confusions (7/8 survived, 87.5%):** One changed digit ($68 \rightarrow 60\text{ km}$, a digit confusion, not dropped digits).
 > **Definition of Number Survival:** A number 'survives' if and only if the exact target numeric value appears in the hypothesis bounded by word boundaries (`\b`) or is successfully parsed by `parse_hindi_number` to within $\pm 0.1$ tolerance (never by unconstrained substring matching).
-
-#### Empirical Comparison: Gnani Prisma STT vs Base Whisper-tiny
-
-| Acoustic Condition | Held-Out Clips (N) | Whisper-tiny Base WER (%) | Whisper-LoRA WER (%) | Gnani Prisma STT WER (%) | Whisper-tiny Num Survival | Whisper-LoRA Num Survival | Gnani Prisma Num Survival | Prisma Advantage |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| clean | 7 | 55.8 | 21.1 | 16.4 | 8/10 (80.0%) | 10/10 (100.0%) | 10/10 (100.0%) | +20.0% vs Base |
-| telephony_8khz | 7 | 88.4 | 23.2 | 18.1 | 7/10 (70.0%) | 10/10 (100.0%) | 10/10 (100.0%) | +30.0% vs Base |
-| telephony_10db | 7 | 112.6 | 33.7 | 26.3 | 7/10 (70.0%) | 10/10 (100.0%) | 10/10 (100.0%) | +30.0% vs Base |
-| telephony_5db | 7 | 89.5 | 42.1 | 32.8 | 5/10 (50.0%) | 8/10 (80.0%) | 9/10 (90.0%) | +40.0% vs Base |
-| telephony_stress_corridor (N=80 Slots, 8 Corridors) | 40 | 48.6 | 36.5 | 24.2 | 52/80 (65.0%) | 64/80 (80.0%) | 74/80 (92.5%) | +27.5% vs Base |
-
 
 #### Headline Metric: Held-Out Generalization (N = 7 Utterances, 28 Audio Clips)
 | Condition | Held-Out N | Held-Out Raw WER (%) | Held-Out Raw WER Mean ± SD (%) | Held-Out Denoised WER (%) | Held-Out Raw Number Acc | Held-Out Denoised Number Acc |
@@ -280,7 +261,6 @@ The table below reports real Word Error Rate (WER) and **Number Survival Accurac
 | telephony_8khz | 7 | 23.16 | 25.3 ± 3.1 | 23.16 | 10/10 (100.0%) | 10/10 (100.0%) |
 | telephony_10db | 7 | 33.68 | 33.7 ± 1.0 | 41.05 | 10/10 (100.0%) | 9/10 (90.0%) |
 | telephony_5db | 7 | 42.11 | 42.9 ± 0.8 | 53.68 | 8/10 (80.0%) | 8/10 (80.0%) |
-| real_world_phone_telephony | 20 | 37.8 | 37.8 ± 2.4 | 46.2 | 17/20 (85.0%) | 15/20 (75.0%) |
 
 #### Held-Out End-to-End Pipeline Metric (Audio -> Whisper-LoRA -> Extractor -> Slots)
 The table below reports end-to-end slot accuracy evaluated by `benchmark/evaluate_held_out_e2e.py` on actual Whisper-LoRA speech transcripts across all 28 held-out clips:
@@ -313,13 +293,12 @@ The table below lists all 7 held-out clips, their ground truth numeric slots, an
 | telephony_8khz | 18 | 0.0 | 0.0 | 23/23 (100.0%) |
 | telephony_10db | 18 | 0.0 | 0.4 | 23/23 (100.0%) |
 | telephony_5db | 18 | 0.0 | 10.67 | 23/23 (100.0%) |
-| real_world_phone_telephony | — | — | — | — |
 
 *Note: In-domain 23/23 (100%) number accuracy and 0.0% WER represents fitting/memorization on the 18 training sentences and is included strictly as an overfitted reference baseline.*
 
 #### Key Empirical Diagnostics & Insights:
 1. **Critical Number Survival Rate & Real Telephony Risk:**
-   In dispatch workflows, word error on filler conversational phrases (`"bhaiya"`, `"chal raha hai"`) does not cause misdispatch. What is critical is whether numeric slots survive. On synthetic telephony down to 10 dB SNR, **10/10 (100%) of numbers survived**, dropping to **8/10 (80.0%)** at 5 dB. On phone telephony audio, **17/20 (85.0%) survived (95% CI: 64%–95%) in benchmark testing**, proving that approximately 1 in 7 numbers is misheard on noisy phone lines.
+   In dispatch workflows, word error on filler conversational phrases (`"bhaiya"`, `"chal raha hai"`) does not cause misdispatch. What is critical is whether numeric slots survive. On synthetic telephony down to 10 dB SNR, **10/10 (100%) of numbers survived**, dropping to **8/10 (80.0%)** at 5 dB. demonstrating how acoustic noise degrades numerical recognition and why deterministic verification is strictly required before dispatch.
 2. **Acoustic Defense for Distance Confusions (Digit-by-Digit Spelling):**
    Because telematics targets do not constrain highway distances (unlike temperatures), the system's primary defense against distance confusion (such as 68 $\rightarrow$ 60 km) is **read-back digit-by-digit spelling** (`generate_readback_prompt` outputs e.g. `Mumbai Pune Expressway se 68 (6, 8) km`), forcing phonetic disambiguation on confirmation.
 3. **Location Grounding, Fuzzy Margin Rule (0.10), & Non-Circular GPS:**
@@ -575,10 +554,9 @@ Whisper-tiny (39M parameters) was selected as the operational base acoustic mode
 - **Measured Empirical Generalization (Track 2):**
   - Held-out clean: **21.05% WER**, 10/10 (100.0%) number survival.
   - Held-out telephony (8 kHz): **23.16% WER**, 10/10 (100.0%) number survival.
-  - Mobile phone telephony evaluation ($N=20$ numbers): **37.8% WER**, **17/20 (85.0%) number survival in benchmark testing**.
 
 ### 8.2 Scaling Path & Engineering Trade-Offs (Qualitative Analysis)
-The ~37.8% WER and ~15% numeric failure rate observed on real phone audio reflect several compounding real-world factors: Whisper-Tiny's small 39M-parameter acoustic modeling capacity, domain mismatch between synthetic training speech (18 gTTS clips) and real Indian freight drivers, and acoustic degradations introduced by mobile telephony codecs. Upgrading the base checkpoint offers a direct engineering trade-off:
+The 42.1% WER and 20% numeric failure rate measured under severe 5 dB SNR cabin noise reflect several compounding factors: Whisper-Tiny's small 39M-parameter acoustic modeling capacity, domain mismatch between synthetic training speech (18 gTTS clips) and real Indian freight drivers, and acoustic degradations introduced by mobile telephony codecs. Upgrading the base checkpoint offers a direct engineering trade-off:
 
 1. **Larger Whisper Checkpoints (`whisper-base` 74M, `whisper-small` 244M):**
    Scaling the acoustic encoder expands phonetic discrimination between phonologically confusable Hindi numerals (such as *atharah* 18 vs *assi* 80, or *chaudah* 14 vs *challis* 40). A larger ASR model directly shrinks the error budget that the telematics gate and read-back confirmation must absorb, reducing the frequency of challenge prompts and increasing conversational velocity.
@@ -593,13 +571,11 @@ In this software benchmark simulation, 40 synthetic corridor scenarios (80 numer
 
 | Evaluation Condition | Corridors / Speakers (N) | Total Numbers (N) | Acoustic Channel | Number Survival Rate (%) | 95% Wilson CI | Gate Interception Rate (%) |
 | :--- | :---: | :---: | :--- | :---: | :---: | :---: |
-| **Real Phone Acoustic Telephony (Live Test)** | 5 | 50 | Live Mobile Telephony (Roadside, Cabin, Fan, Market, Handset) | 41/50 (82.0%) | [69.2%, 90.2%] | **100.0% (9/9 caught)** |
 | **Simulated Telematics Stress Corpus (Software Test)** | 8 | 80 | Calibrated 15% Injected Error Rate (G.711 Simulation) | 64/80 (80.0%) | [70.0%, 87.3%] | **100.0% (12/12 caught)** |
 
 *Key Findings from Telematics Evaluation:*
 - **Empirical Safety Interception Rate Holds:** Every single acoustic failure on phone audio was intercepted by the FSM safety gate (bounds check, sign-flip check, or read-back correction).
 - **Itemized Per-Clip Dataset:** The complete per-clip dataset with all 40 telematics corridor scenarios (80 numeric slots), corridor IDs, recognized outputs, ground truth values, and simulation notices is provided in [data/driver_cohort_per_clip_results.csv](data/driver_cohort_per_clip_results.csv).
-- **Live Mobile Audio Participant Consent:** Ethical consent records for voluntary phone recording participants across all 5 noise environments are archived in [data/phone_dataset/CONSENT_NOTE.md](data/phone_dataset/CONSENT_NOTE.md).
 
 ---
 

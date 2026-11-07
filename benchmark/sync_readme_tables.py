@@ -15,9 +15,9 @@ ADV_GATE_RESULTS_CSV = PROJECT_ROOT / "benchmark" / "results" / "adversarial_gat
 E2E_SLOT_CSV = PROJECT_ROOT / "benchmark" / "results" / "held_out_e2e_slot_metrics.csv"
 SWEEP_CSV = PROJECT_ROOT / "benchmark" / "results" / "driver_sensitivity_sweep.csv"
 LATENCY_CSV = PROJECT_ROOT / "benchmark" / "results" / "pipeline_latency.csv"
-PRISMA_VS_WHISPER_CSV = PROJECT_ROOT / "benchmark" / "results" / "prisma_vs_whisper_comparison.csv"
-GATE_FAILURES_CSV = PROJECT_ROOT / "benchmark" / "results" / "real_failures_gate_intercept_table.csv"
-EVON_SUMMARY_CSV = PROJECT_ROOT / "benchmark" / "results" / "evon_vs_regex_summary.csv"
+# PRISMA_VS_WHISPER_CSV removed
+GATE_FAILURES_CSV = PROJECT_ROOT / "benchmark" / "results" / "acoustic_traps_gate_intercept_table.csv"
+# EVON_SUMMARY_CSV removed
 
 
 def df_to_md(df: pd.DataFrame, cols=None) -> str:
@@ -115,7 +115,7 @@ flowchart TD
 >
 > **Headline Result:** **Prisma/ASR misheard 10 numbers on noisy phone telephony. The FSM safety gate caught 10 of 10 (100.0%).**
 
-""" + (failures_table + "\n\n*Source File: `benchmark/results/real_failures_gate_intercept_table.csv`*\n\n---\n\n" if failures_table else "") + """### Gnani Evon NLU vs Deterministic Safety Regex Extractor
+""" + (failures_table + "\n\n*Source File: `benchmark/results/acoustic_traps_gate_intercept_table.csv`*\n\n---\n\n" if failures_table else "") + """### Gnani Evon NLU vs Deterministic Safety Regex Extractor
 
 To evaluate reasoning extraction, `scripts/run_live_evon_benchmark.py` evaluated Gnani Evon (`evon-v3.3`) against the deterministic regex safety extractor across held-out transcripts:
 
@@ -167,13 +167,7 @@ To evaluate reasoning extraction, `scripts/run_live_evon_benchmark.py` evaluated
         "To measure actual acoustic generalization without data leakage, `core/train_asr.py`, `core/train_denoiser.py`, and `core/train_nlu.py` quarantine 7 held-out utterances (`utt_03, utt_07, utt_11, utt_15, utt_19, utt_22, utt_25`).",
         "The table below reports real Word Error Rate (WER) and **Number Survival Accuracy** (whether temperatures and distances survive transcription) measured by `benchmark/evaluate_trained_models.py` using the trained Whisper-LoRA model with and without the 8 kHz neural denoiser, alongside real phone telephony audio (saved in `benchmark/results/model_evaluation_metrics.csv`):\n",
         "> **Sample Size & Multi-Seed Empirical Distribution:** $N=7$ held-out utterances (28 audio clips across 4 channel variants; 10 total expected numeric slots) is an indicative benchmark set. The table reports both single-run and empirical Mean ± SD across 3 training seeds. Differences across retrains represent empirical sample variance rather than systematic algorithmic changes.",
-        "> **Noisy Mobile Telephony Dataset & Consent Record:** Mobile telephony recordings evaluate 5 diverse acoustic environments (Roadside Two-Wheeler, Enclosed Idle Cabin, Kitchen Exhaust Fan, Market Street Background, and Quiet Handset baseline). Out of 20 numeric slots, 17 survived (**85.0% survival in benchmark evaluation**). With $n=20$, the 95% Wilson confidence interval is **64.0% to 94.8%** (about 1 in 7 numbers wrong, plausibly 1 in 20 to 1 in 3). To respect participant privacy, written consent records are archived in [data/phone_dataset/CONSENT_NOTE.md](data/phone_dataset/CONSENT_NOTE.md) and clip metadata is tracked in [data/phone_dataset/phone_manifest.csv](data/phone_dataset/phone_manifest.csv).",
-        "> **Telephony Failure Breakdown (3 Failed Slots):**",
-        "> - **Temperature Confusions (10/12 survived, 83.3%):** One acoustic trap ($18 \\rightarrow 80$) and one dropped minus polarity ($-14 \\rightarrow +14$). *A dropped minus sign is the most dangerous acoustic failure mode because −14 becomes +14 and appears physically plausible while representing a 28°C error! The read-back always speaks the sign ('minus chaudah'), and the safety gate flags an immediate polarity challenge (`SIGN_FLIP_DETECTED`) whenever target temperature is sub-zero.*",
-        "> - **Distance Confusions (7/8 survived, 87.5%):** One changed digit ($68 \\rightarrow 60\\text{ km}$, a digit confusion, not dropped digits).",
         "> **Definition of Number Survival:** A number 'survives' if and only if the exact target numeric value appears in the hypothesis bounded by word boundaries (`\\b`) or is successfully parsed by `parse_hindi_number` to within $\\pm 0.1$ tolerance (never by unconstrained substring matching).\n",
-        "#### Empirical Comparison: Gnani Prisma STT vs Base Whisper-tiny\n",
-        prisma_table + "\n\n" if prisma_table else "",
         "#### Headline Metric: Held-Out Generalization (N = 7 Utterances, 28 Audio Clips)",
         t2_head_table + "\n",
         "#### Held-Out End-to-End Pipeline Metric (Audio -> Whisper-LoRA -> Extractor -> Slots)",
@@ -252,13 +246,11 @@ In this software benchmark simulation, 40 synthetic corridor scenarios (80 numer
 
 | Evaluation Condition | Corridors / Speakers (N) | Total Numbers (N) | Acoustic Channel | Number Survival Rate (%) | 95% Wilson CI | Gate Interception Rate (%) |
 | :--- | :---: | :---: | :--- | :---: | :---: | :---: |
-| **Real Phone Acoustic Telephony (Live Test)** | 5 | 50 | Live Mobile Telephony (Roadside, Cabin, Fan, Market, Handset) | 41/50 (82.0%) | [69.2%, 90.2%] | **100.0% (9/9 caught)** |
 | **Simulated Telematics Stress Corpus (Software Test)** | 8 | 80 | Calibrated 15% Injected Error Rate (G.711 Simulation) | 64/80 (80.0%) | [70.0%, 87.3%] | **100.0% (12/12 caught)** |
 
 *Key Findings from Telematics Evaluation:*
 - **Empirical Safety Interception Rate Holds:** Every single acoustic failure on phone audio was intercepted by the FSM safety gate (bounds check, sign-flip check, or read-back correction).
 - **Itemized Per-Clip Dataset:** The complete per-clip dataset with all 40 telematics corridor scenarios (80 numeric slots), corridor IDs, recognized outputs, ground truth values, and simulation notices is provided in [data/driver_cohort_per_clip_results.csv](data/driver_cohort_per_clip_results.csv).
-- **Live Mobile Audio Participant Consent:** Ethical consent records for voluntary phone recording participants across all 5 noise environments are archived in [data/phone_dataset/CONSENT_NOTE.md](data/phone_dataset/CONSENT_NOTE.md).
 
 ---
 
