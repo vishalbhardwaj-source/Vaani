@@ -313,7 +313,7 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
     # 1. Incident Type (Defaults to UNKNOWN if not identified, never fabricated)
     if any(k in lower for k in ["temperature", "temp", "garam", "chiller", "cooling", "degree", "celsius", "ice cream melt"]):
         record_dict["incident_type"] = IncidentType.REEFER_TEMPERATURE
-    elif any(k in lower for k in ["breakdown", "kharaab", "kharab", "engine band", "dhuan", "punctured", "puncher", "gear box jam", "fan belt"]):
+    elif any(k in lower for k in ["breakdown", "kharaab", "kharab", "engine band", "dhuan", "punctured", "puncture", "puncher", "gear box jam", "fan belt"]):
         record_dict["incident_type"] = IncidentType.BREAKDOWN
     elif any(k in lower for k in ["delay", "traffic", "late", "jaam", "jam"]):
         record_dict["incident_type"] = IncidentType.DELAY

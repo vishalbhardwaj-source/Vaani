@@ -254,14 +254,14 @@
     "extracted_loc": "Vadodara Bypass",
     "true_loc": "Vadodara Bypass",
     "has_extraction_error": false,
-    "error_caught": true,
+    "error_caught": false,
     "driver_corrected": false,
     "silent_failure": false,
     "telematics_challenged": false,
     "telematics_blocked": false,
-    "action_executed": false,
-    "readback_prompt": "Bhaiya, kripya thoda aur detail batayein.",
-    "final_state": "ASKING"
+    "action_executed": true,
+    "readback_prompt": "Vehicle DL-01-AA-4092 breakdown report, Vadodara Bypass se 30 km aage. Sahi hai na Bhaiya?",
+    "final_state": "DONE"
   },
   "utt_12_clean_v4": {
     "utt_id": "utt_12",
@@ -854,14 +854,14 @@
     "extracted_loc": "Vadodara Bypass",
     "true_loc": "Vadodara Bypass",
     "has_extraction_error": false,
-    "error_caught": true,
+    "error_caught": false,
     "driver_corrected": false,
     "silent_failure": false,
     "telematics_challenged": false,
     "telematics_blocked": false,
-    "action_executed": false,
-    "readback_prompt": "Bhaiya, kripya thoda aur detail batayein.",
-    "final_state": "ASKING"
+    "action_executed": true,
+    "readback_prompt": "Vehicle DL-01-AA-4092 breakdown report, Vadodara Bypass se 30 km aage. Sahi hai na Bhaiya?",
+    "final_state": "DONE"
   },
   "utt_12_telephony_8khz_v4": {
     "utt_id": "utt_12",
@@ -1454,14 +1454,14 @@
     "extracted_loc": "Vadodara Bypass",
     "true_loc": "Vadodara Bypass",
     "has_extraction_error": false,
-    "error_caught": true,
+    "error_caught": false,
     "driver_corrected": false,
     "silent_failure": false,
     "telematics_challenged": false,
     "telematics_blocked": false,
-    "action_executed": false,
-    "readback_prompt": "Bhaiya, kripya thoda aur detail batayein.",
-    "final_state": "ASKING"
+    "action_executed": true,
+    "readback_prompt": "Vehicle DL-01-AA-4092 breakdown report, Vadodara Bypass se 30 km aage. Sahi hai na Bhaiya?",
+    "final_state": "DONE"
   },
   "utt_12_telephony_10db_v4": {
     "utt_id": "utt_12",
@@ -2054,14 +2054,14 @@
     "extracted_loc": "Vadodara Bypass",
     "true_loc": "Vadodara Bypass",
     "has_extraction_error": false,
-    "error_caught": true,
+    "error_caught": false,
     "driver_corrected": false,
     "silent_failure": false,
     "telematics_challenged": false,
     "telematics_blocked": false,
-    "action_executed": false,
-    "readback_prompt": "Bhaiya, kripya thoda aur detail batayein.",
-    "final_state": "ASKING"
+    "action_executed": true,
+    "readback_prompt": "Vehicle DL-01-AA-4092 breakdown report, Vadodara Bypass se 30 km aage. Sahi hai na Bhaiya?",
+    "final_state": "DONE"
   },
   "utt_12_telephony_5db_v4": {
     "utt_id": "utt_12",

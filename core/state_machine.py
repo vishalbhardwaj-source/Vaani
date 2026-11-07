@@ -27,22 +27,42 @@ logger = logging.getLogger("vaani.state_machine")
 
 def get_controller_code_hash() -> str:
     """
-    Computes a cryptographic SHA256 hash of the controller logic and vehicle mapping.
-    Used as a CI guardrail to ensure benchmark results strictly reflect the active controller.
+    Computes a cryptographic SHA256 hash of all benchmark code and data dependencies:
+    - core/state_machine.py
+    - core/schemas.py
+    - core/tools.py
+    - core/learning.py
+    - gnani/client.py
+    - benchmark/run_benchmark.py
+    - benchmark/score.py
+    - benchmark/utterances.csv
+    Normalizes line endings to ensure deterministic cross-platform CI verification.
     """
-    state_machine_path = Path(__file__).resolve()
-    with open(state_machine_path, "rb") as f:
-        content = f.read()
+    repo_root = Path(__file__).resolve().parent.parent
+    deps = [
+        "benchmark/run_benchmark.py",
+        "benchmark/score.py",
+        "benchmark/utterances.csv",
+        "core/learning.py",
+        "core/schemas.py",
+        "core/state_machine.py",
+        "core/tools.py",
+        "gnani/client.py",
+    ]
 
-    bench_path = state_machine_path.parent.parent / "benchmark" / "run_benchmark.py"
-    if bench_path.exists():
-        with open(bench_path, "rb") as f:
-            bench_content = f.read()
-            m = re.search(rb"def get_vehicle_for_utterance\(.*?\n(?=\ndef |\Z)", bench_content, re.DOTALL)
-            if m:
-                content += m.group(0)
+    hasher = hashlib.sha256()
+    for rel_path in sorted(deps):
+        p = repo_root / rel_path
+        if p.exists():
+            with open(p, "r", encoding="utf-8") as f:
+                content = f.read().replace("\r\n", "\n")
+            hasher.update(rel_path.encode("utf-8"))
+            hasher.update(content.encode("utf-8"))
 
-    return hashlib.sha256(content).hexdigest()
+    return hasher.hexdigest()
+
+
+get_benchmark_dependencies_hash = get_controller_code_hash
 
 
 class DialogueController:

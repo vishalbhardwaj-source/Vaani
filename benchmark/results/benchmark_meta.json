@@ -1,0 +1,14 @@
+{
+  "benchmark_dependencies_hash": "f9321556d148b3b1b393c388d2f62e84c4f954be231db918a10cc085af87465b",
+  "generated_at": "2026-11-07T08:54:48.748506+00:00",
+  "dependencies": [
+    "benchmark/run_benchmark.py",
+    "benchmark/score.py",
+    "benchmark/utterances.csv",
+    "core/learning.py",
+    "core/schemas.py",
+    "core/state_machine.py",
+    "core/tools.py",
+    "gnani/client.py"
+  ]
+}

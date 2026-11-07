@@ -11,6 +11,8 @@ Computes:
 """
 
 import re
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 import pandas as pd
 import jiwer
@@ -20,6 +22,7 @@ from core.state_machine import get_controller_code_hash
 RAW_RESULTS_CSV = Path(__file__).resolve().parent / "results" / "raw_benchmark_results.csv"
 SUMMARY_CSV = Path(__file__).resolve().parent / "results" / "summary_metrics.csv"
 SWEEP_CSV = Path(__file__).resolve().parent / "results" / "driver_sensitivity_sweep.csv"
+META_JSON = Path(__file__).resolve().parent / "results" / "benchmark_meta.json"
 
 
 def clean_text_for_wer(text: str) -> str:
@@ -58,20 +61,24 @@ def compute_metrics() -> pd.DataFrame:
         correct_extractions = n_samples - total_errors
         slot_acc_raw = (correct_extractions / n_samples) * 100.0
 
-        # 3. Errors Caught by Read-Back
+        # 3. Errors Caught by Read-Back or Safety Gate
         errors_caught = int(sub[sub["has_extraction_error"]]["error_caught"].sum())
         caught_pct = (errors_caught / total_errors * 100.0) if total_errors > 0 else 100.0
 
-        # 4. Silent Failures (Driver misheard / reflexively confirmed incorrect details)
+        # 4. Error Disposition (Mutually exclusive: Total Errors = Driver Corrected + Gate Blocked + Silent Failures)
+        telematics_blocked = int(sub["telematics_blocked"].sum()) if "telematics_blocked" in sub.columns else 0
+        driver_corrected = int(sub[sub["has_extraction_error"]]["driver_corrected"].sum()) if "driver_corrected" in sub.columns else (errors_caught - telematics_blocked)
         silent_fails = int(sub["silent_failure"].sum())
         silent_fail_pct = (silent_fails / n_samples) * 100.0
 
-        # 5. Non-Circular True Dispatch Accuracy
-        true_dispatch_acc = ((n_samples - silent_fails) / n_samples) * 100.0
-
-        # 6. Telematics Gate vs Driver Read-Back Breakdown
-        telematics_blocked = int(sub["telematics_blocked"].sum()) if "telematics_blocked" in sub.columns else 0
-        driver_corrected = int(sub[sub["has_extraction_error"]]["driver_corrected"].sum()) if "driver_corrected" in sub.columns else (errors_caught - telematics_blocked)
+        # 5. Final Dispatch Outcomes across all N clips:
+        # Successful Dispatches: executed with accurate or corrected data (action_executed == True & silent_failure == False)
+        # Blocked Anomalies: safe, but dispatch withheld to prevent damage (action_executed == False)
+        # Silent Failures: corrupted dispatch executed due to uncaught error
+        # Note: Successful Dispatches + Blocked Anomalies + Silent Failures == N (Total Clips)
+        successful_dispatches = int(sub[(sub["action_executed"] == True) & (sub["silent_failure"] == False)].shape[0])
+        successful_dispatch_pct = (successful_dispatches / n_samples) * 100.0
+        blocked_pct = (telematics_blocked / n_samples) * 100.0
 
         # Engine source primary
         sources = sub["source"].unique() if "source" in sub.columns else ["Simulation"]
@@ -84,11 +91,11 @@ def compute_metrics() -> pd.DataFrame:
             "WER (%)": round(wer_val, 2),
             "Raw Slot Acc (%)": round(slot_acc_raw, 2),
             "Total Errors": total_errors,
-            "Gate Blocked Anomalies": telematics_blocked,
             "Driver Corrected Errors": driver_corrected,
-            "Total Errors Caught": f"{errors_caught} of {total_errors} ({round(caught_pct, 1)}%)",
+            "Gate Blocked Anomalies (Safe)": telematics_blocked,
             "Silent Failures": f"{silent_fails} ({round(silent_fail_pct, 1)}%)",
-            "Final Dispatch Accuracy (%)": round(true_dispatch_acc, 2),
+            "Successful Dispatches (%)": f"{successful_dispatches} of {n_samples} ({round(successful_dispatch_pct, 1)}%)",
+            "Blocked Dispatch Withheld (%)": f"{telematics_blocked} of {n_samples} ({round(blocked_pct, 1)}%)",
             "Controller Code Hash": get_controller_code_hash()
         })
 
@@ -96,9 +103,29 @@ def compute_metrics() -> pd.DataFrame:
     SUMMARY_CSV.parent.mkdir(parents=True, exist_ok=True)
     summary_df.to_csv(SUMMARY_CSV, index=False)
 
+    # Save benchmark metadata file next to CSVs
+    code_hash = get_controller_code_hash()
+    meta_info = {
+        "benchmark_dependencies_hash": code_hash,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "dependencies": [
+            "benchmark/run_benchmark.py",
+            "benchmark/score.py",
+            "benchmark/utterances.csv",
+            "core/learning.py",
+            "core/schemas.py",
+            "core/state_machine.py",
+            "core/tools.py",
+            "gnani/client.py"
+        ]
+    }
+    with open(META_JSON, "w", encoding="utf-8") as f:
+        json.dump(meta_info, f, indent=2)
+
     print(summary_df.to_string(index=False))
     print("=" * 85)
     print(f"Summary metrics saved to: {SUMMARY_CSV}")
+    print(f"Benchmark metadata saved to: {META_JSON}")
 
     # Compute Sensitivity Sweep
     compute_sensitivity_sweep(df)

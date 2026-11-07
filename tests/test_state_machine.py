@@ -216,21 +216,33 @@ def test_committed_benchmark_results_consistency_with_controller():
     raw_csv_path = repo_root / "benchmark" / "results" / "raw_benchmark_results.csv"
     summary_csv_path = repo_root / "benchmark" / "results" / "summary_metrics.csv"
     sweep_csv_path = repo_root / "benchmark" / "results" / "driver_sensitivity_sweep.csv"
+    meta_json_path = repo_root / "benchmark" / "results" / "benchmark_meta.json"
 
     assert raw_csv_path.exists(), "raw_benchmark_results.csv missing!"
     assert summary_csv_path.exists(), "summary_metrics.csv missing!"
     assert sweep_csv_path.exists(), "driver_sensitivity_sweep.csv missing!"
+    assert meta_json_path.exists(), "benchmark_meta.json missing!"
 
-    # 1. Cryptographic Hash Guardrail: results must strictly match active controller logic and vehicle mapping
-    # (Avoids flaky mtime assertions that break on fresh git clones or CI checkouts)
+    # 1. Cryptographic Hash Guardrail: results must strictly match active benchmark dependencies
+    # (covers state machine, schemas, tools, learning, extractor client, runner, scorer, and utterances.csv)
+    import json
     from core.state_machine import get_controller_code_hash
     current_code_hash = get_controller_code_hash()
+
     summary_df = pd.read_csv(summary_csv_path)
     assert "Controller Code Hash" in summary_df.columns, "summary_metrics.csv missing 'Controller Code Hash' column!"
     committed_hash = str(summary_df["Controller Code Hash"].iloc[0]).strip()
+
+    with open(meta_json_path, "r", encoding="utf-8") as f:
+        meta_data = json.load(f)
+    meta_hash = meta_data.get("benchmark_dependencies_hash", "")
+
     assert committed_hash == current_code_hash, (
-        f"Committed benchmark results hash ({committed_hash}) does not match controller source hash ({current_code_hash})! "
-        "The controller code or vehicle mapping has changed. Run python benchmark/run_benchmark.py to synchronize."
+        f"Committed benchmark results hash ({committed_hash}) does not match current source hash ({current_code_hash})! "
+        "Benchmark code or utterances.csv has changed. Run python benchmark/run_benchmark.py to synchronize."
+    )
+    assert meta_hash == current_code_hash, (
+        f"benchmark_meta.json hash ({meta_hash}) does not match current source hash ({current_code_hash})!"
     )
 
     # 2. Results content integrity
