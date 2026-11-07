@@ -88,7 +88,11 @@ def init_db():
         status TEXT DEFAULT 'PENDING',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         resolved_at TIMESTAMP,
-        resolution_notes TEXT
+        resolution_notes TEXT,
+        alert_level TEXT DEFAULT 'STANDARD',
+        latest_location TEXT,
+        incident_type TEXT,
+        last_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
@@ -141,6 +145,18 @@ def init_db():
     sup_cols = {row["name"] for row in cursor.fetchall()}
     if "alert_level" not in sup_cols:
         cursor.execute("ALTER TABLE supervisor_queue ADD COLUMN alert_level TEXT DEFAULT 'STANDARD'")
+    if "latest_location" not in sup_cols:
+        cursor.execute("ALTER TABLE supervisor_queue ADD COLUMN latest_location TEXT")
+    if "incident_type" not in sup_cols:
+        cursor.execute("ALTER TABLE supervisor_queue ADD COLUMN incident_type TEXT")
+    if "last_updated_at" not in sup_cols:
+        cursor.execute("ALTER TABLE supervisor_queue ADD COLUMN last_updated_at TIMESTAMP")
+
+    # Partial unique index ensuring at most one PENDING ticket per vehicle
+    cursor.execute("""
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_supervisor_queue_pending_vehicle
+    ON supervisor_queue(vehicle_id) WHERE status = 'PENDING'
+    """)
 
     # Seed initial test data if empty
     cursor.execute("SELECT COUNT(*) FROM vehicles")
@@ -484,21 +500,34 @@ def enqueue_supervisor_escalation(
     telematics_sensor_c: Optional[float] = None,
     audio_recording_path: Optional[str] = None,
     transcript_history: Optional[str] = None,
-    alert_level: str = "STANDARD"
+    alert_level: str = "STANDARD",
+    incident_type: Optional[str] = None,
+    location_text: Optional[str] = None
 ) -> int:
     """
     Pushes an unresolved or safety-escalated call into the real supervisor dispatch queue.
     Supports alert_level='UNVERIFIED_SENSOR_CORROBORATED' when sensor corroborates an unconfirmed excursion.
+    Enforces atomic deduplication, keeps highest priority, tracks incident type per redial,
+    and maintains latest location with timestamp within a 120-minute deduplication window.
     Returns: escalation_id
     """
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    PRIORITY_RANK = {
+        "STANDARD": 1,
+        "HIGH": 2,
+        "CRITICAL": 3,
+        "UNVERIFIED_SENSOR_CORROBORATED": 4,
+        "CONFIRMED_DISPATCHED": 5
+    }
+
     # Deduplicate pending tickets per vehicle to prevent redial flooding:
     # Keeps highest priority, appends call event history, and respects a 120-minute time window.
     if vehicle_id:
         cursor.execute("""
-        SELECT escalation_id, alert_level, transcript_history, created_at FROM supervisor_queue 
+        SELECT escalation_id, alert_level, transcript_history, created_at, incident_type, latest_location 
+        FROM supervisor_queue 
         WHERE vehicle_id = ? AND status = 'PENDING'
         ORDER BY escalation_id DESC LIMIT 1
         """, (vehicle_id,))
@@ -518,16 +547,16 @@ def enqueue_supervisor_escalation(
 
             if is_recent:
                 esc_id = existing["escalation_id"]
-                # Keep highest priority: if either is UNVERIFIED_SENSOR_CORROBORATED, preserve it!
-                effective_alert = (
-                    "UNVERIFIED_SENSOR_CORROBORATED" 
-                    if ("UNVERIFIED_SENSOR_CORROBORATED" in (alert_level, existing["alert_level"])) 
-                    else alert_level
-                )
-                # Append each call as a timestamped event rather than replacing history
+                # Keep highest priority: upgrade if new event or existing has higher severity
+                curr_rank = PRIORITY_RANK.get(alert_level, 1)
+                prev_rank = PRIORITY_RANK.get(existing["alert_level"], 1)
+                effective_alert = alert_level if curr_rank >= prev_rank else existing["alert_level"]
+
+                # Append each call as a timestamped event with incident type rather than replacing history
                 old_hist = existing["transcript_history"] or ""
                 now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                appended_hist = f"{old_hist}\n[REDIAL {now_str}]: {transcript_history}" if old_hist else transcript_history
+                inc_label = incident_type or existing["incident_type"] or "UNKNOWN"
+                appended_hist = f"{old_hist}\n[REDIAL {now_str} (incident={inc_label})]: {transcript_history}" if old_hist else transcript_history
 
                 cursor.execute("""
                 UPDATE supervisor_queue
@@ -536,7 +565,10 @@ def enqueue_supervisor_escalation(
                     unconfirmed_temp_c = COALESCE(?, unconfirmed_temp_c),
                     telematics_sensor_c = COALESCE(?, telematics_sensor_c),
                     audio_recording_path = COALESCE(?, audio_recording_path),
-                    transcript_history = ?, alert_level = ?
+                    transcript_history = ?, alert_level = ?,
+                    incident_type = COALESCE(?, incident_type),
+                    latest_location = COALESCE(?, latest_location),
+                    last_updated_at = CURRENT_TIMESTAMP
                 WHERE escalation_id = ?
                 """, (
                     trigger_reason,
@@ -546,31 +578,117 @@ def enqueue_supervisor_escalation(
                     audio_recording_path,
                     appended_hist,
                     effective_alert,
+                    incident_type,
+                    location_text,
                     esc_id
                 ))
                 conn.commit()
                 conn.close()
                 return esc_id
 
-    cursor.execute("""
-    INSERT INTO supervisor_queue (
-        vehicle_id, driver_phone, trigger_reason, unconfirmed_temp_c,
-        telematics_sensor_c, audio_recording_path, transcript_history, status, alert_level
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING', ?)
-    """, (
-        vehicle_id,
-        driver_phone,
-        trigger_reason,
-        unconfirmed_temp_c,
-        telematics_sensor_c,
-        audio_recording_path,
-        transcript_history,
-        alert_level
-    ))
-    esc_id = cursor.lastrowid
-    conn.commit()
+    try:
+        cursor.execute("""
+        INSERT INTO supervisor_queue (
+            vehicle_id, driver_phone, trigger_reason, unconfirmed_temp_c,
+            telematics_sensor_c, audio_recording_path, transcript_history, status,
+            alert_level, incident_type, latest_location, last_updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, CURRENT_TIMESTAMP)
+        """, (
+            vehicle_id,
+            driver_phone,
+            trigger_reason,
+            unconfirmed_temp_c,
+            telematics_sensor_c,
+            audio_recording_path,
+            transcript_history,
+            alert_level,
+            incident_type,
+            location_text
+        ))
+        esc_id = cursor.lastrowid
+        conn.commit()
+    except sqlite3.IntegrityError:
+        # Atomic race condition defense: another concurrent thread created a PENDING ticket
+        # for this vehicle_id under the partial unique index. Perform atomic update instead.
+        cursor.execute("""
+        SELECT escalation_id, alert_level, transcript_history, incident_type, latest_location
+        FROM supervisor_queue 
+        WHERE vehicle_id = ? AND status = 'PENDING'
+        ORDER BY escalation_id DESC LIMIT 1
+        """, (vehicle_id,))
+        existing = cursor.fetchone()
+        if existing:
+            esc_id = existing["escalation_id"]
+            curr_rank = PRIORITY_RANK.get(alert_level, 1)
+            prev_rank = PRIORITY_RANK.get(existing["alert_level"], 1)
+            effective_alert = alert_level if curr_rank >= prev_rank else existing["alert_level"]
+            old_hist = existing["transcript_history"] or ""
+            now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            inc_label = incident_type or existing["incident_type"] or "UNKNOWN"
+            appended_hist = f"{old_hist}\n[CONCURRENT_CALL {now_str} (incident={inc_label})]: {transcript_history}" if old_hist else transcript_history
+
+            cursor.execute("""
+            UPDATE supervisor_queue
+            SET trigger_reason = ?,
+                driver_phone = COALESCE(?, driver_phone),
+                unconfirmed_temp_c = COALESCE(?, unconfirmed_temp_c),
+                telematics_sensor_c = COALESCE(?, telematics_sensor_c),
+                audio_recording_path = COALESCE(?, audio_recording_path),
+                transcript_history = ?, alert_level = ?,
+                incident_type = COALESCE(?, incident_type),
+                latest_location = COALESCE(?, latest_location),
+                last_updated_at = CURRENT_TIMESTAMP
+            WHERE escalation_id = ?
+            """, (
+                trigger_reason,
+                driver_phone,
+                unconfirmed_temp_c,
+                telematics_sensor_c,
+                audio_recording_path,
+                appended_hist,
+                effective_alert,
+                incident_type,
+                location_text,
+                esc_id
+            ))
+            conn.commit()
+        else:
+            esc_id = 0
+
     conn.close()
     return esc_id
+
+
+def upgrade_supervisor_escalation_on_confirmation(
+    vehicle_id: str,
+    confirmed_ticket_id: int,
+    confirmed_temp_c: Optional[float] = None
+) -> bool:
+    """
+    Upgrades an existing PENDING supervisor ticket when a subsequent call/redial
+    successfully confirms the reading and dispatches assistance.
+    Marks status as 'RESOLVED', alert_level as 'CONFIRMED_DISPATCHED',
+    and records resolution notes with the confirmed dispatch ticket ID.
+    """
+    if not vehicle_id:
+        return False
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    temp_note = f" at {confirmed_temp_c:g}°C" if confirmed_temp_c is not None else ""
+    notes = f"Upgraded on redial confirmation: driver verified reading{temp_note}, roadside assistance ticket #{confirmed_ticket_id} dispatched."
+    cursor.execute("""
+    UPDATE supervisor_queue
+    SET status = 'RESOLVED',
+        alert_level = 'CONFIRMED_DISPATCHED',
+        resolved_at = ?,
+        resolution_notes = ?
+    WHERE vehicle_id = ? AND status = 'PENDING'
+    """, (now_iso, notes, vehicle_id))
+    affected = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return affected > 0
 
 
 def list_supervisor_queue(status: Optional[str] = "PENDING") -> List[Dict[str, Any]]:

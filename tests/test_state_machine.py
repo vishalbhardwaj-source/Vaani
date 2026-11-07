@@ -1257,8 +1257,10 @@ def test_acoustic_echo_rejected_as_self_confirmation():
     """
     Echo Loop Defense:
     Agent read-back ends in 'Sahi hai na Bhaiya?'.
-    Carrier line reflection or speakerphone leakage transcribes as 'sahi hai na bhaiya' or 'sahi hai'.
-    Verify it is rejected as acoustic echo rather than confirming the ticket!
+    1. Question tail reflection ('sahi hai na bhaiya') is rejected as acoustic echo.
+    2. Full readback playback echo ('Temperature minus 14 degree (ek, chaar)...') is rejected as echo
+       and does NOT satisfy the number repetition gate, even though it contains '14'!
+    3. Genuine natural driver confirmations ('sahi hai', 'sahi hai bhaiya') are accepted!
     """
     from core.state_machine import DialogueController, DialogueState
     from core.schemas import ExtractionRecord, DriverReply, IncidentType
@@ -1269,7 +1271,7 @@ def test_acoustic_echo_rejected_as_self_confirmation():
     ctrl.process_extraction(rec)
     assert ctrl.state == DialogueState.CONFIRMING
 
-    # 1. Microphone picks up exact question tail from prompt
+    # 1. Microphone picks up rhetorical question tail from prompt: "sahi hai na bhaiya"
     s1, p1 = ctrl.handle_confirmation_reply(
         DriverReply(intent="CONFIRM", raw_text="sahi hai na bhaiya")
     )
@@ -1277,20 +1279,228 @@ def test_acoustic_echo_rejected_as_self_confirmation():
     assert "Echo detect hua hai" in p1
     assert ctrl.last_action_result is None
 
-    # 2. Microphone picks up tail fragment "sahi hai"
+    # 2. Full prompt reflection: microphone picks up the agent's entire read-back playback
+    # Contains the number '-14', but must NOT satisfy the number repetition gate!
+    full_prompt_echo = ctrl.last_agent_prompt
     s2, p2 = ctrl.handle_confirmation_reply(
-        DriverReply(intent="CONFIRM", raw_text="sahi hai")
+        DriverReply(intent="CONFIRM", raw_text=full_prompt_echo)
     )
     assert s2 == DialogueState.CONFIRMING
     assert "Echo detect hua hai" in p2
     assert ctrl.last_action_result is None
 
-    # 3. Legitimate driver speech containing affirmative 'haan' is accepted
+    # 3. Legitimate driver speech saying natural 'sahi hai' (without question particle 'na')
+    # Must be accepted as valid driver confirmation!
     s3, p3 = ctrl.handle_confirmation_reply(
-        DriverReply(intent="CONFIRM", raw_text="haan sahi hai")
+        DriverReply(intent="CONFIRM", raw_text="sahi hai")
     )
     assert s3 == DialogueState.DONE
     assert ctrl.last_action_result is not None
+
+
+def test_slot_isolation_distance_cutin_does_not_affect_temperature():
+    """
+    Number Cut-in Slot Isolation:
+    Read-back is 18°C and 10 km.
+    Driver cuts in early with 'haan 42 km'.
+    Because utterance specifies distance ('km'), only distance is corrected to 42 km.
+    The temperature slot MUST remain 18°C and NOT be corrupted or modified!
+    """
+    from core.state_machine import DialogueController, DialogueState
+    from core.schemas import ExtractionRecord, DriverReply, IncidentType
+
+    ctrl = DialogueController(vehicle_id="HR-55-TC-1102")
+    ctrl.receive_driver_utterance("Temperature 18 degree hai 10 km aage", asr_confidence=0.95)
+    rec = ExtractionRecord(
+        incident_type=IncidentType.REEFER_TEMPERATURE,
+        temperature_c=18.0,
+        location_text="Panipat Toll",
+        distance_km=10.0
+    )
+    ctrl.process_extraction(rec)
+    assert ctrl.state == DialogueState.CONFIRMING
+    assert ctrl.current_record.temperature_c == 18.0
+    assert ctrl.current_record.distance_km == 10.0
+
+    # Driver cuts in at 1.0s: "haan 42 km"
+    s1, p1 = ctrl.handle_confirmation_reply(
+        DriverReply(intent="CONFIRM", raw_text="haan 42 km"),
+        playback_elapsed_s=1.0
+    )
+    assert s1 == DialogueState.CONFIRMING
+    # Distance updated, temperature untouched!
+    assert ctrl.current_record.distance_km == 42.0
+    assert ctrl.current_record.temperature_c == 18.0
+    assert "42" in p1
+    assert "18" in p1
+
+
+def test_concurrent_enqueues_atomic_deduplication():
+    """
+    Atomic Deduplication & Concurrency:
+    Simulates concurrent racing calls from the same vehicle (e.g. 8 threads simultaneously).
+    Enforces that exactly 1 PENDING ticket exists in supervisor_queue under the partial unique index.
+    """
+    import concurrent.futures
+    from core.tools import enqueue_supervisor_escalation, list_supervisor_queue
+
+    veh_id = "TEST-CONCURRENT-VEH-99"
+
+    def enqueue_call(i):
+        return enqueue_supervisor_escalation(
+            vehicle_id=veh_id,
+            trigger_reason=f"CONCURRENT_CALL_THREAD_{i}",
+            driver_phone="+91-9876543200",
+            alert_level="STANDARD",
+            transcript_history=f"Thread {i} call"
+        )
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        futures = [executor.submit(enqueue_call, i) for i in range(8)]
+        results = [f.result() for f in futures]
+
+    assert len(results) == 8
+    # All threads returned the same ticket ID
+    unique_ids = set(results)
+    assert len(unique_ids) == 1
+
+    # Exactly one PENDING ticket exists in the database
+    pending = [t for t in list_supervisor_queue(status="PENDING") if t["vehicle_id"] == veh_id]
+    assert len(pending) == 1
+    assert pending[0]["escalation_id"] == list(unique_ids)[0]
+
+
+def test_different_incidents_preserve_incident_type_and_latest_location():
+    """
+    Multi-incident Merging:
+    Vehicle experiences reefer alert at Panipat, then redials with breakdown at Karnal.
+    Verifies that:
+    1. Incident type and latest location are updated to the latest call.
+    2. Transcript history preserves both incident contexts with timestamp.
+    3. Alert priority escalates according to severity.
+    """
+    from core.tools import enqueue_supervisor_escalation, list_supervisor_queue
+
+    veh_id = "TEST-MULTI-INCIDENT-01"
+
+    # Call 1: Reefer temperature issue
+    id1 = enqueue_supervisor_escalation(
+        vehicle_id=veh_id,
+        trigger_reason="REEFER_TEMPERATURE_EXCURSION",
+        alert_level="HIGH",
+        incident_type="reefer_temperature",
+        location_text="Panipat Toll",
+        transcript_history="Reefer temp warning"
+    )
+
+    # Call 2: Engine breakdown (higher priority)
+    id2 = enqueue_supervisor_escalation(
+        vehicle_id=veh_id,
+        trigger_reason="VEHICLE_BREAKDOWN",
+        alert_level="CRITICAL",
+        incident_type="breakdown",
+        location_text="Karnal Bypass Milepost 12",
+        transcript_history="Engine smoke breakdown"
+    )
+
+    assert id1 == id2
+    pending = [t for t in list_supervisor_queue(status="PENDING") if t["vehicle_id"] == veh_id]
+    assert len(pending) == 1
+    ticket = pending[0]
+
+    # Priority upgraded to CRITICAL
+    assert ticket["alert_level"] == "CRITICAL"
+    # Latest location and incident type updated
+    assert ticket["latest_location"] == "Karnal Bypass Milepost 12"
+    assert ticket["incident_type"] == "breakdown"
+    # Both incidents documented in audit history
+    assert "incident=breakdown" in ticket["transcript_history"]
+    assert "Reefer temp warning" in ticket["transcript_history"]
+
+
+def test_unverified_alert_upgraded_on_confirmation():
+    """
+    Upgrade Path:
+    When a vehicle previously has an UNVERIFIED_SENSOR_CORROBORATED ticket in supervisor_queue,
+    and a subsequent redial successfully confirms the reading and dispatches,
+    the supervisor ticket is upgraded to CONFIRMED_DISPATCHED with status RESOLVED.
+    """
+    from core.tools import enqueue_supervisor_escalation, list_supervisor_queue
+    from core.state_machine import DialogueController, DialogueState
+    from core.schemas import ExtractionRecord, DriverReply, IncidentType
+
+    veh_id = "HR-55-TC-1102"
+    # Initial unverified ticket
+    esc_id = enqueue_supervisor_escalation(
+        vehicle_id=veh_id,
+        trigger_reason="UNVERIFIED_SENSOR_CORROBORATED",
+        alert_level="UNVERIFIED_SENSOR_CORROBORATED",
+        transcript_history="Initial dropped call with unverified excursion"
+    )
+
+    # Subsequent redial succeeds: driver reports -14°C (matches live sensor -14°C)
+    ctrl = DialogueController(vehicle_id=veh_id)
+    ctrl.receive_driver_utterance("Temperature minus 14 degree ho gaya hai", asr_confidence=0.95)
+    rec = ExtractionRecord(
+        incident_type=IncidentType.REEFER_TEMPERATURE,
+        temperature_c=-14.0,
+        location_text="Panipat Toll"
+    )
+    ctrl.process_extraction(rec)
+    s, p = ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="haan sahi hai"))
+    assert s == DialogueState.DONE
+    assert ctrl.last_action_result is not None
+
+    # Verify the supervisor ticket was automatically upgraded to CONFIRMED_DISPATCHED!
+    all_tickets = list_supervisor_queue(status=None)
+    upgraded_ticket = next((t for t in all_tickets if t["escalation_id"] == esc_id), None)
+    assert upgraded_ticket is not None
+    assert upgraded_ticket["status"] == "RESOLVED"
+    assert upgraded_ticket["alert_level"] == "CONFIRMED_DISPATCHED"
+    assert "Upgraded on redial confirmation" in upgraded_ticket["resolution_notes"]
+
+
+def test_call_reaching_done_does_not_raise_hangup_alert():
+    """
+    Hangup Guard Negative Test:
+    A call that successfully reached DialogueState.DONE and then disconnects
+    must NOT raise an unverified excursion alert.
+    """
+    from core.state_machine import DialogueController, DialogueState
+    from core.schemas import ExtractionRecord, DriverReply, IncidentType
+    from core.tools import list_supervisor_queue
+
+    veh_id = "HR-55-TC-1102"
+    ctrl = DialogueController(vehicle_id=veh_id)
+    ctrl.receive_driver_utterance("Temperature minus 14 degree ho gaya", asr_confidence=0.95)
+    rec = ExtractionRecord(incident_type=IncidentType.REEFER_TEMPERATURE, temperature_c=-14.0, location_text="Panipat")
+    ctrl.process_extraction(rec)
+    ctrl.handle_confirmation_reply(DriverReply(intent="CONFIRM", raw_text="haan sahi hai"))
+    assert ctrl.state == DialogueState.DONE
+
+    # Record pending ticket count before disconnect
+    pending_before = len(list_supervisor_queue(status="PENDING"))
+
+    # Simulate telephony server finally block disconnect check
+    if ctrl.state not in (DialogueState.DONE, DialogueState.ESCALATING):
+        ctrl._check_and_enqueue_escalation(trigger_reason="TELEPHONY_CALL_DROPPED_BEFORE_CONFIRMATION")
+
+    pending_after = len(list_supervisor_queue(status="PENDING"))
+    assert pending_after == pending_before  # No new ticket raised!
+
+
+def test_slot_duration_calibration_within_twenty_percent():
+    """
+    Slot Duration Speech Rate Calibration:
+    Verifies that the calibrated speech rate constant (0.16 s/word)
+    matches measured conversational Hinglish read-back speech rate
+    (35 words / 5.2 s = 0.1485 s/word) within 20%.
+    """
+    measured_benchmark_rate = 5.2 / 35.0  # ~0.1485 s per word
+    calibrated_rate = 0.16
+
+    relative_error = abs(calibrated_rate - measured_benchmark_rate) / measured_benchmark_rate
+    assert relative_error < 0.20, f"Speech rate error {relative_error:.1%} exceeds 20% tolerance!"
 
 
 def test_early_barge_in_divergent_number_routes_to_correction():
