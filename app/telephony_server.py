@@ -15,11 +15,18 @@ import sys
 import io
 import json
 import base64
-import audioop
 import time
 import logging
+import warnings
 from pathlib import Path
 from typing import Dict, Any, Optional
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=DeprecationWarning)
+    try:
+        import audioop
+    except ImportError:
+        audioop = None
 
 import numpy as np
 import soundfile as sf

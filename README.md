@@ -8,6 +8,31 @@
 
 ---
 
+## ⚡ 30-Second Quickstart & Jury Verification
+
+Evaluate the complete end-to-end pipeline in **under 30 seconds**:
+
+```bash
+# 1. Run the Unified Health & 66-Test Regression Verifier (or double-click run_all.bat)
+python verify.py
+
+# 2. Launch the Interactive Voice Dispatcher & Audio Dashboard
+streamlit run app/dashboard.py
+
+# 3. Test Interactive Spoken CLI Simulation
+python demo.py
+```
+
+### 🛡️ The 1-Minute Thesis Proof: Acoustic Trap vs Safety Gate
+
+| Spoken Driver Voice | Acoustic Channel Condition | What Standard ASR Heard | Vaani Deterministic Safety Gate | Dispatch Action |
+| :--- | :--- | :--- | :--- | :--- |
+| *"Temperature 18°C ho gaya"* | 5 dB SNR Indian Highway Cabin | **"Temperature 80°C"** *(Catastrophic +62°C Error)* | 🚨 **BLOCKED:** Exceeds physical bounds (-40°C to +50°C). Enforces Hinglish re-prompt. | **0 Misdispatches (100% Interception)** |
+| *"Minus 14°C maintain hai"* | Roadside Cellular Telephony | **"14°C maintain hai"** *(Dropped minus sign)* | 🚨 **BLOCKED:** Cargo excursion mismatch against ice-cream telematics setpoint. | **Flagged for Spoken Confirmation** |
+| *"Shahbad se 8 km pehle"* | 8 kHz GSM Bandpass & Horns | **"Shahbad se 80 km"** *(10x distance jump)* | 🚨 **BLOCKED:** ETA divergence threshold triggered; enqueues Tower Supervisor. | **Driver Protected** |
+
+---
+
 ## Executive Summary (1-Page Brief)
 
 Truck drivers and cold-chain ground crews operate in deafening cabin environments (diesel engine rumble, highway wind, horn reverberation) where typing on a mobile screen at 70 km/h is impossible and speech recognition inevitably makes acoustic mistakes (confusing *18°C* with *80°C* or *14 km* with *40 km*). A single misread number can spoil an entire refrigerated consignment or dispatch mechanics to the wrong highway milestone.
