@@ -2,7 +2,6 @@
 ### A Voice Dispatcher That Confirms Before It Acts
 **Built for the Great Indian AI Internship Challenge by Gnani AI**  
 **Target Award Category:** *Noisy Telephonic Audio*  
-**Submission Deadline:** November 10, 2026 (Target: November 9)
 
 ---
 
