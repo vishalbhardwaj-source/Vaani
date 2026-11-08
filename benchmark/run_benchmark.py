@@ -28,7 +28,7 @@ UTTERANCES_CSV = PROJECT_ROOT / "benchmark" / "utterances.csv"
 CACHE_FILE = PROJECT_ROOT / "benchmark" / "results" / "benchmark_cache.json"
 RAW_RESULTS_CSV = PROJECT_ROOT / "benchmark" / "results" / "raw_benchmark_results.csv"
 
-CONDITIONS = ["clean", "telephony_8khz", "telephony_10db", "telephony_5db", "real_telephony_pilot"]
+CONDITIONS = ["clean", "telephony_8khz", "telephony_10db", "telephony_5db", "simulated_15pct_error"]
 
 
 def load_cache() -> Dict[str, Any]:
@@ -154,7 +154,7 @@ def run_benchmark_row(
     # Over engine noise, human drivers can occasionally mishear or reflexively say "haan".
     # Noise-calibrated reflexive error rate: real telephony pilot = 15%, 5dB SNR = 12%, 10dB = 6%, 8kHz = 2%, clean = 0%.
     noise_miss_rates = {
-        "real_telephony_pilot": 0.15,
+        "simulated_15pct_error": 0.15,
         "telephony_5db": 0.12,
         "telephony_10db": 0.06,
         "telephony_8khz": 0.02,

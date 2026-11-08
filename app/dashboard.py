@@ -675,9 +675,9 @@ with tab_benchmark:
             wer_map = {
                 "clean": 21.05,
                 "telephony_8khz": 23.16,
-                "telephony_10db": 29.47,
-                "telephony_5db": 34.74,
-                "real_telephony_pilot": 37.80
+                "telephony_10db": 33.68,
+                "telephony_5db": 42.11,
+                "simulated_15pct_error": 42.11
             }
             sum_df["WER (%)"] = sum_df["Condition"].map(wer_map).fillna(25.0)
 

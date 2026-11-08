@@ -42,6 +42,8 @@ Truck drivers and cold-chain ground crews operate in deafening cabin environment
 
 ### Central Gnani AI Technology Stack
 
+> **Integration & Reproducibility Notice:** The repository implements production API client interfaces for the complete Gnani AI stack (`prisma-v3.0`, `evon-v3.3`, `timbre-v2.5`) in `gnani/client.py`. Because API credentials require an active Gnani contest key, all baseline benchmarks, unit tests, and metrics in this repository execute locally and deterministically using fine-tuned Whisper-LoRA, the deterministic safety regex extractor, and local audio processing so that every test passes 100% offline out-of-the-box.
+
 | Capability | Gnani AI Component | Role in Pipeline |
 | :--- | :--- | :--- |
 | **Speech-to-Text (ASR)** | **Gnani Prisma (prisma-v3.0)** | Primary Hinglish speech transcription on noisy telephony audio |
@@ -84,21 +86,19 @@ Our empirical benchmark evaluates **100 audio clips** across 4 acoustic conditio
 
 ### Where Gnani Sits in the Pipeline
 
-Vaani uses the complete Gnani AI conversational intelligence stack end-to-end:
+Vaani implements a complete pipeline with modular interfaces for the Gnani AI conversational intelligence stack:
 
 ```mermaid
 flowchart TD
-    Audio["1. Telephonic Spoken Audio
+    Audio["1. Spoken Audio
 (Mobile GSM / 8 kHz / Cabin Noise)"] --> Prisma["2. Gnani Prisma STT (prisma-v3.0)
 POST https://api.vachana.ai/stt/v3
-Header: X-API-Key-ID
-Latency: ~380 ms"]
+(or local Whisper-LoRA fallback)"]
     Prisma --> Transcript["Spoken Hinglish Transcript
 ('Temp 18 degree toll plaza se 42 km')"]
     Transcript --> Evon["3. Gnani Evon NLU (evon-v3.3)
 POST https://api.vachana.ai/v1/evon/chat
-Extracts Incident & Slots
-Latency: ~290 ms"]
+(or deterministic regex safety extractor)"]
     Evon --> Record["Structured Incident Record
 (incident_type, temp, dist, loc)"]
     Record --> Gate["4. Deterministic FSM Safety Gate
@@ -111,8 +111,7 @@ Latency: <2 ms"]
 ('Temp 18 degree (ek, aath)... Sahi hai?')"]
     Readback --> Timbre["5. Gnani Timbre TTS (timbre-v2.5)
 POST https://api.vachana.ai/api/v1/tts/inference
-Voice: Pranav
-Latency: ~310 ms"]
+Voice: Pranav (or gTTS fallback)"]
     Timbre --> Driver["6. Spoken Telephony Confirmation to Driver"]
 ```
 
@@ -129,36 +128,23 @@ Latency: ~310 ms"]
 
 > **Unit Test Specification:** To verify that the finite-state machine (FSM) safety gate blocks hazardous commands even when an upstream component outputs phonetically confusable numbers, 10 known acoustic trap patterns are evaluated in unit testing (`scripts/evaluate_thesis_on_real_failures.py`):
 
-| Test Case ID | Environment Type | Confusion Category | Target Spoken Text | Injected ASR Hypothesis | Gate Status | Interception Mechanism |
-| :--- | :---: | :---: | :--- | :--- | :---: | :---: |
+| scenario_id | acoustic_condition | failure_type | spoken_ground_truth | asr_misheard_transcript | gate_status | interception_mechanism |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | TRAP_01 | Roadside Ambient | 18_vs_80_Phonetic_Trap | Temperature 18 degree ho gaya hai toll plaza se 42 km aage | Temperature 80 degree ho gaya hai toll plaza se 42 km aage | CAUGHT | Physical Bounds Gate (-40C to 50C) / 18-vs-80 Trap |
-| TRAP_02 | Enclosed Cabin | Dropped_Minus_Sign_Flip | Breakdown alert temp minus 18 degree hai aur Mumbai Pune Expressway km 68 par hoon | Breakdown alert temp 18 degree hai aur Mumbai Pune Expressway km 68 par hoon | CAUGHT | Sign-Flip Cross-Check & Readback Rejection |
-| TRAP_03 | Roadside Ambient | 14_vs_40_Phonetic_Trap | Bhaiya 14 degree cross ho gaya Manesar chauraha se 35 km | Bhaiya 40 degree cross ho gaya Manesar chauraha se 35 km | CAUGHT | 14-vs-40 Acoustic Warning & Readback Correction |
-| TRAP_04 | Roadside Ambient | Distance_Digit_Substitution | Cabin me temp minus 8 degree show ho raha hai 25 km pehle | Cabin me temp minus 8 degree show ho raha hai 20 km pehle | CAUGHT | Distance Slot Verification & Readback Rejection |
-| TRAP_05 | Continuous Fan Noise | Double_Acoustic_Confusion_Temp_And_Dist | Bhaiya 14 degree ho gaya hai dairy consignment ka Dharuhera se 18 km | Bhaiya 40 degree ho gaya hai dairy consignment ka Dharuhera se 80 km | CAUGHT | 14-vs-40 Acoustic Warning & Readback Correction |
-| TRAP_06 | Continuous Fan Noise | Dropped_Minus_Sign_Flip | Minus 18 degree maintain nahi ho raha Paota se 12 km pehle | 18 degree maintain nahi ho raha Paota se 12 km pehle | CAUGHT | Sign-Flip Cross-Check & Readback Rejection |
-| TRAP_07 | Street Market | Dropped_Minus_Sign_Flip | Temperature minus 14 degree ki jagah 14 degree ho gaya Hosur se 12 km aage | Temperature 14 degree ho gaya Hosur se 12 km aage | CAUGHT | Sign-Flip Cross-Check & Readback Rejection |
+| TRAP_02 | Enclosed Cabin | Dropped_Minus_Sign_Flip | Breakdown alert temp minus 18 degree hai aur Mumbai Pune Expressway km 68 par hoon | Breakdown alert temp 18 degree hai aur Mumbai Pune Expressway km 68 par hoon | CAUGHT | Sign-Flip Cross-Check and Readback Rejection |
+| TRAP_03 | Roadside Ambient | 14_vs_40_Phonetic_Trap | Bhaiya 14 degree cross ho gaya Manesar chauraha se 35 km | Bhaiya 40 degree cross ho gaya Manesar chauraha se 35 km | CAUGHT | 14-vs-40 Acoustic Warning and Readback Correction |
+| TRAP_04 | Roadside Ambient | Distance_Digit_Substitution | Cabin me temp minus 8 degree show ho raha hai 25 km pehle | Cabin me temp minus 8 degree show ho raha hai 20 km pehle | CAUGHT | Distance Slot Verification and Readback Rejection |
+| TRAP_05 | Continuous Fan Noise | Double_Acoustic_Confusion_Temp_And_Dist | Bhaiya 14 degree ho gaya hai dairy consignment ka Dharuhera se 18 km | Bhaiya 40 degree ho gaya hai dairy consignment ka Dharuhera se 80 km | CAUGHT | 14-vs-40 Acoustic Warning and Readback Correction |
+| TRAP_06 | Continuous Fan Noise | Dropped_Minus_Sign_Flip | Minus 18 degree maintain nahi ho raha Paota se 12 km pehle | 18 degree maintain nahi ho raha Paota se 12 km pehle | CAUGHT | Sign-Flip Cross-Check and Readback Rejection |
+| TRAP_07 | Street Market | Dropped_Minus_Sign_Flip | Temperature minus 14 degree ki jagah 14 degree ho gaya Hosur se 12 km aage | Temperature 14 degree ho gaya Hosur se 12 km aage | CAUGHT | Sign-Flip Cross-Check and Readback Rejection |
 | TRAP_08 | Street Market | 18_vs_80_Phonetic_Trap | Reefer display 18 degree dikha raha hai Chandapura flyover se 17 km | Reefer display 80 degree dikha raha hai Chandapura flyover se 17 km | CAUGHT | Physical Bounds Gate (-40C to 50C) / 18-vs-80 Trap |
-| TRAP_09 | Narrowband Baseline | Dropped_Minus_Sign_Flip | Temp minus 18 degree ice cream load Ranoli bridge se 15 km pehle | Temp 18 degree ice cream load Ranoli bridge se 15 km pehle | CAUGHT | Sign-Flip Cross-Check & Readback Rejection |
-| TRAP_10 | Enclosed Cabin | Distance_18_vs_80_Confusion | Chiller trip temp 5 degree Talegaon bypass se 18 km | Chiller trip temp 5 degree Talegaon bypass se 80 km | CAUGHT | Distance Slot Verification & Readback Rejection |
+| TRAP_09 | Narrowband Baseline | Dropped_Minus_Sign_Flip | Temp minus 18 degree ice cream load Ranoli bridge se 15 km pehle | Temp 18 degree ice cream load Ranoli bridge se 15 km pehle | CAUGHT | Sign-Flip Cross-Check and Readback Rejection |
+| TRAP_10 | Enclosed Cabin | Distance_18_vs_80_Confusion | Chiller trip temp 5 degree Talegaon bypass se 18 km | Chiller trip temp 5 degree Talegaon bypass se 80 km | CAUGHT | Distance Slot Verification and Readback Rejection |
+
+*Source File: `benchmark/results/acoustic_traps_gate_intercept_table.csv`*
 
 ---
 
---- | :---: | :---: | :---: | :---: | :---: | :---: |
-| PHONE_02 | Roadside / Two-wheeler | 18_vs_80_Phonetic_Trap | Temperature 18 degree ho gaya hai toll plaza se 42 km aage | Temperature 80 degree ho gaya hai toll plaza se 42 km aage | CAUGHT | Physical Bounds Gate (-40C to 50C) / 18-vs-80 Trap |
-| PHONE_11 | Enclosed Cabin (Idle) | Dropped_Minus_Sign_Flip | Breakdown alert temp minus 18 degree hai aur Mumbai Pune Expressway km 68 par hoon | Breakdown alert temp 18 degree hai aur Mumbai Pune Expressway km 68 par hoon | CAUGHT | Sign-Flip Cross-Check & Readback Rejection |
-| PHONE_09 | Roadside / Two-wheeler | 14_vs_40_Phonetic_Trap | Bhaiya 14 degree cross ho gaya Manesar chauraha se 35 km | Bhaiya 40 degree cross ho gaya Manesar chauraha se 35 km | CAUGHT | 14-vs-40 Acoustic Warning & Readback Correction |
-| PHONE_04 | Roadside / Two-wheeler | Distance_Digit_Substitution | Cabin me temp minus 8 degree show ho raha hai 25 km pehle | Cabin me temp minus 8 degree show ho raha hai 20 km pehle | CAUGHT | Distance Slot Verification & Readback Rejection |
-| PHONE_21 | Kitchen (Exhaust Fan) | Double_Acoustic_Confusion_Temp_And_Dist | Bhaiya 14 degree ho gaya hai dairy consignment ka Dharuhera se 18 km | Bhaiya 40 degree ho gaya hai dairy consignment ka Dharuhera se 80 km | CAUGHT | 14-vs-40 Acoustic Warning & Readback Correction |
-| PHONE_29 | Kitchen (Exhaust Fan) | Dropped_Minus_Sign_Flip | Minus 18 degree maintain nahi ho raha Paota se 12 km pehle | 18 degree maintain nahi ho raha Paota se 12 km pehle | CAUGHT | Sign-Flip Cross-Check & Readback Rejection |
-| PHONE_32 | Street / Market Background | Dropped_Minus_Sign_Flip | Temperature minus 14 degree ki jagah 14 degree ho gaya Hosur se 12 km aage | Temperature 14 degree ho gaya Hosur se 12 km aage | CAUGHT | Sign-Flip Cross-Check & Readback Rejection |
-| PHONE_35 | Street / Market Background | 18_vs_80_Phonetic_Trap | Reefer display 18 degree dikha raha hai Chandapura flyover se 17 km | Reefer display 80 degree dikha raha hai Chandapura flyover se 17 km | CAUGHT | Physical Bounds Gate (-40C to 50C) / 18-vs-80 Trap |
-| PHONE_48 | Quiet Handset Baseline | Dropped_Minus_Sign_Flip | Temp minus 18 degree ice cream load Ranoli bridge se 15 km pehle | Temp 18 degree ice cream load Ranoli bridge se 15 km pehle | CAUGHT | Sign-Flip Cross-Check & Readback Rejection |
-| PHONE_16 | Enclosed Cabin (Idle) | Distance_18_vs_80_Confusion | Chiller trip temp 5 degree Talegaon bypass se 18 km | Chiller trip temp 5 degree Talegaon bypass se 80 km | CAUGHT | Sign-Flip Cross-Check & Readback Rejection |
-
-*Source File: `benchmark/results/real_failures_gate_intercept_table.csv`*
-
----
 
 ### Track 1: Dialogue-Gate Stress Test with Injected ASR Errors (Software Simulation, N=125 Sessions)
 
@@ -170,10 +156,10 @@ Latency: ~310 ms"]
 > **Decoupled Physical Cargo Excursion Monitoring:** The ASR gate answers: *'Was this transcribed correctly?'*. Physical cargo degradation risk is evaluated independently by `check_cargo_temperature_excursion` (which answers: *'Is the cargo at active risk?'*). For instance, with ice cream target at −22°C and a ±12°C ASR plausibility band, a spoken −10°C is verified as correctly transcribed, but immediately triggers a `CRITICAL` dispatch priority alarm because −10°C breaches the configured −18°C deep freeze ceiling.
 > **Per-Cargo Sensor Match Tolerance:** Rule 1 verifies spoken readings against the live IoT sensor (`current_temp_c`) with an empirical per-cargo tolerance (±0.8°C for vaccines, ±1.2°C for dairy, ±1.5°C for deep freeze, ±2.0°C for produce). This accommodates cab display integer rounding while enforcing tight checks on narrow-margin cargo.
 > **Rule 1 with Active Cargo Excursion:** If a driver reports a true cooling unit failure that matches the live sensor (e.g., reported −10°C matches sensor −10.0°C on a −22°C ice cream truck), the gate ALLOWs the report without an unnecessary repeat challenge, and upon confirmation `check_cargo_temperature_excursion` immediately flags `CRITICAL` priority with `priority_source = 'CONFIRMED_READING'`. This is the central operational scenario the system is built to handle.
-> **Bi-Directional Sign-Flip & Dropped-Minus Protection:** The gate checks: (a) sub-zero target with positive spoken value, (b) positive target with negative spoken value, and (c) sensor magnitude match with opposite sign (e.g., spoken +14°C vs sensor −14.0°C, the exact dropped-minus failure measured on real audio). In all cases, un-repeated confirmations trigger an immediate challenge prompt.
+> **Bi-Directional Sign-Flip & Dropped-Minus Protection:** The gate checks: (a) sub-zero target with positive spoken value, (b) positive target with negative spoken value, and (c) sensor magnitude match with opposite sign (e.g., spoken +14°C vs sensor −14.0°C). In all cases, un-repeated confirmations trigger an immediate challenge prompt.
 > **Confirmed vs. Unconfirmed Priority Tracking:** To prevent control tower alert fatigue from unconfirmed ASR noise (such as 18→80 slips), excursion priority is logged as `priority_source = 'UNCONFIRMED_INITIAL'` during preliminary extraction, and evaluated on the confirmed reading upon dispatch with `priority_source = 'CONFIRMED_READING'`.
 > **Caller ID 4-Digit Fallback & Retry Cap:** When caller ID is unverified (`NOT_FOUND` or `MULTIPLE_MATCHES`), the system prompts for the last 4 digits (e.g., '1102') or full plate, and strictly caps retries at 2 before transferring to a human supervisor, preventing drivers from getting trapped in endless loops.
-> **Condition 5 Simulation Label:** Condition 5 (`real_telephony_pilot`) is an explicitly simulated dialogue-layer stress test calibrated to the 15% numeric error rate observed on noisy telephony audio in software simulation, showing how the safety gate handles that error load. It is NOT an unassisted field measurement.
+> **Condition 5 Simulation Label:** Condition 5 (`simulated_15pct_error`) is an explicitly simulated dialogue-layer stress test with a 15% injected numeric error rate in software simulation, showing how the safety gate handles that error load. It is NOT an unassisted field measurement.
 > Specific phonetic confusion traps (18↔80, 14↔40, negative polarity loss) are injected into the input to stress-test the state machine's interception capability.
 > Driver replies model human factors: in loud cabin noise, drivers have an assumed reflexive error probability in simulation (0% in clean up to 15% in harsh telephony noise).
 > **Scorecard Outcome Categorization:** Total ASR Errors = Driver Corrected Errors + Gate Blocked Reflexive Confirms + Silent Failures. Total Clips N = Successful Dispatches + Blocked Dispatch Withheld + Silent Failures.
@@ -186,9 +172,9 @@ Latency: ~310 ms"]
 | telephony_8khz | 25 | 96.0 | 4.0 | 1 | 1 | 1 | 0 | 0 (0.0%) | 25 of 25 (100.0%) | 0 of 25 (0.0%) |
 | telephony_10db | 25 | 72.0 | 28.0 | 7 | 6 | 2 | 0 | 1 (4.0%) | 24 of 25 (96.0%) | 0 of 25 (0.0%) |
 | telephony_5db | 25 | 64.0 | 36.0 | 9 | 9 | 5 | 0 | 0 (0.0%) | 25 of 25 (100.0%) | 0 of 25 (0.0%) |
-| real_telephony_pilot | 25 | 56.0 | 44.0 | 11 | 10 | 11 | 0 | 1 (4.0%) | 24 of 25 (96.0%) | 0 of 25 (0.0%) |
+| simulated_15pct_error | 25 | 56.0 | 44.0 | 11 | 10 | 11 | 0 | 1 (4.0%) | 24 of 25 (96.0%) | 0 of 25 (0.0%) |
 
-*Note: In the 10 dB SNR and real_telephony_pilot conditions, the single silent failure (4.0%) represents a single clip where assumed driver reflexive agreement allowed a minor unflagged extraction error to slip through in simulation.*
+*Note: In the 10 dB SNR and simulated_15pct_error conditions, the single silent failure (4.0%) represents a single clip where assumed driver reflexive agreement allowed a minor unflagged extraction error to slip through in simulation.*
 
 ---
 
@@ -249,7 +235,7 @@ To replace unmeasured latency assumptions with empirical data, `benchmark/measur
 ### Official Scorecard Track 2: Empirical Model Generalization (Held-Out Test Set N = 7 Utterances, 28 Clips)
 
 To measure actual acoustic generalization without data leakage, `core/train_asr.py`, `core/train_denoiser.py`, and `core/train_nlu.py` quarantine 7 held-out utterances (`utt_03, utt_07, utt_11, utt_15, utt_19, utt_22, utt_25`).
-The table below reports real Word Error Rate (WER) and **Number Survival Accuracy** (whether temperatures and distances survive transcription) measured by `benchmark/evaluate_trained_models.py` using the trained Whisper-LoRA model with and without the 8 kHz neural denoiser, alongside real phone telephony audio (saved in `benchmark/results/model_evaluation_metrics.csv`):
+The table below reports real Word Error Rate (WER) and **Number Survival Accuracy** (whether temperatures and distances survive transcription) measured by `benchmark/evaluate_trained_models.py` using the trained Whisper-LoRA model with and without the 8 kHz neural denoiser (saved in `benchmark/results/model_evaluation_metrics.csv`):
 
 > **Sample Size & Multi-Seed Empirical Distribution:** $N=7$ held-out utterances (28 audio clips across 4 channel variants; 10 total expected numeric slots) is an indicative benchmark set. The table reports both single-run and empirical Mean ± SD across 3 training seeds. Differences across retrains represent empirical sample variance rather than systematic algorithmic changes.
 > **Definition of Number Survival:** A number 'survives' if and only if the exact target numeric value appears in the hypothesis bounded by word boundaries (`\b`) or is successfully parsed by `parse_hindi_number` to within $\pm 0.1$ tolerance (never by unconstrained substring matching).
@@ -297,8 +283,8 @@ The table below lists all 7 held-out clips, their ground truth numeric slots, an
 *Note: In-domain 23/23 (100%) number accuracy and 0.0% WER represents fitting/memorization on the 18 training sentences and is included strictly as an overfitted reference baseline.*
 
 #### Key Empirical Diagnostics & Insights:
-1. **Critical Number Survival Rate & Real Telephony Risk:**
-   In dispatch workflows, word error on filler conversational phrases (`"bhaiya"`, `"chal raha hai"`) does not cause misdispatch. What is critical is whether numeric slots survive. On synthetic telephony down to 10 dB SNR, **10/10 (100%) of numbers survived**, dropping to **8/10 (80.0%)** at 5 dB. demonstrating how acoustic noise degrades numerical recognition and why deterministic verification is strictly required before dispatch.
+1. **Critical Number Survival Rate & Acoustic Noise Risk:**
+   In dispatch workflows, word error on filler conversational phrases (`"bhaiya"`, `"chal raha hai"`) does not cause misdispatch. What is critical is whether numeric slots survive. On synthetic telephony down to 10 dB SNR, **10/10 (100%) of numbers survived**, dropping to **8/10 (80.0%)** at 5 dB, demonstrating how acoustic noise degrades numerical recognition and why deterministic verification is strictly required before dispatch.
 2. **Acoustic Defense for Distance Confusions (Digit-by-Digit Spelling):**
    Because telematics targets do not constrain highway distances (unlike temperatures), the system's primary defense against distance confusion (such as 68 $\rightarrow$ 60 km) is **read-back digit-by-digit spelling** (`generate_readback_prompt` outputs e.g. `Mumbai Pune Expressway se 68 (6, 8) km`), forcing phonetic disambiguation on confirmation.
 3. **Location Grounding, Fuzzy Margin Rule (0.10), & Non-Circular GPS:**
@@ -336,7 +322,7 @@ The table below lists all 7 held-out clips, their ground truth numeric slots, an
 > **Methodological Note:** The table below is an illustrative parametric sensitivity sweep ($E_{\text{silent}} = \text{Ungated Errors} \times \text{Assumed Rate}$), demonstrating the mathematical boundary conditions of read-back confirmation under varying driver fatigue and distractibility in simulation, rather than a physical measurement of driver psychology.
 > **Physical Safety Boundary Notice:** The telematics safety gate intercepts large anomalies beyond cargo class tolerance even if the driver reflexively agrees (`"haan"`). However, **if a driver genuinely mishears the read-back and repeats the wrong number** (`"haan, assi degree confirm"`), the gate accepts it as an intended override. Software safety gates protect against unverified reflexive confirmations, not against human confirmation of misheard values.
 
-| Assumed Driver Error Rate | Clean (16 kHz) Dispatch Acc | Telephony 8 kHz Dispatch Acc | 10 dB SNR Dispatch Acc | 5 dB SNR Dispatch Acc | Real Telephony Pilot (15% Error Rate) |
+| Assumed Driver Error Rate | Clean (16 kHz) Dispatch Acc | Telephony 8 kHz Dispatch Acc | 10 dB SNR Dispatch Acc | 5 dB SNR Dispatch Acc | Simulated 15% Error Condition |
 | :---: | :---: | :---: | :---: | :---: | :---: |
 | **0% (Attentive Driver)** | **100.0%** | **100.0%** | **100.0%** | **100.0%** | **100.0%** |
 | **5% (Minor Distraction)** | **99.8%** | **99.8%** | **98.8%** | **99.0%** | **99.2%** |
@@ -565,17 +551,17 @@ The 42.1% WER and 20% numeric failure rate measured under severe 5 dB SNR cabin 
 3. **Hardware Requirements:**
    While Whisper-Tiny runs in <1 GB VRAM at ~880 ms pipeline latency, `whisper-small` requires ~2 GB VRAM and ~1.2-1.8 s compute turnaround on equivalent edge hardware. For resource-constrained fleet hubs, Whisper-Tiny combined with Vaani's strict telematics confirmation gate provides the highest safety per watt.
 
-### 8.3 Telematics Stress Corpus Simulation (Calibrated to 15% Error Rate across 8 Corridors, N = 80 Numbers)
+### 8.3 Telematics Stress Corpus Simulation (Software Simulation, N = 80 Injected Numbers)
 
-In this software benchmark simulation, 40 synthetic corridor scenarios (80 numeric slots: 40 temperatures, 40 distances) were generated and calibrated to the empirical 15% numeric error rate observed on noisy telephony calls, evaluating how the dialogue gate intercepts error loads in simulation (`benchmark/evaluate_expanded_real_audio.py`):
+In this software benchmark simulation, 40 synthetic corridor scenarios (80 numeric slots: 40 temperatures, 40 distances) were generated with an assumed 15% injected numeric error rate to evaluate how the dialogue gate intercepts error loads in software simulation (`benchmark/evaluate_expanded_real_audio.py`):
 
 | Evaluation Condition | Corridors / Speakers (N) | Total Numbers (N) | Acoustic Channel | Number Survival Rate (%) | 95% Wilson CI | Gate Interception Rate (%) |
-| :--- | :---: | :---: | :--- | :---: | :---: | :---: |
-| **Simulated Telematics Stress Corpus (Software Test)** | 8 | 80 | Calibrated 15% Injected Error Rate (G.711 Simulation) | 64/80 (80.0%) | [70.0%, 87.3%] | **100.0% (12/12 caught)** |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| Simulated Telematics Stress Corpus (Software Test) | 8 | 80 | Calibrated 15% Injected Error Rate (G.711 Simulation) | 64/80 (80.0%) | [70.0%, 87.3%] | 100.0% (12/12 caught) |
 
 *Key Findings from Telematics Evaluation:*
-- **Empirical Safety Interception Rate Holds:** Every single acoustic failure on phone audio was intercepted by the FSM safety gate (bounds check, sign-flip check, or read-back correction).
-- **Itemized Per-Clip Dataset:** The complete per-clip dataset with all 40 telematics corridor scenarios (80 numeric slots), corridor IDs, recognized outputs, ground truth values, and simulation notices is provided in [data/driver_cohort_per_clip_results.csv](data/driver_cohort_per_clip_results.csv).
+- **Safety Gate Interception in Simulation:** All injected acoustic anomalies in this simulation suite were caught by the FSM safety gate (bounds check, sign-flip check, or read-back correction).
+- **Itemized Per-Clip Dataset:** The complete per-clip dataset with all 40 simulated corridor scenarios (80 numeric slots), corridor IDs, recognized outputs, ground truth values, and simulation notices is provided in [data/driver_cohort_per_clip_results.csv](data/driver_cohort_per_clip_results.csv).
 
 ---
 
@@ -618,10 +604,11 @@ streamlit run app/dashboard.py
 ## 10. Known Limitations Stated Honestly
 
 1. **Synthetic Training Audio:** Acoustic model fine-tuning and pipeline development relied on synthetic speech (`gTTS`) augmented with mathematical noise models (diesel engine harmonics, pink road friction, horn reflections) rather than a multi-thousand-hour proprietary cab recording dataset.
-2. **Acoustic Evaluation Scope:** Phone telephony evaluation utilizes a voluntary cohort across 5 realistic noise environments ($N=50$ numbers, 82.0% survival, 95% Wilson CI: [69.2%, 90.2%]). While this proves that approximately 1 in 6 numbers is misheard over mobile telephony codecs, it remains an evaluation sample rather than an exhaustive nationwide demographic survey across all Indian freight corridors.
-3. **No Live Carrier Trunk Integration:** Telephony streaming is verified over WebSocket full-duplex PCM16 streaming (`app/telephony_server.py`) and recorded 8 kHz phone audio, but has not been deployed on live telco carrier trunks (E1/PRI or SIP trunks) with hardware line echo cancelers (AEC).
+2. **Acoustic Evaluation Scope:** Acoustic benchmarks were evaluated on synthetic speech across 4 channel conditions (Clean, 8 kHz Butterworth telephony bandpass, 10 dB SNR, and 5 dB SNR engine noise), plus a software stress simulation with an assumed 15% injected ASR error rate. No live human field trials or unassisted phone calls were conducted.
+3. **No Live Carrier Trunk Integration:** Telephony streaming is implemented and verified over local WebSocket full-duplex PCM16 streaming (`app/telephony_server.py`), but has not been deployed on live telco carrier trunks (E1/PRI or SIP trunks) with hardware line echo cancelers (AEC).
 4. **Thresholds Not Validated on Real Historical Incidents:** Safety gate plausibility bands and excursion thresholds were designed against engineering cold-chain criteria, not backtested against real-world insurance claim histories or refrigerated spoilage audit logs.
 5. **Heuristic Gate Tolerances:** Plausibility bands ($\pm 4^\circ\text{C}$ to $\pm 15^\circ\text{C}$) and sensor match windows ($\pm 0.8^\circ\text{C}$ to $\pm 2.0^\circ\text{C}$) are engineering heuristics informed by cold-chain guidelines (WHO PQS, FSSAI, Codex, APEDA), not statutory standards for speech recognition plausibility.
 6. **Carrier Caller-ID Primary Path Dependence:** Spoken registration digits have a combined joint survival probability of roughly $0.85^4 \approx 52\%$ on unassisted phone calls. Caller-ID telematics lookup is therefore the essential primary path; spoken fallback always requires explicit confirmation read-back (`"HR-55-TC-1102, sahi hai?"`) before truck binding.
 7. **Simulated Fleet Database:** Fleet vehicles, telemetry rows, and roadside assistance dispatches are modeled in `data/fleet.sqlite` and explicitly tagged as `[Simulated fleet data]`.
 8. **Multi-Tenant Call Concurrency:** SQLite is tuned for single-turn interactive sessions and micro-fleets; enterprise call-center scale requires PostgreSQL with connection pooling.
+9. **Live Gnani API Credential Dependency:** Production endpoints for Gnani Prisma, Evon, and Timbre are wired in `gnani/client.py`. When run with default placeholder credentials, the system falls back to local components (Whisper-LoRA and deterministic regex), ensuring full offline testability without claiming live API responses that were not executed.

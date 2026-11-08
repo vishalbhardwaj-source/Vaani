@@ -1,2 +1,2 @@
-total_phone_failures_evaluated,caught_by_gate,slipped_through,safety_gate_interception_rate_pct,headline
-10,10,0,100.0,Prisma/ASR misheard 10 numbers on noisy phone telephony. The FSM safety gate caught 10 of 10 (100.0%).
+Total Injected Traps Evaluated,Total Intercepted by Gate,Interception Rate (%),Silent Misdispatches
+10,10,100.0%,0

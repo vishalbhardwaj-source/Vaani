@@ -226,15 +226,7 @@ def run_expanded_evaluation() -> pd.DataFrame:
     ci_low_80, ci_high_80 = calculate_wilson_ci(total_survived, total_slots)
 
     results = [
-        {
-            "Evaluation Condition": "Real Phone Acoustic Telephony (Live Test)",
-            "Corridors / Speakers (N)": 5,
-            "Total Numbers (N)": 50,
-            "Acoustic Channel": "Live Mobile Telephony (Roadside, Cabin, Fan, Market, Handset)",
-            "Number Survival Rate (%)": "41/50 (82.0%)",
-            "95% Wilson CI": "[69.2%, 90.2%]",
-            "Gate Interception Rate (%)": "100.0% (9/9 caught)"
-        },
+        
         {
             "Evaluation Condition": "Simulated Telematics Stress Corpus (Software Test)",
             "Corridors / Speakers (N)": 8,

@@ -230,9 +230,9 @@ def transcribe_audio(
     transcript = reference_hint or "Bhaiya reefer ka temperature 18 degree ho gaya hai toll plaza se 42 km aage"
     confidence = 0.96
 
-    if "real_telephony_pilot" in condition:
+    if "simulated_15pct_error" in condition:
         confidence = 0.72
-        # Calibrated real telephony pilot: 15.0% error rate (3 in 20 slots misheard: 18->80, dropped negative, 14->40, 68->60)
+        # Software stress simulation: 15.0% assumed error rate with injected phonetic traps (18->80, dropped negative, 14->40, 68->60)
         if "18" in transcript:
             transcript = transcript.replace("18", "80")
         elif "minus" in transcript.lower():

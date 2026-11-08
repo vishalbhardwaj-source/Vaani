@@ -1,3 +1,2 @@
 Evaluation Condition,Corridors / Speakers (N),Total Numbers (N),Acoustic Channel,Number Survival Rate (%),95% Wilson CI,Gate Interception Rate (%)
-Real Phone Acoustic Telephony (Live Test),5,50,"Live Mobile Telephony (Roadside, Cabin, Fan, Market, Handset)",41/50 (82.0%),"[69.2%, 90.2%]",100.0% (9/9 caught)
 Simulated Telematics Stress Corpus (Software Test),8,80,Calibrated 15% Injected Error Rate (G.711 Simulation),64/80 (80.0%),"[70.0%, 87.3%]",100.0% (12/12 caught)

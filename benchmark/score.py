@@ -10,12 +10,17 @@ Computes:
 7. Engine Breakdown (Cloud Prisma, Local Whisper-LoRA, Acoustic Simulation)
 """
 
+import sys
 import re
 import json
 from datetime import datetime, timezone
 from pathlib import Path
 import pandas as pd
 import jiwer
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from core.state_machine import get_controller_code_hash
 
@@ -39,7 +44,7 @@ def compute_metrics() -> pd.DataFrame:
     df = pd.read_csv(RAW_RESULTS_CSV)
 
     summary_rows = []
-    conditions = ["clean", "telephony_8khz", "telephony_10db", "telephony_5db", "real_telephony_pilot"]
+    conditions = ["clean", "telephony_8khz", "telephony_10db", "telephony_5db", "simulated_15pct_error"]
 
     print("=" * 85)
     print("VAANI EMPIRICAL BENCHMARK EVALUATION METRICS")
@@ -139,7 +144,7 @@ def compute_sensitivity_sweep(df: pd.DataFrame) -> pd.DataFrame:
     """
     sweep_rates = [0.0, 0.05, 0.10, 0.15, 0.20]
     sweep_rows = []
-    conditions = ["clean", "telephony_8khz", "telephony_10db", "telephony_5db", "real_telephony_pilot"]
+    conditions = ["clean", "telephony_8khz", "telephony_10db", "telephony_5db", "simulated_15pct_error"]
 
     print("\n" + "=" * 85)
     print("PARAMETRIC DRIVER ATTENTION SENSITIVITY SWEEP (0% to 20% Reflexive Agreement)")
