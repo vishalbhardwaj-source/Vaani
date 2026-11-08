@@ -1,29 +1,29 @@
-clip_id,condition,reference_text,prisma_transcript,status_code,latency_s,wer,true_temp_c,temp_survived,true_dist_km,dist_survived
-utt_03,clean,Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle,"temperature -14° चल रहा है, मुरथल ढाबा से 10 kilometers पहले।",200,0.902,0.7692,-14.0,1.0,10.0,1.0
-utt_07,clean,Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas,"temperature 15° पहुंच गया है, refer chiller band pad गया शाहाबाद के पास।",200,0.87,0.6429,15.0,1.0,,
-utt_11,clean,Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km,"सर, गाड़ी puncture हो गई है और reefer off है वडोदरा bypass से 30 kilometers।",200,0.827,0.6667,,,30.0,1.0
-utt_15,clean,Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68,"Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",200,0.732,0.5385,,,68.0,1.0
-utt_19,clean,Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage,"चिल्लर display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",200,0.775,0.6923,19.0,1.0,12.0,1.0
-utt_22,clean,Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km,"सर, अर्जेंट हेल्प चाहिए, temperature 25 degree हो गया रेवाड़ी बाईपास से 18 kilometers।",200,0.781,0.7143,25.0,1.0,18.0,1.0
-utt_25,clean,Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway,"Emergency alert, refer temperature 2° से 18° हो गया केएमपी एक्सप्रेसवे।",200,0.806,0.6154,18.0,1.0,,
-utt_03,telephony_8khz,Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle,"temperature -14 degree चल रहा है, मुर्थल ढाबा से 10 kilometers पहले।",200,0.8,0.6923,-14.0,1.0,10.0,1.0
-utt_07,telephony_8khz,Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas,"temperature 15° पहुंच गया है, refer chiller band pad गया शाहबाद के पास।",200,0.785,0.6429,15.0,1.0,,
-utt_11,telephony_8khz,Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km,"सर, गाड़ी puncture हो गई है और reefer off है, वडोदरा bypass से 30 kilometers।",200,0.827,0.6667,,,30.0,1.0
-utt_15,telephony_8khz,Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68,"Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",200,0.762,0.5385,,,68.0,1.0
-utt_19,telephony_8khz,Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage,"चिलर display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",200,0.785,0.6923,19.0,1.0,12.0,1.0
-utt_22,telephony_8khz,Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km,"सर, urgent help चाहिए, temperature 25° हो गया रेवाड़ी bypass से 18 kilometers।",200,0.886,0.5714,25.0,1.0,18.0,1.0
-utt_25,telephony_8khz,Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway,Emergency alert refer temperature 2° से 18° हो गया KMP expressway.,200,0.726,0.4615,18.0,1.0,,
-utt_03,telephony_10db,Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle,"temperature -14 degree चल रहा है, मुल्थल ढाबा से 10 kilometers पहले।",200,0.793,0.6923,-14.0,1.0,10.0,1.0
-utt_07,telephony_10db,Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas,"temperature 15 degree पहुंच गया है, refer chiller band pad गया शाहबाद के पास।",200,0.859,0.5714,15.0,1.0,,
-utt_11,telephony_10db,Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km,"सर, गाड़ी puncture हो गई है और reaper off है वडोदरा bypass से 30 km।",200,0.767,0.6667,,,30.0,1.0
-utt_15,telephony_10db,Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68,"Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",200,0.804,0.5385,,,68.0,1.0
-utt_19,telephony_10db,Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage,"चिलर display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",200,0.812,0.6923,19.0,1.0,12.0,1.0
-utt_22,telephony_10db,Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km,"Sir, urgent help chahiye, temperature 25 degree हो गया Rewari bypass से 18 kilometers।",200,0.77,0.2857,25.0,1.0,18.0,1.0
-utt_25,telephony_10db,Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway,Emergency alert: refer temperature 2° से 18° हो गया KMP expressway.,200,0.853,0.4615,18.0,1.0,,
-utt_03,telephony_5db,Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle,"temperature -14 degree चल रहा है, मुल्ताल ढाबा से 10 kilometers पहले।",200,0.801,0.6923,-14.0,1.0,10.0,1.0
-utt_07,telephony_5db,Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas,"temperature 15 degree पहुंच गया है, refer chiller band pad गया शाहबाद के पास।",200,0.883,0.5714,15.0,1.0,,
-utt_11,telephony_5db,Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km,"सर, गाड़ी puncture हो गई है और repair off है वडोदरा bypass से 30 km।",200,0.817,0.6667,,,30.0,1.0
-utt_15,telephony_5db,Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68,"Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",200,0.771,0.5385,,,68.0,1.0
-utt_19,telephony_5db,Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage,"screen display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",200,0.816,0.6923,19.0,1.0,12.0,1.0
-utt_22,telephony_5db,Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km,"The surgeons help chahiye temperature 25 degree, वो गया रेवाड़ी bypass से 18 kilometers।",200,0.872,0.5,25.0,1.0,18.0,1.0
-utt_25,telephony_5db,Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway,Emergency alert: Rifer temperature 2° से 18° हो गया KMP expressway.,200,0.735,0.4615,18.0,1.0,,
+clip_id,condition,reference_text,prisma_transcript,status_code,latency_s,true_temp_c,temp_survived,true_dist_km,dist_survived
+utt_03,clean,Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle,"temperature -14° चल रहा है, मुरथल ढाबा से 10 kilometers पहले।",200,0.902,-14.0,1.0,10.0,1.0
+utt_07,clean,Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas,"temperature 15° पहुंच गया है, refer chiller band pad गया शाहाबाद के पास।",200,0.87,15.0,1.0,,
+utt_11,clean,Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km,"सर, गाड़ी puncture हो गई है और reefer off है वडोदरा bypass से 30 kilometers।",200,0.827,,,30.0,1.0
+utt_15,clean,Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68,"Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",200,0.732,,,68.0,1.0
+utt_19,clean,Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage,"चिल्लर display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",200,0.775,19.0,1.0,12.0,1.0
+utt_22,clean,Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km,"सर, अर्जेंट हेल्प चाहिए, temperature 25 degree हो गया रेवाड़ी बाईपास से 18 kilometers।",200,0.781,25.0,1.0,18.0,1.0
+utt_25,clean,Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway,"Emergency alert, refer temperature 2° से 18° हो गया केएमपी एक्सप्रेसवे।",200,0.806,18.0,1.0,,
+utt_03,telephony_8khz,Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle,"temperature -14 degree चल रहा है, मुर्थल ढाबा से 10 kilometers पहले।",200,0.8,-14.0,1.0,10.0,1.0
+utt_07,telephony_8khz,Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas,"temperature 15° पहुंच गया है, refer chiller band pad गया शाहबाद के पास।",200,0.785,15.0,1.0,,
+utt_11,telephony_8khz,Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km,"सर, गाड़ी puncture हो गई है और reefer off है, वडोदरा bypass से 30 kilometers।",200,0.827,,,30.0,1.0
+utt_15,telephony_8khz,Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68,"Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",200,0.762,,,68.0,1.0
+utt_19,telephony_8khz,Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage,"चिलर display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",200,0.785,19.0,1.0,12.0,1.0
+utt_22,telephony_8khz,Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km,"सर, urgent help चाहिए, temperature 25° हो गया रेवाड़ी bypass से 18 kilometers।",200,0.886,25.0,1.0,18.0,1.0
+utt_25,telephony_8khz,Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway,Emergency alert refer temperature 2° से 18° हो गया KMP expressway.,200,0.726,18.0,1.0,,
+utt_03,telephony_10db,Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle,"temperature -14 degree चल रहा है, मुल्थल ढाबा से 10 kilometers पहले।",200,0.793,-14.0,1.0,10.0,1.0
+utt_07,telephony_10db,Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas,"temperature 15 degree पहुंच गया है, refer chiller band pad गया शाहबाद के पास।",200,0.859,15.0,1.0,,
+utt_11,telephony_10db,Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km,"सर, गाड़ी puncture हो गई है और reaper off है वडोदरा bypass से 30 km।",200,0.767,,,30.0,1.0
+utt_15,telephony_10db,Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68,"Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",200,0.804,,,68.0,1.0
+utt_19,telephony_10db,Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage,"चिलर display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",200,0.812,19.0,1.0,12.0,1.0
+utt_22,telephony_10db,Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km,"Sir, urgent help chahiye, temperature 25 degree हो गया Rewari bypass से 18 kilometers।",200,0.77,25.0,1.0,18.0,1.0
+utt_25,telephony_10db,Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway,Emergency alert: refer temperature 2° से 18° हो गया KMP expressway.,200,0.853,18.0,1.0,,
+utt_03,telephony_5db,Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle,"temperature -14 degree चल रहा है, मुल्ताल ढाबा से 10 kilometers पहले।",200,0.801,-14.0,1.0,10.0,1.0
+utt_07,telephony_5db,Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas,"temperature 15 degree पहुंच गया है, refer chiller band pad गया शाहबाद के पास।",200,0.883,15.0,1.0,,
+utt_11,telephony_5db,Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km,"सर, गाड़ी puncture हो गई है और repair off है वडोदरा bypass से 30 km।",200,0.817,,,30.0,1.0
+utt_15,telephony_5db,Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68,"Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",200,0.771,,,68.0,1.0
+utt_19,telephony_5db,Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage,"screen display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",200,0.816,19.0,1.0,12.0,1.0
+utt_22,telephony_5db,Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km,"The surgeons help chahiye temperature 25 degree, वो गया रेवाड़ी bypass से 18 kilometers।",200,0.872,25.0,1.0,18.0,1.0
+utt_25,telephony_5db,Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway,Emergency alert: Rifer temperature 2° से 18° हो गया KMP expressway.,200,0.735,18.0,1.0,,

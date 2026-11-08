@@ -371,12 +371,12 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
     # Prevents "NH-44", "NH-48", "km-42" from interfering with temperature parsing
     lower_temp_masked = re.sub(r"\b(?:nh|sh|route|km|milepost)\s*[-:]?\s*\d+\b", " ", lower)
 
-    # 1. Incident Type (Defaults to UNKNOWN if not identified, never fabricated)
-    if any(k in lower for k in ["temperature", "temp", "garam", "chiller", "cooling", "degree", "celsius", "ice cream melt"]):
+    # 1. Incident Type (Defaults to UNKNOWN if not identified, never fabricated; supports Romanized & Devanagari)
+    if any(k in lower for k in ["temperature", "temp", "garam", "chiller", "cooling", "degree", "celsius", "ice cream melt", "चिल्लर", "चिलर", "तापमान", "डिग्री", "°"]):
         record_dict["incident_type"] = IncidentType.REEFER_TEMPERATURE
-    elif any(k in lower for k in ["breakdown", "kharaab", "kharab", "engine band", "dhuan", "punctured", "puncture", "puncher", "gear box jam", "fan belt"]):
+    elif any(k in lower for k in ["breakdown", "kharaab", "kharab", "engine band", "dhuan", "punctured", "puncture", "puncher", "gear box jam", "fan belt", "गाड़ी खराब", "पंचर", "जाम", "ब्रेकडाउन"]):
         record_dict["incident_type"] = IncidentType.BREAKDOWN
-    elif any(k in lower for k in ["delay", "traffic", "late", "jaam", "jam"]):
+    elif any(k in lower for k in ["delay", "traffic", "late", "jaam", "jam", "देरी", "ट्रैफिक"]):
         record_dict["incident_type"] = IncidentType.DELAY
     else:
         record_dict["incident_type"] = IncidentType.UNKNOWN
@@ -489,13 +489,32 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
     known_landmarks.sort(key=len, reverse=True)
 
     matched_location = None
-    for lm in known_landmarks:
-        if lm in lower:
-            title_case = lm.title()
-            if "Mumbai" in title_case:
-                title_case = "Mumbai Pune Expressway"
-            matched_location = title_case
+
+    # Devanagari landmark aliases (from native Indic ASR like Gnani Prisma)
+    DEVANAGARI_LANDMARK_MAP = {
+        "मुरथल ढाबा": "Murthal Dhaba", "मुर्थल ढाबा": "Murthal Dhaba", "मुल्थल ढाबा": "Murthal Dhaba", "मुल्ताल ढाबा": "Murthal Dhaba", "मुरथल": "Murthal Dhaba",
+        "शाहाबाद": "Shahbad", "शाहबाद": "Shahbad",
+        "वडोदरा बाईपास": "Vadodara Bypass", "वडोदरा bypass": "Vadodara Bypass", "वडोदरा": "Vadodara Bypass",
+        "मुंबई पुणे expressway": "Mumbai Pune Expressway", "मुंबई पुणे": "Mumbai Pune Expressway",
+        "गाजियाबाद बॉर्डर": "Ghaziabad Border", "गाजियाबाद border": "Ghaziabad Border", "गाजियाबाद": "Ghaziabad Border",
+        "रेवाड़ी बाईपास": "Rewari Bypass", "रेवाड़ी bypass": "Rewari Bypass", "रेवाड़ी": "Rewari Bypass",
+        "केएमपी एक्सप्रेसवे": "KMP Expressway", "केएमपी": "KMP Expressway",
+        "पानीपत टोल": "Panipat Toll", "पानीपत": "Panipat Toll",
+        "बिलासपुर": "Bilaspur Chowk", "मानेसर": "Manesar", "अंबाला": "Ambala Cantt"
+    }
+    for dev_k, dev_name in DEVANAGARI_LANDMARK_MAP.items():
+        if dev_k in lower:
+            matched_location = dev_name
             break
+
+    if not matched_location:
+        for lm in known_landmarks:
+            if lm in lower:
+                title_case = lm.title()
+                if "Mumbai" in title_case:
+                    title_case = "Mumbai Pune Expressway"
+                matched_location = title_case
+                break
 
     # Fuzzy matching fallback across token sequences if no exact substring matched
     # Applies margin rule (0.10) and checks KNOWN_CONFUSABLE_PAIRS to avoid silent misrouting

@@ -1,5 +1,0 @@
-slot,evon_accuracy_pct,regex_accuracy_pct,key_finding
-Incident Type,0.0,100.0,Evon handles diverse paraphrasing; Regex matches dispatch vocabulary keywords.
-Temperature (C),28.6,100.0,Regex reliably enforces sign polarity (minus drops) and 18 vs 80 bounds.
-Distance (km),28.6,100.0,Both extract distances accurately; Regex strips highway marker prefixes (NH-44).
-Location / Landmark,0.0,100.0,Evon excels at open-vocabulary landmarks; Regex detects confusable phonetic pairs.

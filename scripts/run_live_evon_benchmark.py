@@ -220,6 +220,19 @@ def run_evon_benchmark():
             "evon_latency_s": round(evon_res.get("latency", 0.0), 3)
         })
 
+    # Check if live Evon actually responded successfully
+    successful_calls = sum(1 for r in raw_responses.values() if r.get('status_code') == 200)
+    if successful_calls == 0:
+        print('\n' + '=' * 78)
+        print('[!] GNANI EVON API STATUS: 403 SCOPE_NOT_ALLOWED')
+        print('=' * 78)
+        print('The current contest API key does not have the Evon Chat scope active.')
+        print(f'All raw responses saved to: {RAW_EVON_FILE}')
+        print('No comparison CSVs generated to prevent unbacked metrics.')
+        print('Once the Evon scope is enabled on your key, re-run this runner.')
+        print('=' * 78)
+        return
+
     df_res = pd.DataFrame(results)
     df_res.to_csv(COMPARISON_CSV, index=False)
     print(f"\n[+] Itemized slot comparison saved to {COMPARISON_CSV}")

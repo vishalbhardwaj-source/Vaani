@@ -1,0 +1,10 @@
+{
+  "status_code": 200,
+  "model": "timbre-v3.0",
+  "voice": "Devansh",
+  "language": "hi-IN",
+  "prompt_text": "Bhaiya, reefer display par temperature kitna degree dikh raha hai? Saaf batayein.",
+  "audio_bytes_len": 399360,
+  "sample_rate": 16000,
+  "output_file": "benchmark/results/live_timbre_devansh_prompt.wav"
+}

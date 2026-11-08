@@ -46,9 +46,9 @@ Truck drivers and cold-chain ground crews operate in deafening cabin environment
 
 | Capability | Gnani AI Component | Role in Pipeline |
 | :--- | :--- | :--- |
-| **Speech-to-Text (ASR)** | **Gnani Prisma (prisma-v3.0)** | Primary Hinglish speech transcription on noisy telephony audio |
-| **Reasoning & NLU** | **Gnani Evon (evon-v3.3)** | Structured slot extraction (temperature, location, distance, incident) |
-| **Conversational TTS** | **Gnani Timbre (timbre-v2.5)** | Low-latency natural Hindi read-back synthesis (Pranav / Conversational) |
+| **Speech-to-Text (ASR)** | **Gnani Prisma (prisma-v3.0)** | Primary Indic speech transcription on noisy telephony audio (live verified on 28 audio clips) |
+| **Reasoning & NLU** | **Deterministic Bilingual Extractor** | Extraction engine (Gnani Evon v3.3 client implemented; contest key lacks Evon scope, see notes) |
+| **Conversational TTS** | **Gnani Timbre (timbre-v3.0)** | Low-latency natural Hindi read-back synthesis (live verified; Devansh voice; 16 kHz WAV) |
 | **Safety Gate & Verification** | **Deterministic State Machine** | Strict physical bounds (-40°C to +50°C), IoT telematics match, WHO/FSSAI tolerances |
 
 ### Key Empirical Findings at a Glance
@@ -611,4 +611,5 @@ streamlit run app/dashboard.py
 6. **Carrier Caller-ID Primary Path Dependence:** Spoken registration digits have a combined joint survival probability of roughly $0.85^4 \approx 52\%$ on unassisted phone calls. Caller-ID telematics lookup is therefore the essential primary path; spoken fallback always requires explicit confirmation read-back (`"HR-55-TC-1102, sahi hai?"`) before truck binding.
 7. **Simulated Fleet Database:** Fleet vehicles, telemetry rows, and roadside assistance dispatches are modeled in `data/fleet.sqlite` and explicitly tagged as `[Simulated fleet data]`.
 8. **Multi-Tenant Call Concurrency:** SQLite is tuned for single-turn interactive sessions and micro-fleets; enterprise call-center scale requires PostgreSQL with connection pooling.
-9. **Live Gnani API Credential Dependency:** Production endpoints for Gnani Prisma, Evon, and Timbre are wired in `gnani/client.py`. When run with default placeholder credentials, the system falls back to local components (Whisper-LoRA and deterministic regex), ensuring full offline testability without claiming live API responses that were not executed.
+9. **Live Gnani API Integration & Credential Status:** Production endpoints for Gnani Prisma STT, Evon NLU, and Timbre TTS are wired in `gnani/client.py`. Live calls against `api.vachana.ai` confirm that Prisma STT and Timbre TTS are fully operational. For Evon NLU, the contest API key returned HTTP 403 `SCOPE_NOT_ALLOWED` (logged in `raw_live_evon_responses.json`); the system transparently routes extraction to the deterministic safety extractor without making unbacked claims.
+10. **Acoustic Generalization on Synthetic Telephony:** While 100% of numeric quantities survived in live Prisma transcripts across 4 noise tiers (40/40 slots across Clean, 8kHz, 10dB, and 5dB SNR), the underlying audio was generated with gTTS. Synthetic voices have clearer diction and phonetic separation than live freight drivers speaking over moving truck cabin noise. Real-world human telephony will experience higher acoustic error rates, which is precisely why the deterministic read-back confirmation gate remains mandatory.

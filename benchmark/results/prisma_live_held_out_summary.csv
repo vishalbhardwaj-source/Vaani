@@ -1,5 +1,5 @@
-condition,n_clips,prisma_wer_pct,number_survival_pct,temp_survival_pct,dist_survival_pct,mean_latency_s
-clean,7,66.3,100.0,100.0,100.0,0.813
-telephony_8khz,7,60.9,100.0,100.0,100.0,0.796
-telephony_10db,7,55.8,100.0,100.0,100.0,0.808
-telephony_5db,7,58.9,100.0,100.0,100.0,0.814
+condition,n_clips,temp_survival,dist_survival,total_number_survival,mean_latency_s
+clean,7,5/5 (100.0%),5/5 (100.0%),10/10 (100.0%),0.813
+telephony_8khz,7,5/5 (100.0%),5/5 (100.0%),10/10 (100.0%),0.796
+telephony_10db,7,5/5 (100.0%),5/5 (100.0%),10/10 (100.0%),0.808
+telephony_5db,7,5/5 (100.0%),5/5 (100.0%),10/10 (100.0%),0.814

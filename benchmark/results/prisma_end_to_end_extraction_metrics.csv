@@ -1,0 +1,29 @@
+clip_key,condition,utterance_id,prisma_transcript,true_incident,pred_incident,incident_match,true_temp,pred_temp,temp_match,true_dist,pred_dist,dist_match,true_loc,pred_loc,loc_match
+utt_03_clean,clean,utt_03,"temperature -14° चल रहा है, मुरथल ढाबा से 10 kilometers पहले।",reefer_temperature,reefer_temperature,1,-14.0,-14.0,1,10.0,10.0,1,Murthal Dhaba,Murthal Dhaba,1
+utt_07_clean,clean,utt_07,"temperature 15° पहुंच गया है, refer chiller band pad गया शाहाबाद के पास।",reefer_temperature,reefer_temperature,1,15.0,15.0,1,,,1,Shahbad,Shahbad,1
+utt_11_clean,clean,utt_11,"सर, गाड़ी puncture हो गई है और reefer off है वडोदरा bypass से 30 kilometers।",breakdown,breakdown,1,,,1,30.0,30.0,1,Vadodara Bypass,Vadodara Bypass,1
+utt_15_clean,clean,utt_15,"Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",breakdown,breakdown,1,,,1,68.0,68.0,1,Mumbai Pune Expressway,Mumbai Pune Expressway,1
+utt_19_clean,clean,utt_19,"चिल्लर display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",reefer_temperature,reefer_temperature,1,19.0,19.0,1,12.0,12.0,1,Ghaziabad Border,Ghaziabad Border,1
+utt_22_clean,clean,utt_22,"सर, अर्जेंट हेल्प चाहिए, temperature 25 degree हो गया रेवाड़ी बाईपास से 18 kilometers।",reefer_temperature,reefer_temperature,1,25.0,25.0,1,18.0,18.0,1,Rewari Bypass,Rewari Bypass,1
+utt_25_clean,clean,utt_25,"Emergency alert, refer temperature 2° से 18° हो गया केएमपी एक्सप्रेसवे।",reefer_temperature,reefer_temperature,1,18.0,18.0,1,,,1,KMP Expressway,KMP Expressway,1
+utt_03_telephony_8khz,telephony_8khz,utt_03,"temperature -14 degree चल रहा है, मुर्थल ढाबा से 10 kilometers पहले।",reefer_temperature,reefer_temperature,1,-14.0,-14.0,1,10.0,10.0,1,Murthal Dhaba,Murthal Dhaba,1
+utt_07_telephony_8khz,telephony_8khz,utt_07,"temperature 15° पहुंच गया है, refer chiller band pad गया शाहबाद के पास।",reefer_temperature,reefer_temperature,1,15.0,15.0,1,,,1,Shahbad,Shahbad,1
+utt_11_telephony_8khz,telephony_8khz,utt_11,"सर, गाड़ी puncture हो गई है और reefer off है, वडोदरा bypass से 30 kilometers।",breakdown,breakdown,1,,,1,30.0,30.0,1,Vadodara Bypass,Vadodara Bypass,1
+utt_15_telephony_8khz,telephony_8khz,utt_15,"Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",breakdown,breakdown,1,,,1,68.0,68.0,1,Mumbai Pune Expressway,Mumbai Pune Expressway,1
+utt_19_telephony_8khz,telephony_8khz,utt_19,"चिलर display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",reefer_temperature,reefer_temperature,1,19.0,19.0,1,12.0,12.0,1,Ghaziabad Border,Ghaziabad Border,1
+utt_22_telephony_8khz,telephony_8khz,utt_22,"सर, urgent help चाहिए, temperature 25° हो गया रेवाड़ी bypass से 18 kilometers।",reefer_temperature,reefer_temperature,1,25.0,25.0,1,18.0,18.0,1,Rewari Bypass,Rewari Bypass,1
+utt_25_telephony_8khz,telephony_8khz,utt_25,Emergency alert refer temperature 2° से 18° हो गया KMP expressway.,reefer_temperature,reefer_temperature,1,18.0,18.0,1,,,1,KMP Expressway,Kmp Expressway,1
+utt_03_telephony_10db,telephony_10db,utt_03,"temperature -14 degree चल रहा है, मुल्थल ढाबा से 10 kilometers पहले।",reefer_temperature,reefer_temperature,1,-14.0,-14.0,1,10.0,10.0,1,Murthal Dhaba,Murthal Dhaba,1
+utt_07_telephony_10db,telephony_10db,utt_07,"temperature 15 degree पहुंच गया है, refer chiller band pad गया शाहबाद के पास।",reefer_temperature,reefer_temperature,1,15.0,15.0,1,,,1,Shahbad,Shahbad,1
+utt_11_telephony_10db,telephony_10db,utt_11,"सर, गाड़ी puncture हो गई है और reaper off है वडोदरा bypass से 30 km।",breakdown,breakdown,1,,,1,30.0,30.0,1,Vadodara Bypass,Vadodara Bypass,1
+utt_15_telephony_10db,telephony_10db,utt_15,"Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",breakdown,breakdown,1,,,1,68.0,68.0,1,Mumbai Pune Expressway,Mumbai Pune Expressway,1
+utt_19_telephony_10db,telephony_10db,utt_19,"चिलर display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",reefer_temperature,reefer_temperature,1,19.0,19.0,1,12.0,12.0,1,Ghaziabad Border,Ghaziabad Border,1
+utt_22_telephony_10db,telephony_10db,utt_22,"Sir, urgent help chahiye, temperature 25 degree हो गया Rewari bypass से 18 kilometers।",reefer_temperature,reefer_temperature,1,25.0,25.0,1,18.0,18.0,1,Rewari Bypass,Rewari Bypass,1
+utt_25_telephony_10db,telephony_10db,utt_25,Emergency alert: refer temperature 2° से 18° हो गया KMP expressway.,reefer_temperature,reefer_temperature,1,18.0,18.0,1,,,1,KMP Expressway,Kmp Expressway,1
+utt_03_telephony_5db,telephony_5db,utt_03,"temperature -14 degree चल रहा है, मुल्ताल ढाबा से 10 kilometers पहले।",reefer_temperature,reefer_temperature,1,-14.0,-14.0,1,10.0,10.0,1,Murthal Dhaba,Murthal Dhaba,1
+utt_07_telephony_5db,telephony_5db,utt_07,"temperature 15 degree पहुंच गया है, refer chiller band pad गया शाहबाद के पास।",reefer_temperature,reefer_temperature,1,15.0,15.0,1,,,1,Shahbad,Shahbad,1
+utt_11_telephony_5db,telephony_5db,utt_11,"सर, गाड़ी puncture हो गई है और repair off है वडोदरा bypass से 30 km।",breakdown,breakdown,1,,,1,30.0,30.0,1,Vadodara Bypass,Vadodara Bypass,1
+utt_15_telephony_5db,telephony_5db,utt_15,"Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",breakdown,breakdown,1,,,1,68.0,68.0,1,Mumbai Pune Expressway,Mumbai Pune Expressway,1
+utt_19_telephony_5db,telephony_5db,utt_19,"screen display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",reefer_temperature,reefer_temperature,1,19.0,19.0,1,12.0,12.0,1,Ghaziabad Border,Ghaziabad Border,1
+utt_22_telephony_5db,telephony_5db,utt_22,"The surgeons help chahiye temperature 25 degree, वो गया रेवाड़ी bypass से 18 kilometers।",reefer_temperature,reefer_temperature,1,25.0,25.0,1,18.0,18.0,1,Rewari Bypass,Rewari Bypass,1
+utt_25_telephony_5db,telephony_5db,utt_25,Emergency alert: Rifer temperature 2° से 18° हो गया KMP expressway.,reefer_temperature,reefer_temperature,1,18.0,18.0,1,,,1,KMP Expressway,Kmp Expressway,1
