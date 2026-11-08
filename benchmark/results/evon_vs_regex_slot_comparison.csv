@@ -1,0 +1,8 @@
+utterance_id,transcript,true_incident,evon_incident,evon_incident_ok,regex_incident,regex_incident_ok,true_temp,evon_temp,evon_temp_ok,regex_temp,regex_temp_ok,true_dist,evon_dist,evon_dist_ok,regex_dist,regex_dist_ok,true_loc,evon_loc,evon_loc_ok,regex_loc,regex_loc_ok,evon_latency_s
+utt_03,Temperature minus 14 degree chal raha hai Murthal Dhaba se 10 km pehle,reefer_temperature,,0,reefer_temperature,1,-14.0,,0,-14.0,1,10.0,,0,10.0,1,Murthal Dhaba,,0,Murthal Dhaba,1,0.654
+utt_07,Temperature 15 degree pahunch gaya hai reefer chiller band pad gaya Shahbad ke paas,reefer_temperature,,0,reefer_temperature,1,15.0,,0,15.0,1,,,1,,1,Shahbad,,0,Shahbad,1,0.662
+utt_11,Sir gaadi puncture ho gayi hai aur reefer off hai Vadodara Bypass se 30 km,breakdown,,0,breakdown,1,,,1,,1,30.0,,0,30.0,1,Vadodara Bypass,,0,Vadodara Bypass,1,0.549
+utt_15,Breakdown alert gear box jam ho gaya hai Mumbai Pune Expressway km 68,breakdown,,0,breakdown,1,,,1,,1,68.0,,0,68.0,1,Mumbai Pune Expressway,,0,Mumbai Pune Expressway,1,0.588
+utt_19,Chiller display 19 degree dikha raha hai Ghaziabad Border se 12 km aage,reefer_temperature,,0,reefer_temperature,1,19.0,,0,19.0,1,12.0,,0,12.0,1,Ghaziabad Border,,0,Ghaziabad Border,1,0.644
+utt_22,Sir urgent help chahiye temperature 25 degree ho gaya Rewari Bypass se 18 km,reefer_temperature,,0,reefer_temperature,1,25.0,,0,25.0,1,18.0,,0,18.0,1,Rewari Bypass,,0,Rewari Bypass,1,0.531
+utt_25,Emergency alert reefer temperature 2 degree se 18 degree ho gaya KMP Expressway,reefer_temperature,,0,reefer_temperature,1,18.0,,0,18.0,1,,,1,,1,KMP Expressway,,0,Kmp Expressway,1,0.657

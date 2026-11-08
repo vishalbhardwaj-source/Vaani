@@ -1,0 +1,422 @@
+{
+  "utt_03_clean": {
+    "transcript": "temperature -14° चल रहा है, मुरथल ढाबा से 10 kilometers पहले।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-842f-7e80-afa7-46e05394aafd",
+      "transcript": "temperature -14° चल रहा है, मुरथल ढाबा से 10 kilometers पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1795058250427246,
+      "end_to_end_latency": 0.1878819465637207,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.9015278816223145,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_07_clean": {
+    "transcript": "temperature 15° पहुंच गया है, refer chiller band pad गया शाहाबाद के पास।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-8970-7f16-9290-cc99c68366c4",
+      "transcript": "temperature 15° पहुंच गया है, refer chiller band pad गया शाहाबाद के पास।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1741487979888916,
+      "end_to_end_latency": 0.17563319206237793,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.8695235252380371,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_11_clean": {
+    "transcript": "सर, गाड़ी puncture हो गई है और reefer off है वडोदरा bypass से 30 kilometers।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-8e10-7d39-9420-37d6adef5536",
+      "transcript": "सर, गाड़ी puncture हो गई है और reefer off है वडोदरा bypass से 30 kilometers।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.20628738403320312,
+      "end_to_end_latency": 0.20778393745422363,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.8267951011657715,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_15_clean": {
+    "transcript": "Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-92c8-7d9c-a8b0-87e8ccf9e66e",
+      "transcript": "Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15206527709960938,
+      "end_to_end_latency": 0.1580204963684082,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.7316622734069824,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_19_clean": {
+    "transcript": "चिल्लर display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-9739-7e12-8165-e0a84b7aa641",
+      "transcript": "चिल्लर display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1980276107788086,
+      "end_to_end_latency": 0.20987534523010254,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.7751307487487793,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_22_clean": {
+    "transcript": "सर, अर्जेंट हेल्प चाहिए, temperature 25 degree हो गया रेवाड़ी बाईपास से 18 kilometers।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-9bd9-7a57-8a0b-930366324309",
+      "transcript": "सर, अर्जेंट हेल्प चाहिए, temperature 25 degree हो गया रेवाड़ी बाईपास से 18 kilometers।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.20650553703308105,
+      "end_to_end_latency": 0.20868968963623047,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.7809977531433105,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_25_clean": {
+    "transcript": "Emergency alert, refer temperature 2° से 18° हो गया केएमपी एक्सप्रेसवे।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-a0ad-749b-b25f-1cdb2565ac1c",
+      "transcript": "Emergency alert, refer temperature 2° से 18° हो गया केएमपी एक्सप्रेसवे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.18144798278808594,
+      "end_to_end_latency": 0.1834096908569336,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.8058526515960693,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_03_telephony_8khz": {
+    "transcript": "temperature -14 degree चल रहा है, मुर्थल ढाबा से 10 kilometers पहले।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-a561-7d2e-943d-60b76e535850",
+      "transcript": "temperature -14 degree चल रहा है, मुर्थल ढाबा से 10 kilometers पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.18265867233276367,
+      "end_to_end_latency": 0.1841297149658203,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.7997751235961914,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_07_telephony_8khz": {
+    "transcript": "temperature 15° पहुंच गया है, refer chiller band pad गया शाहबाद के पास।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-a9ce-7af8-a1e4-40f10d8bb83d",
+      "transcript": "temperature 15° पहुंच गया है, refer chiller band pad गया शाहबाद के पास।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17512249946594238,
+      "end_to_end_latency": 0.17661619186401367,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.7850041389465332,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_11_telephony_8khz": {
+    "transcript": "सर, गाड़ी puncture हो गई है और reefer off है, वडोदरा bypass से 30 kilometers।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-aecb-7e85-b2c5-55660e9330a3",
+      "transcript": "सर, गाड़ी puncture हो गई है और reefer off है, वडोदरा bypass से 30 kilometers।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.19530439376831055,
+      "end_to_end_latency": 0.19670605659484863,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.8269939422607422,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_15_telephony_8khz": {
+    "transcript": "Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-b33a-7a2e-b255-a75a452141af",
+      "transcript": "Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17101740837097168,
+      "end_to_end_latency": 0.1724550724029541,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.762481689453125,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_19_telephony_8khz": {
+    "transcript": "चिलर display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-b7d1-7e52-a1b6-4a83d7735a3d",
+      "transcript": "चिलर display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.18874812126159668,
+      "end_to_end_latency": 0.19054317474365234,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.7847695350646973,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_22_telephony_8khz": {
+    "transcript": "सर, urgent help चाहिए, temperature 25° हो गया रेवाड़ी bypass से 18 kilometers।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-bd02-7f99-9996-b19b6dc4c823",
+      "transcript": "सर, urgent help चाहिए, temperature 25° हो गया रेवाड़ी bypass से 18 kilometers।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.18750810623168945,
+      "end_to_end_latency": 0.18902802467346191,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.88590407371521,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_25_telephony_8khz": {
+    "transcript": "Emergency alert refer temperature 2° से 18° हो गया KMP expressway.",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-c18e-7894-b253-bad73e1835d2",
+      "transcript": "Emergency alert refer temperature 2° से 18° हो गया KMP expressway.",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17087483406066895,
+      "end_to_end_latency": 0.1723802089691162,
+      "detected_language_code": "en-IN"
+    },
+    "latency": 0.7264347076416016,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_03_telephony_10db": {
+    "transcript": "temperature -14 degree चल रहा है, मुल्थल ढाबा से 10 kilometers पहले।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-c633-7bf8-b6eb-bc1841006401",
+      "transcript": "temperature -14 degree चल रहा है, मुल्थल ढाबा से 10 kilometers पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17706060409545898,
+      "end_to_end_latency": 0.17829036712646484,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.7930970191955566,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_07_telephony_10db": {
+    "transcript": "temperature 15 degree पहुंच गया है, refer chiller band pad गया शाहबाद के पास।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-cb25-725b-b3f6-e76c11473a73",
+      "transcript": "temperature 15 degree पहुंच गया है, refer chiller band pad गया शाहबाद के पास।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17598628997802734,
+      "end_to_end_latency": 0.17740678787231445,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.8586971759796143,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_11_telephony_10db": {
+    "transcript": "सर, गाड़ी puncture हो गई है और reaper off है वडोदरा bypass से 30 km।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-cfb8-7c84-8ca0-71fdcd0b8aa8",
+      "transcript": "सर, गाड़ी puncture हो गई है और reaper off है वडोदरा bypass से 30 km।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.18117308616638184,
+      "end_to_end_latency": 0.18236279487609863,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.7672073841094971,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_15_telephony_10db": {
+    "transcript": "Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-d481-77be-859e-9301c5f67d0c",
+      "transcript": "Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16020870208740234,
+      "end_to_end_latency": 0.16158819198608398,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.8040962219238281,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_19_telephony_10db": {
+    "transcript": "चिलर display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-d8f2-7286-9d24-434f14d4dea6",
+      "transcript": "चिलर display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.20408058166503906,
+      "end_to_end_latency": 0.23887252807617188,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.8117706775665283,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_22_telephony_10db": {
+    "transcript": "Sir, urgent help chahiye, temperature 25 degree हो गया Rewari bypass से 18 kilometers।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-ddb5-7108-9719-74849570e708",
+      "transcript": "Sir, urgent help chahiye, temperature 25 degree हो गया Rewari bypass से 18 kilometers।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1970539093017578,
+      "end_to_end_latency": 0.1985461711883545,
+      "detected_language_code": "en-IN"
+    },
+    "latency": 0.770317792892456,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_25_telephony_10db": {
+    "transcript": "Emergency alert: refer temperature 2° से 18° हो गया KMP expressway.",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-e279-7767-a3f3-9ef44532cfed",
+      "transcript": "Emergency alert: refer temperature 2° से 18° हो गया KMP expressway.",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17841243743896484,
+      "end_to_end_latency": 0.17992663383483887,
+      "detected_language_code": "en-IN"
+    },
+    "latency": 0.8528096675872803,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_03_telephony_5db": {
+    "transcript": "temperature -14 degree चल रहा है, मुल्ताल ढाबा से 10 kilometers पहले।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-e72e-7537-a5eb-b55ca2f28676",
+      "transcript": "temperature -14 degree चल रहा है, मुल्ताल ढाबा से 10 kilometers पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17923235893249512,
+      "end_to_end_latency": 0.18066859245300293,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.8007023334503174,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_07_telephony_5db": {
+    "transcript": "temperature 15 degree पहुंच गया है, refer chiller band pad गया शाहबाद के पास।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-ec79-7012-8e77-d2c0ab07cef1",
+      "transcript": "temperature 15 degree पहुंच गया है, refer chiller band pad गया शाहबाद के पास।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1655564308166504,
+      "end_to_end_latency": 0.167130708694458,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.883103609085083,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_11_telephony_5db": {
+    "transcript": "सर, गाड़ी puncture हो गई है और repair off है वडोदरा bypass से 30 km।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-f125-7abc-8c20-05a000e7d337",
+      "transcript": "सर, गाड़ी puncture हो गई है और repair off है वडोदरा bypass से 30 km।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.18465447425842285,
+      "end_to_end_latency": 0.18637657165527344,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.8174309730529785,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_15_telephony_5db": {
+    "transcript": "Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-f5be-77f7-97b0-25aace6f5c26",
+      "transcript": "Breakdown alert, gearbox jam हो गया है मुंबई पुणे expressway KM 68।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1711568832397461,
+      "end_to_end_latency": 0.17273402214050293,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.7712993621826172,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_19_telephony_5db": {
+    "transcript": "screen display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-fa6e-7a16-940b-791d47bd4bbf",
+      "transcript": "screen display 19° दिखा रहा है, गाजियाबाद border से 12 kilometers आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.18153882026672363,
+      "end_to_end_latency": 0.18308234214782715,
+      "detected_language_code": "hi-IN"
+    },
+    "latency": 0.8156156539916992,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_22_telephony_5db": {
+    "transcript": "The surgeons help chahiye temperature 25 degree, वो गया रेवाड़ी bypass से 18 kilometers।",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc46-ff33-77d0-9e04-8ff0c30fb3d0",
+      "transcript": "The surgeons help chahiye temperature 25 degree, वो गया रेवाड़ी bypass से 18 kilometers।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.2084355354309082,
+      "end_to_end_latency": 0.2100679874420166,
+      "detected_language_code": "en-IN"
+    },
+    "latency": 0.872145414352417,
+    "status_code": 200,
+    "error": null
+  },
+  "utt_25_telephony_5db": {
+    "transcript": "Emergency alert: Rifer temperature 2° से 18° हो गया KMP expressway.",
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1bc47-0406-7d78-bff0-7ea1dffca98c",
+      "transcript": "Emergency alert: Rifer temperature 2° से 18° हो गया KMP expressway.",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17244338989257812,
+      "end_to_end_latency": 0.17380213737487793,
+      "detected_language_code": "en-IN"
+    },
+    "latency": 0.7345654964447021,
+    "status_code": 200,
+    "error": null
+  }
+}

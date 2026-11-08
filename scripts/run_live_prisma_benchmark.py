@@ -31,7 +31,13 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # Load .env
 load_dotenv(PROJECT_ROOT / ".env")
 
-from gnani.client import parse_hindi_number, clean_text
+import re
+from gnani.client import parse_hindi_number
+
+def clean_text(t: str) -> str:
+    t = str(t).lower()
+    t = re.sub(r"[^\w\s]", "", t)
+    return " ".join(t.split())
 
 GNANI_API_KEY = os.getenv("GNANI_API_KEY", "").strip()
 GNANI_PRISMA_URL = os.getenv("GNANI_PRISMA_URL", "https://api.vachana.ai/stt/v3").strip()

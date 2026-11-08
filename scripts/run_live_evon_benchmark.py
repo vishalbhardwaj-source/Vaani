@@ -137,7 +137,7 @@ def run_evon_benchmark():
         true_inc = str(row["incident_type"]).strip()
         true_temp = row["true_temperature_c"]
         true_dist = row["true_distance_km"]
-        true_loc = str(row["location_landmark"]).strip()
+        true_loc = str(row.get("true_location", row.get("location_landmark", ""))).strip()
 
         # 1. Live Evon Extraction
         evon_key = f"evon_{uid}"
