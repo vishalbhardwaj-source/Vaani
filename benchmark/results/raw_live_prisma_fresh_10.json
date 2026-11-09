@@ -1,0 +1,152 @@
+{
+  "fresh_01": {
+    "status_code": 200,
+    "transcript": "सर, refer temperature -18° हो गया है आगरा highway पर 25 kilometers पहले।",
+    "latency_s": 0.862,
+    "raw": {
+      "success": true,
+      "request_id": "01a1bf9e-4074-7006-a4b7-21019195c99a",
+      "transcript": "सर, refer temperature -18° हो गया है आगरा highway पर 25 kilometers पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17878341674804688,
+      "end_to_end_latency": 0.18026137351989746,
+      "detected_language_code": "hi-IN"
+    },
+    "error": null
+  },
+  "fresh_02": {
+    "status_code": 200,
+    "transcript": "emergency breakdown, fan belt टूट गया है मथुरा toll से 15 kilometers आगे।",
+    "latency_s": 0.711,
+    "raw": {
+      "success": true,
+      "request_id": "01a1bf9e-4720-7628-8e2a-bb9acc78b81e",
+      "transcript": "emergency breakdown, fan belt टूट गया है मथुरा toll से 15 kilometers आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17336106300354004,
+      "end_to_end_latency": 0.1754446029663086,
+      "detected_language_code": "hi-IN"
+    },
+    "error": null
+  },
+  "fresh_03": {
+    "status_code": 200,
+    "transcript": "temperature 4° चल रहा है, करनाल bypass से 8 kilometers पे।",
+    "latency_s": 0.717,
+    "raw": {
+      "success": true,
+      "request_id": "01a1bf9e-4dad-7d84-a99b-c4607c36e9ea",
+      "transcript": "temperature 4° चल रहा है, करनाल bypass से 8 kilometers पे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15787434577941895,
+      "end_to_end_latency": 0.15987229347229004,
+      "detected_language_code": "hi-IN"
+    },
+    "error": null
+  },
+  "fresh_04": {
+    "status_code": 200,
+    "transcript": "गाड़ी puncture हो गई है सोनीपत के पास 22 kilometers दूर।",
+    "latency_s": 0.754,
+    "raw": {
+      "success": true,
+      "request_id": "01a1bf9e-5442-7317-a5ba-4163b7d6a478",
+      "transcript": "गाड़ी puncture हो गई है सोनीपत के पास 22 kilometers दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15255236625671387,
+      "end_to_end_latency": 0.18932628631591797,
+      "detected_language_code": "hi-IN"
+    },
+    "error": null
+  },
+  "fresh_05": {
+    "status_code": 200,
+    "transcript": "चिल्लर temperature -5° display हो रहा है जयपुर highway KM 45।",
+    "latency_s": 0.924,
+    "raw": {
+      "success": true,
+      "request_id": "01a1bf9e-5bc6-773b-8149-f3aacc7f9457",
+      "transcript": "चिल्लर temperature -5° display हो रहा है जयपुर highway KM 45।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17898130416870117,
+      "end_to_end_latency": 0.18091917037963867,
+      "detected_language_code": "hi-IN"
+    },
+    "error": null
+  },
+  "fresh_06": {
+    "status_code": 200,
+    "transcript": "भैया, temperature 28° पहुँच गया है, सूरत bypass से 50 kilometers आगे।",
+    "latency_s": 0.737,
+    "raw": {
+      "success": true,
+      "request_id": "01a1bf9e-6256-7af0-b891-ff5070968704",
+      "transcript": "भैया, temperature 28° पहुँच गया है, सूरत bypass से 50 kilometers आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.19308757781982422,
+      "end_to_end_latency": 0.19499540328979492,
+      "detected_language_code": "hi-IN"
+    },
+    "error": null
+  },
+  "fresh_07": {
+    "status_code": 200,
+    "transcript": "traffic jam है, भारी delay होगा इंदौर bypass पर 12 kilometers पहले।",
+    "latency_s": 0.71,
+    "raw": {
+      "success": true,
+      "request_id": "01a1bf9e-691e-7fee-aa6f-d0d6813b70fc",
+      "transcript": "traffic jam है, भारी delay होगा इंदौर bypass पर 12 kilometers पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1489264965057373,
+      "end_to_end_latency": 0.15069270133972168,
+      "detected_language_code": "hi-IN"
+    },
+    "error": null
+  },
+  "fresh_08": {
+    "status_code": 200,
+    "transcript": "refer off है और temperature -22 degree से बढ़ रहा है, अंबाला cant 18 kilometers।",
+    "latency_s": 0.795,
+    "raw": {
+      "success": true,
+      "request_id": "01a1bf9e-6fb9-7311-8352-bcd10052b9fd",
+      "transcript": "refer off है और temperature -22 degree से बढ़ रहा है, अंबाला cant 18 kilometers।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.19700908660888672,
+      "end_to_end_latency": 0.20509743690490723,
+      "detected_language_code": "hi-IN"
+    },
+    "error": null
+  },
+  "fresh_09": {
+    "status_code": 200,
+    "transcript": "breakdown alert, engine गरम हो रहा है, नीमराना industrial area से 30 kilometers दूर।",
+    "latency_s": 0.759,
+    "raw": {
+      "success": true,
+      "request_id": "01a1bf9e-76aa-79b2-8eae-d0f933b3468a",
+      "transcript": "breakdown alert, engine गरम हो रहा है, नीमराना industrial area से 30 kilometers दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.18797779083251953,
+      "end_to_end_latency": 0.1898326873779297,
+      "detected_language_code": "hi-IN"
+    },
+    "error": null
+  },
+  "fresh_10": {
+    "status_code": 200,
+    "transcript": "temperature 14 degree दिखा रहा है बवाल toll plaza से 10 kilometers पहले।",
+    "latency_s": 0.783,
+    "raw": {
+      "success": true,
+      "request_id": "01a1bf9e-7dc4-7817-a542-88da23279a0b",
+      "transcript": "temperature 14 degree दिखा रहा है बवाल toll plaza से 10 kilometers पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17801189422607422,
+      "end_to_end_latency": 0.1801624298095703,
+      "detected_language_code": "hi-IN"
+    },
+    "error": null
+  }
+}

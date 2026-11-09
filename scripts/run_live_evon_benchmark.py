@@ -237,38 +237,37 @@ def run_evon_benchmark():
     df_res.to_csv(COMPARISON_CSV, index=False)
     print(f"\n[+] Itemized slot comparison saved to {COMPARISON_CSV}")
 
-    # Summary table
+    # Summary table computed dynamically from results
     n = len(df_res)
-    summary_data = [
-        {
-            "slot": "Incident Type",
-            "evon_accuracy_pct": round(df_res["evon_incident_ok"].sum() / n * 100.0, 1),
-            "regex_accuracy_pct": round(df_res["regex_incident_ok"].sum() / n * 100.0, 1),
-            "key_finding": "Evon handles diverse paraphrasing; Regex matches dispatch vocabulary keywords."
-        },
-        {
-            "slot": "Temperature (C)",
-            "evon_accuracy_pct": round(df_res["evon_temp_ok"].sum() / n * 100.0, 1),
-            "regex_accuracy_pct": round(df_res["regex_temp_ok"].sum() / n * 100.0, 1),
-            "key_finding": "Regex reliably enforces sign polarity (minus drops) and 18 vs 80 bounds."
-        },
-        {
-            "slot": "Distance (km)",
-            "evon_accuracy_pct": round(df_res["evon_dist_ok"].sum() / n * 100.0, 1),
-            "regex_accuracy_pct": round(df_res["regex_dist_ok"].sum() / n * 100.0, 1),
-            "key_finding": "Both extract distances accurately; Regex strips highway marker prefixes (NH-44)."
-        },
-        {
-            "slot": "Location / Landmark",
-            "evon_accuracy_pct": round(df_res["evon_loc_ok"].sum() / n * 100.0, 1),
-            "regex_accuracy_pct": round(df_res["regex_loc_ok"].sum() / n * 100.0, 1),
-            "key_finding": "Evon excels at open-vocabulary landmarks; Regex detects confusable phonetic pairs."
-        }
+    summary_data = []
+    slots_meta = [
+        ("Incident Type", "evon_incident_ok", "regex_incident_ok"),
+        ("Temperature (C)", "evon_temp_ok", "regex_temp_ok"),
+        ("Distance (km)", "evon_dist_ok", "regex_dist_ok"),
+        ("Location / Landmark", "evon_loc_ok", "regex_loc_ok"),
     ]
+    for slot_label, e_col, r_col in slots_meta:
+        e_corr = int(df_res[e_col].sum())
+        r_corr = int(df_res[r_col].sum())
+        e_acc = round(e_corr / n * 100.0, 1)
+        r_acc = round(r_corr / n * 100.0, 1)
+        if e_acc > r_acc:
+            finding = f"Evon led by +{round(e_acc - r_acc, 1)}% ({e_corr}/{n} vs {r_corr}/{n})"
+        elif r_acc > e_acc:
+            finding = f"Deterministic extractor led by +{round(r_acc - e_acc, 1)}% ({r_corr}/{n} vs {e_corr}/{n})"
+        else:
+            finding = f"Tied at {e_acc}% ({e_corr}/{n})"
+
+        summary_data.append({
+            "slot": slot_label,
+            "evon_accuracy_pct": e_acc,
+            "regex_accuracy_pct": r_acc,
+            "measured_result": finding
+        })
 
     summary_df = pd.DataFrame(summary_data)
     summary_df.to_csv(SUMMARY_CSV, index=False)
-    print(f"[+] Summary saved to {SUMMARY_CSV}\n")
+    print(f"\n[+] Summary saved to {SUMMARY_CSV}\n")
     print(summary_df.to_string(index=False))
 
 

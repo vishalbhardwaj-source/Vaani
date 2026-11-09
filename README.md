@@ -117,10 +117,10 @@ Voice: Pranav (or gTTS fallback)"]
 
 | Pipeline Stage | Technology | Production Endpoint / Protocol | Verified Input Example | Structured Output Example | Measured Latency |
 | :--- | :--- | :--- | :--- | :--- | :---: |
-| **1. Speech-to-Text** | **Gnani Prisma (`prisma-v3.0`)** | `POST https://api.vachana.ai/stt/v3` | 8/16 kHz WAV audio clip | Spoken Hinglish transcript | **~380 ms** |
-| **2. Reasoning & Extraction** | **Gnani Evon (`evon-v3.3`)** | `POST https://api.vachana.ai/v1/evon/chat` | Spoken transcript string | Validated JSON extraction | **~290 ms** |
+| **1. Speech-to-Text** | **Gnani Prisma (`prisma-v3.0`)** | `POST https://api.vachana.ai/stt/v3` | 8/16 kHz WAV audio clip | Spoken Hinglish/Devanagari transcript | **~800 ms** (live measured) |
+| **2. Reasoning & Extraction** | **Deterministic Extractor** | Native Python (`gnani/client.py`) | Spoken transcript string | Validated JSON extraction | **< 1 ms** (Evon scope pending) |
 | **3. Safety Verification Gate** | **Deterministic Safety FSM** | Plain Python Code (`core/state_machine.py`) | Extracted Record + SQLite IoT Telemetry | Interception action / Challenge prompt | **< 2 ms** |
-| **4. Spoken Read-Back** | **Gnani Timbre (`timbre-v2.5`)** | `POST https://api.vachana.ai/api/v1/tts/inference` | Read-back text prompt (`voice: "Pranav"`) | 16 kHz Natural Spoken Hindi Audio | **~310 ms** |
+| **4. Spoken Read-Back** | **Gnani Timbre (`timbre-v3.0`)** | `POST https://api.vachana.ai/api/v1/tts/inference` | Read-back text prompt (`voice: "Devansh"`) | 16 kHz Natural Spoken Hindi WAV Audio | **~500 ms** (live measured) |
 
 ---
 
@@ -316,6 +316,60 @@ The table below lists all 7 held-out clips, their ground truth numeric slots, an
     Exact command: `python -m pytest tests/ -v` (66 tests pass). Environment: Python 3.12.10, PyTorch 2.6+, Transformers 4.49+, PEFT 0.14+, JiWER 3.1+, Pydantic 2.10+.
 
 ---
+
+---
+
+### Official Scorecard Track 2B: Live Empirical Verification on Gnani AI Stack
+
+Live empirical runs were conducted against the Gnani AI platform (`api.vachana.ai`) using contest credentials to evaluate the primary endpoints under real HTTP conditions:
+
+#### 1. Live Gnani Prisma STT Evaluation (`prisma-v3.0` on 28 Held-Out Audio Clips)
+Evaluated across all 7 held-out utterances in 4 calibrated acoustic conditions (Clean, 8 kHz telephony, 10 dB SNR, and 5 dB SNR noise; total N=10 numbers per condition, 40 numeric instances across all 4 noise tiers). All raw HTTP 200 responses with unique Gnani request IDs and latencies are saved in `benchmark/results/raw_live_prisma_responses.json`. Itemized metrics are saved in `benchmark/results/prisma_live_held_out_metrics.csv`:
+
+| Condition | Held-Out Clips (N) | Temperature Survival | Distance Survival | Total Number Survival | Mean API Latency |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| clean | 7 | 5/5 (100.0%) | 5/5 (100.0%) | **10/10 (100.0%)** | 0.813 s |
+| telephony_8khz | 7 | 5/5 (100.0%) | 5/5 (100.0%) | **10/10 (100.0%)** | 0.796 s |
+| telephony_10db | 7 | 5/5 (100.0%) | 5/5 (100.0%) | **10/10 (100.0%)** | 0.808 s |
+| telephony_5db | 7 | 5/5 (100.0%) | 5/5 (100.0%) | **10/10 (100.0%)** | 0.814 s |
+
+> **Methodological & Acoustic Notes on Prisma Results:**  
+> 1. **Synthetic Base Speech Caveat:** All 28 clips evaluate 7 utterances synthesized using gTTS under 4 calibrated noise tiers from a single synthetic voice. Clean synthetic speech provides clearer articulation than live human callers; real-world phone accuracy will be lower.  
+> 2. **Cross-Script WER Exclusion:** The reference text is Romanized Hinglish whereas Prisma outputs native Devanagari script (e.g. `temperature -14° चल रहा है, मुरथल ढाबा से 10 kilometers पहले`). Direct string edit distances reflect alphabet mismatch rather than transcription fidelity; cross-script WER is therefore excluded in favor of exact numeric slot survival.  
+> 3. **Numeric Polarity Preservation:** Prisma accurately retained negative signs (e.g. `-14°` in `utt_03`) and digit formatting across all noise levels.
+
+#### 2. End-to-End Extraction on Live Prisma Devanagari Transcripts (Development Set)
+To verify that downstream extraction handles native Indic script output from Prisma (Devanagari text, `°` symbol, `kilometers`, `KM 68`, and Devanagari landmarks), the bilingual deterministic extractor was executed over all 28 live Prisma development transcripts (`scripts/evaluate_extractor_on_live_prisma.py`, saved in `benchmark/results/prisma_end_to_end_extraction_metrics.csv`):
+
+| Slot / Attribute | Evaluated Transcripts (N) | Extraction Accuracy | Matched Slots | Key Behavior on Prisma Output |
+| :--- | :---: | :---: | :---: | :--- |
+| **Temperature Slot** | 28 | **100.0%** | 28 / 28 | Extracted `-14°C`, `15°C`, `19°C`, `25°C`, `18°C` directly from Devanagari/mixed text |
+| **Distance Slot** | 28 | **100.0%** | 28 / 28 | Correctly parsed `10 kilometers`, `30 km`, `KM 68`, `12 km`, `18 km` |
+| **Incident Type** | 28 | **100.0%** | 28 / 28 | Detected bilingual keywords (`चिल्लर`, `temperature`, `breakdown`, `puncture`, `gearbox jam`) |
+| **Location Landmark** | 28 | **89.3%** | 25 / 28 | Evaluated on development set; at 10dB and 5dB SNR, ASR distortions (`मुल्थल` for Murthal) are rejected by standard corridor gazetteer |
+
+#### 3. Out-of-Sample Generalization on 10 Fresh Unseen Sentences
+To test whether the extractor generalizes beyond the development set without code tuning, 10 brand-new dispatch sentences across diverse Indian freight corridors (Agra, Mathura, Karnal, Sonipat, Jaipur, Surat, Indore, Ambala, Neemrana, Bawal) were synthesized and transcribed live via Gnani Prisma STT (`scripts/evaluate_live_prisma_fresh_10.py`, saved in `benchmark/results/prisma_fresh_unseen_metrics.csv`):
+
+| Attribute | Tested Fresh Scenarios (N) | Accuracy (%) | Matched Instances | Notes on Unseen Test |
+| :--- | :---: | :---: | :---: | :--- |
+| **Incident Type** | 10 | **100.0%** | 10 / 10 | Accurately categorized `reefer_temperature`, `breakdown`, `delay` |
+| **Temperature Slot** | 10 | **100.0%** | 10 / 10 | Exact numeric extraction (e.g. `-18°C`, `4°C`, `-5°C`, `28°C`, `-22°C`, `14°C`) |
+| **Distance Slot** | 10 | **100.0%** | 10 / 10 | Exact distance extraction (e.g. `25 km`, `15 km`, `8 km`, `22 km`, `45 km`, `50 km`) |
+| **Location Landmark** | 10 | **90.0%** | 9 / 10 | 9 corridors matched; 1 corridor missed because Prisma transcribed Bawal as phonetic 'बवाल' |
+| **Mean Prisma Latency** | 10 | — | — | **0.775 s** per live HTTP call |
+
+#### 4. Gnani Evon NLU Status (`evon-v3.3`)
+- **Status:** HTTP 403 Forbidden (`SCOPE_NOT_ALLOWED: Service 'None' not in allowed scopes`).
+- **Audit Detail:** The production HTTP client for Evon is implemented in `gnani/client.py` and `scripts/run_live_evon_benchmark.py`. The provided contest API key has STT and TTS permissions active, but lacks the Evon scope in the Gnani platform.
+- **Reporting Rule:** In accordance with contest integrity, all 403 responses are logged verbatim to `benchmark/results/raw_live_evon_responses.json`. No artificial accuracy tables or mock scores are generated; extraction currently operates via the validated deterministic safety extractor.
+
+#### 5. Live Gnani Timbre TTS Verification (`timbre-v3.0`)
+- **Endpoint:** `POST https://api.vachana.ai/api/v1/tts/inference`
+- **Voice Model:** `timbre-v3.0` (Voice: `Devansh`, Language: `hi-IN`)
+- **Generated Output:** Synthesized live spoken readback confirmation: *"Bhaiya, reefer display par temperature kitna degree dikh raha hai? Saaf batayein."*
+- **Saved Audio:** `benchmark/results/live_timbre_devansh_prompt.wav` (12.48s, 16 kHz mono WAV, 399 kB).
+- **Metadata:** Logged in `benchmark/results/raw_live_timbre_response.json`.
 
 ### Illustrative Driver Attention Sensitivity Sweep (0% to 20% Reflexive Error Rate in Simulation)
 

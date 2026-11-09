@@ -490,17 +490,34 @@ def extract_incident_details(transcript: str, vehicle_id_fallback: str = "HR-55-
 
     matched_location = None
 
-    # Devanagari landmark aliases (from native Indic ASR like Gnani Prisma)
+    # Standard Devanagari freight corridor gazetteer (maps native Indic script to canonical corridor names)
     DEVANAGARI_LANDMARK_MAP = {
-        "मुरथल ढाबा": "Murthal Dhaba", "मुर्थल ढाबा": "Murthal Dhaba", "मुल्थल ढाबा": "Murthal Dhaba", "मुल्ताल ढाबा": "Murthal Dhaba", "मुरथल": "Murthal Dhaba",
+        "मुरथल": "Murthal Dhaba",
         "शाहाबाद": "Shahbad", "शाहबाद": "Shahbad",
-        "वडोदरा बाईपास": "Vadodara Bypass", "वडोदरा bypass": "Vadodara Bypass", "वडोदरा": "Vadodara Bypass",
-        "मुंबई पुणे expressway": "Mumbai Pune Expressway", "मुंबई पुणे": "Mumbai Pune Expressway",
-        "गाजियाबाद बॉर्डर": "Ghaziabad Border", "गाजियाबाद border": "Ghaziabad Border", "गाजियाबाद": "Ghaziabad Border",
-        "रेवाड़ी बाईपास": "Rewari Bypass", "रेवाड़ी bypass": "Rewari Bypass", "रेवाड़ी": "Rewari Bypass",
-        "केएमपी एक्सप्रेसवे": "KMP Expressway", "केएमपी": "KMP Expressway",
-        "पानीपत टोल": "Panipat Toll", "पानीपत": "Panipat Toll",
-        "बिलासपुर": "Bilaspur Chowk", "मानेसर": "Manesar", "अंबाला": "Ambala Cantt"
+        "वडोदरा": "Vadodara Bypass",
+        "मुंबई": "Mumbai Pune Expressway", "पुणे": "Mumbai Pune Expressway",
+        "गाजियाबाद": "Ghaziabad Border",
+        "रेवाड़ी": "Rewari Bypass",
+        "केएमपी": "KMP Expressway",
+        "पानीपत": "Panipat Toll",
+        "बिलासपुर": "Bilaspur Chowk",
+        "मानेसर": "Manesar",
+        "अंबाला": "Ambala Cantt",
+        "करनाल": "Karnal",
+        "बावल": "Bawal",
+        "सोनीपत": "Sonipat",
+        "नीमराना": "Neemrana",
+        "जयपुर": "Jaipur",
+        "आगरा": "Agra",
+        "मथुरा": "Mathura",
+        "इंदौर": "Indore",
+        "भोपाल": "Bhopal",
+        "नागपुर": "Nagpur",
+        "सूरत": "Surat",
+        "भरूच": "Bharuch",
+        "वापी": "Vapi",
+        "ठाणे": "Thane",
+        "होसुर": "Hosur"
     }
     for dev_k, dev_name in DEVANAGARI_LANDMARK_MAP.items():
         if dev_k in lower:

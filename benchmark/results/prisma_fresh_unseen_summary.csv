@@ -1,0 +1,2 @@
+dataset,incident_accuracy,temperature_accuracy,distance_accuracy,location_accuracy,mean_prisma_latency_s
+Fresh Unseen Evaluation (N=10 Sentences),10/10 (100.0%),10/10 (100.0%),10/10 (100.0%),9/10 (90.0%),0.775
