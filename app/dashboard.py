@@ -109,17 +109,6 @@ st.markdown("""
         font-weight: 500;
         margin-top: 4px;
     }
-    .badge-simulated {
-        background: rgba(245, 158, 11, 0.15);
-        color: #FBBF24;
-        border: 1px solid rgba(245, 158, 11, 0.3);
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-    }
 
     /* Metric Card */
     .telematics-card {
@@ -316,10 +305,6 @@ st.markdown("""
         <div class="brand-subtitle">
             Gnani AI Challenge • Target Award: <strong>Noisy Telephonic Audio</strong> • Safety Gate Architecture
         </div>
-    </div>
-    <div style="text-align: right;">
-        <span class="badge-simulated">⚠️ Simulated Fleet Data</span>
-        <div style="font-size: 0.75rem; color: #94A3B8; margin-top: 4px;">Code Gate: Confirmation Unlocks Dispatch</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
