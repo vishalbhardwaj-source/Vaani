@@ -3,9 +3,9 @@ Vaani: Voice Dispatcher Dashboard
 Built for the Great Indian AI Internship Challenge by Gnani AI
 Track: Noisy Telephonic Audio
 
-Design: Crafted using UI/UX Pro Max (Operate mode) and Impeccable principles.
+Design: Engineered under Impeccable principles (Operate mode).
 Features:
-- Live Hinglish Speech-to-Text (Prisma STT)
+- Live Hinglish Speech-to-Text (Whisper-LoRA / Prisma STT)
 - Pydantic-validated extraction gate (Evon LLM)
 - Finite State Machine visual HUD
 - Spoken Read-Back Confirmation (Timbre TTS)
@@ -17,13 +17,14 @@ Features:
 import sys
 import io
 import time
+import os
+import html
 from pathlib import Path
 import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-import html
 
 # Setup python path
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -45,7 +46,7 @@ from benchmark.make_noisy import process_audio_file, resample_audio, apply_bandp
 import soundfile as sf
 
 # -------------------------------------------------------------
-# Streamlit Page Config & Custom Styling (Impeccable & UI/UX Pro Max)
+# Streamlit Page Config & Custom Styling (Impeccable Operate Mode)
 # -------------------------------------------------------------
 st.set_page_config(
     page_title="Vaani // Voice Dispatcher",
@@ -58,154 +59,459 @@ st.set_page_config(
 init_db()
 init_learning_db()
 
-# Custom CSS for Industrial Telematics Command Center
+# Custom CSS for Industrial Telematics Command Center (Impeccable Operate Mode)
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
     :root {
-        --bg-main: #0B0F19;
-        --card-bg: #111827;
-        --card-border: #1F2937;
-        --accent-blue: #3B82F6;
-        --accent-cyan: #06B6D4;
-        --status-green: #10B981;
-        --status-amber: #F59E0B;
-        --status-red: #EF4444;
-        --text-muted: #94A3B8;
-        --text-bright: #F8FAFC;
+        --bg-base: #0D1117;
+        --bg-surface: #161B22;
+        --bg-elevated: #21262D;
+        --border-subtle: #30363D;
+        --border-muted: #21262D;
+        --border-focus: #58A6FF;
+        --text-primary: #F0F6FC;
+        --text-secondary: #8B949E;
+        --text-tertiary: #6E7681;
+        --accent-blue: #58A6FF;
+        --accent-blue-bg: rgba(88, 166, 255, 0.1);
+        --accent-blue-border: rgba(88, 166, 255, 0.3);
+        --status-pass: #2EA043;
+        --status-pass-bg: rgba(46, 160, 67, 0.1);
+        --status-pass-border: rgba(46, 160, 67, 0.3);
+        --status-warn: #D29922;
+        --status-warn-bg: rgba(210, 153, 34, 0.1);
+        --status-warn-border: rgba(210, 153, 34, 0.3);
+        --status-fail: #F85149;
+        --status-fail-bg: rgba(248, 81, 73, 0.1);
+        --status-fail-border: rgba(248, 81, 73, 0.3);
+        --font-sans: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
     }
 
+    /* Base application surfaces */
     .stApp {
-        background-color: var(--bg-main);
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        color: var(--text-bright);
+        background-color: var(--bg-base);
+        font-family: var(--font-sans);
+        color: var(--text-primary);
     }
 
-    /* Top Brand Bar */
-    .brand-header {
-        background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
-        border: 1px solid var(--card-border);
-        border-radius: 12px;
-        padding: 18px 24px;
-        margin-bottom: 24px;
+    /* Browser surfaces: selection, scrollbar & focus */
+    ::selection {
+        background: #1F6FEB;
+        color: #FFFFFF;
+    }
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: var(--bg-base);
+    }
+    ::-webkit-scrollbar-thumb {
+        background: var(--border-subtle);
+        border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--accent-blue);
+    }
+
+    /* Streamlit structural overrides */
+    header[data-testid="stHeader"] {
+        background-color: transparent !important;
+    }
+    section[data-testid="stSidebar"] {
+        background-color: var(--bg-surface) !important;
+        border-right: 1px solid var(--border-subtle) !important;
+    }
+    section[data-testid="stSidebar"] hr {
+        border-color: var(--border-subtle) !important;
+    }
+
+    /* Tab navigation */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 6px;
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        padding: 5px;
+        margin-bottom: 20px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 38px;
+        padding: 0 16px;
+        border-radius: 6px;
+        color: var(--text-secondary) !important;
+        font-weight: 500;
+        font-size: 0.85rem;
+        font-family: var(--font-sans);
+        border: none !important;
+        background: transparent !important;
+        transition: all 0.15s ease-in-out;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: var(--bg-elevated) !important;
+        color: var(--text-primary) !important;
+        font-weight: 600 !important;
+        border: 1px solid var(--border-subtle) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+    .stTabs [data-baseweb="tab-highlight"] {
+        display: none !important;
+    }
+
+    /* Top Masthead Header */
+    .masthead-container {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: 10px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        backdrop-filter: blur(10px);
+        flex-wrap: wrap;
+        gap: 16px;
     }
-    .brand-title {
-        font-size: 1.6rem;
+    .masthead-brand {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .masthead-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--status-pass);
+        font-family: var(--font-mono);
+    }
+    .badge-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--status-pass);
+        box-shadow: 0 0 8px var(--status-pass);
+        animation: pulse-dot 2s infinite ease-in-out;
+    }
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.85); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .badge-dot {
+            animation: none !important;
+            opacity: 1 !important;
+        }
+    }
+    .masthead-title {
+        font-size: 1.65rem;
         font-weight: 800;
-        letter-spacing: -0.5px;
-        background: linear-gradient(90deg, #60A5FA, #34D399);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        letter-spacing: -0.02em;
+        color: var(--text-primary);
+        margin: 0;
+        line-height: 1.2;
+    }
+    .masthead-title .sep {
+        color: var(--border-subtle);
+        margin: 0 6px;
+        font-weight: 400;
+    }
+    .masthead-desc {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
         margin: 0;
     }
-    .brand-subtitle {
-        color: var(--text-muted);
-        font-size: 0.85rem;
-        font-weight: 500;
-        margin-top: 4px;
+    .masthead-telemetry {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .telemetry-tag {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-subtle);
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .telemetry-tag.active {
+        color: var(--accent-blue);
+        border-color: var(--accent-blue-border);
+        background: var(--accent-blue-bg);
     }
 
-    /* Metric Card */
-    .telematics-card {
-        background: var(--card-bg);
-        border: 1px solid var(--card-border);
-        border-radius: 10px;
+    /* High-density Telematics Panels */
+    .control-panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
         padding: 16px;
         margin-bottom: 14px;
     }
-    .telematics-label {
-        color: var(--text-muted);
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .panel-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
     }
-    .telematics-value {
-        font-size: 1.3rem;
+    .panel-label {
+        color: var(--text-secondary);
+        font-size: 0.72rem;
         font-weight: 700;
-        color: #FFFFFF;
-        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+    .panel-meta {
+        font-size: 0.75rem;
+        font-family: var(--font-mono);
+        color: var(--accent-blue);
+        font-variant-numeric: tabular-nums;
+    }
+    .panel-value-primary {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+    }
+    .panel-caption {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
         margin-top: 4px;
     }
 
     /* State Machine HUD */
-    .fsm-container {
-        display: flex;
-        gap: 8px;
-        padding: 12px;
-        background: rgba(17, 24, 39, 0.8);
-        border-radius: 10px;
-        border: 1px solid var(--card-border);
-        margin-bottom: 20px;
-        overflow-x: auto;
-    }
-    .fsm-step {
-        flex: 1;
-        text-align: center;
-        padding: 8px 6px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        font-family: 'JetBrains Mono', monospace;
-        background: #1E293B;
-        color: #64748B;
-        border: 1px solid transparent;
-        transition: all 0.3s ease;
-    }
-    .fsm-step.active {
-        background: rgba(16, 185, 129, 0.2);
-        color: #34D399;
-        border: 1px solid #10B981;
-        box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
-    }
-    .fsm-step.warning {
-        background: rgba(245, 158, 11, 0.2);
-        color: #FBBF24;
-        border: 1px solid #F59E0B;
-    }
-    .fsm-step.escalated {
-        background: rgba(239, 68, 68, 0.2);
-        color: #F87171;
-        border: 1px solid #EF4444;
-    }
-
-    /* Read-Back Box */
-    .readback-box {
-        background: rgba(6, 182, 212, 0.08);
-        border-left: 4px solid var(--accent-cyan);
-        border-radius: 0 8px 8px 0;
-        padding: 16px;
-        margin: 14px 0;
-    }
-    .readback-title {
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: var(--accent-cyan);
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-    }
-    .readback-text {
-        font-size: 1.15rem;
-        font-weight: 600;
-        color: #E2E8F0;
-        margin-top: 6px;
-    }
-
-    /* Verification Gate Alert */
-    .gate-shield {
+    .fsm-pipeline {
         display: flex;
         align-items: center;
-        gap: 12px;
-        background: rgba(16, 185, 129, 0.1);
-        border: 1px solid rgba(16, 185, 129, 0.3);
+        gap: 6px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
         border-radius: 8px;
-        padding: 12px 16px;
-        margin-top: 10px;
+        padding: 10px;
+        margin-bottom: 18px;
+        overflow-x: auto;
+    }
+    .fsm-node {
+        flex: 1;
+        min-width: 90px;
+        text-align: center;
+        padding: 8px 4px;
+        border-radius: 5px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        font-family: var(--font-mono);
+        background: var(--bg-elevated);
+        color: var(--text-tertiary);
+        border: 1px solid var(--border-subtle);
+        transition: all 0.2s ease;
+    }
+    .fsm-node.active {
+        background: var(--status-pass-bg);
+        color: var(--status-pass);
+        border-color: var(--status-pass);
+        box-shadow: 0 0 10px rgba(46, 160, 67, 0.25);
+    }
+    .fsm-node.warning {
+        background: var(--status-warn-bg);
+        color: var(--status-warn);
+        border-color: var(--status-warn);
+    }
+    .fsm-node.escalated {
+        background: var(--status-fail-bg);
+        color: var(--status-fail);
+        border-color: var(--status-fail);
+    }
+
+    /* Safety Interlock Read-Back Box (No side tabs, balanced 1px border) */
+    .safety-interlock-panel {
+        background: rgba(88, 166, 255, 0.05);
+        border: 1px solid var(--accent-blue-border);
+        border-radius: 8px;
+        padding: 16px;
+        margin: 16px 0;
+    }
+    .interlock-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    .interlock-title-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .interlock-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--accent-blue);
+        font-family: var(--font-mono);
+    }
+    .interlock-tag {
+        font-size: 0.7rem;
+        font-family: var(--font-mono);
+        font-weight: 600;
+        color: var(--text-secondary);
+        background: var(--bg-elevated);
+        padding: 2px 8px;
+        border-radius: 4px;
+        border: 1px solid var(--border-subtle);
+    }
+    .interlock-prompt {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        line-height: 1.4;
+        margin-bottom: 10px;
+    }
+    .interlock-subtext {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* ASR Telemetry Stream Box */
+    .asr-stream-panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        padding: 14px 16px;
+        margin-top: 14px;
+    }
+    .asr-stream-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    .asr-badge {
+        font-size: 0.72rem;
+        font-weight: 700;
+        font-family: var(--font-mono);
+        letter-spacing: 0.05em;
+        color: var(--accent-blue);
+        text-transform: uppercase;
+    }
+    .asr-stats {
+        font-size: 0.75rem;
+        font-family: var(--font-mono);
+        color: var(--status-pass);
+        font-variant-numeric: tabular-nums;
+    }
+    .asr-transcript {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        line-height: 1.4;
+    }
+
+    /* Dispatch Gate Unlocked Alert */
+    .gate-unlocked-card {
+        background: var(--status-pass-bg);
+        border: 1px solid var(--status-pass-border);
+        border-radius: 8px;
+        padding: 16px;
+        margin-top: 14px;
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+    }
+    .gate-unlocked-icon {
+        background: var(--status-pass);
+        color: #FFFFFF;
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+    .gate-unlocked-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--status-pass);
+        margin-bottom: 4px;
+    }
+    .gate-unlocked-desc {
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        line-height: 1.4;
+    }
+
+    /* Metric cards in Plotly / Streamlit */
+    div[data-testid="stMetricValue"] {
+        font-family: var(--font-mono) !important;
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        font-variant-numeric: tabular-nums !important;
+        color: var(--text-primary) !important;
+    }
+    div[data-testid="stMetricLabel"] {
+        font-family: var(--font-sans) !important;
+        font-size: 0.72rem !important;
+        font-weight: 600 !important;
+        color: var(--text-secondary) !important;
+        letter-spacing: 0.05em !important;
+        text-transform: uppercase !important;
+    }
+
+    /* Buttons */
+    .stButton > button {
+        font-family: var(--font-sans) !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        border-radius: 6px !important;
+        transition: all 0.15s ease-in-out !important;
+    }
+    .stButton > button[kind="primary"] {
+        background-color: var(--status-pass) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #FFFFFF !important;
+    }
+    .stButton > button[kind="primary"]:hover {
+        background-color: #38B252 !important;
+        box-shadow: 0 0 10px rgba(46, 160, 67, 0.35) !important;
+    }
+    .stButton > button[kind="secondary"] {
+        background-color: var(--bg-elevated) !important;
+        border: 1px solid var(--border-subtle) !important;
+        color: var(--text-primary) !important;
+    }
+    .stButton > button[kind="secondary"]:hover {
+        background-color: var(--border-subtle) !important;
+        border-color: var(--text-secondary) !important;
+    }
+
+    /* Typography rhythm */
+    h1, h2, h3, h4 {
+        font-family: var(--font-sans) !important;
+        color: var(--text-primary) !important;
+        letter-spacing: -0.01em !important;
+    }
+    p, span, label {
+        font-family: var(--font-sans);
+    }
+    code, pre {
+        font-family: var(--font-mono) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -231,11 +537,10 @@ if "audio_to_play" not in st.session_state:
 # -------------------------------------------------------------
 # Sidebar: ASR, LLM Provider & Continuous Learning Engine
 # -------------------------------------------------------------
-import os
 with st.sidebar:
-    st.markdown("### 🎙️ Speech-to-Text Engine")
+    st.markdown("### Speech-to-Text Engine")
     asr_engine_option = st.selectbox(
-        "ASR Model Architecture",
+        "ASR Architecture",
         options=[
             "Fine-Tuned Whisper-LoRA (Local RTX 5070 GPU)",
             "Gnani Prisma STT (Cloud)",
@@ -245,17 +550,17 @@ with st.sidebar:
     )
     if "Whisper" in asr_engine_option:
         st.markdown("""
-        <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; padding: 6px 10px; font-size: 0.75rem; color: #60A5FA; margin-bottom: 8px;">
-            ⚡ <strong>RTX 5070 Local Engine</strong><br>Whisper-LoRA fine-tuned on 8 kHz Hinglish dispatch recordings.
+        <div style="background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.3); border-radius: 6px; padding: 8px 12px; font-size: 0.75rem; color: #58A6FF; margin-bottom: 8px;">
+            <strong>RTX 5070 Engine Active</strong><br>Whisper-LoRA fine-tuned on 8 kHz Hinglish dispatch recordings.
         </div>
         """, unsafe_allow_html=True)
     elif "Prisma" in asr_engine_option:
-        st.caption("☁️ **Cloud STT Active:** Gnani Prisma API endpoint.")
+        st.caption("Cloud STT Active: Gnani Prisma API endpoint.")
     else:
-        st.caption("🧪 **Simulation Active:** Deterministic acoustic confusion rules.")
+        st.caption("Simulation Active: Deterministic acoustic confusion rules.")
 
     st.markdown("---")
-    st.markdown("### 🧠 LLM & Learning Engine")
+    st.markdown("### LLM & Extraction Engine")
     llm_provider = st.selectbox(
         "Model Architecture",
         options=[
@@ -278,12 +583,12 @@ with st.sidebar:
             st.success("Gnani API linked")
 
     st.markdown("---")
-    st.markdown("#### 🔄 Continuous Learning Loop")
+    st.markdown("### Continuous Learning Loop")
     st.markdown("""
-    <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 10px; font-size: 0.8rem;">
-        <div style="font-weight: 700; color: #34D399;">🟢 ACTIVE LEARNING ENABLED</div>
-        <div style="color: #94A3B8; margin-top: 4px;">
-            Driver read-back feedback automatically updates in-context memory and phonetic rules.
+    <div style="background: rgba(46, 160, 67, 0.1); border: 1px solid rgba(46, 160, 67, 0.3); border-radius: 6px; padding: 10px; font-size: 0.78rem;">
+        <div style="font-weight: 700; color: #2EA043;">ACTIVE LEARNING CLOSED LOOP</div>
+        <div style="color: #8B949E; margin-top: 4px; line-height: 1.4;">
+            Driver read-back interventions dynamically update in-context memory and disambiguation rules.
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -291,19 +596,35 @@ with st.sidebar:
     try:
         corr_c = len(get_learned_corrections(limit=100))
         rule_c = len(get_adaptive_rules())
-        st.caption(f"💾 **Memory Store:** {corr_c} driver corrections • {rule_c} adaptive phonetic rules active")
+        st.caption(f"Memory Store: {corr_c} driver corrections • {rule_c} adaptive phonetic rules active")
     except Exception:
         pass
 
+
 # -------------------------------------------------------------
-# Top Navigation Header
+# Top Masthead Header (Restrained, Authoritative, No Slop)
 # -------------------------------------------------------------
 st.markdown("""
-<div class="brand-header">
-    <div>
-        <h1 class="brand-title">🎙️ VAANI // VOICE DISPATCHER</h1>
-        <div class="brand-subtitle">
-            Gnani AI Challenge • Target Award: <strong>Noisy Telephonic Audio</strong> • Safety Gate Architecture
+<div class="masthead-container">
+    <div class="masthead-brand">
+        <div class="masthead-badge">
+            <span class="badge-dot"></span>
+            <span>Telematics Control Tower // Active Highway Safety Gate</span>
+        </div>
+        <h1 class="masthead-title">VAANI<span class="sep">//</span>VOICE DISPATCHER</h1>
+        <p class="masthead-desc">
+            Gnani AI Challenge • Target Award: <strong>Noisy Telephonic Audio</strong> • Deterministic Safety Gate Architecture
+        </p>
+    </div>
+    <div class="masthead-telemetry">
+        <div class="telemetry-tag active">
+            <span>GATE INTERLOCK: ARMED</span>
+        </div>
+        <div class="telemetry-tag">
+            <span>8 kHz GSM CHANNEL ACTIVE</span>
+        </div>
+        <div class="telemetry-tag">
+            <span>VERIFIED ZERO-DISPATCH ERROR</span>
         </div>
     </div>
 </div>
@@ -311,11 +632,11 @@ st.markdown("""
 
 # Main Navigation Tabs
 tab_console, tab_benchmark, tab_learning, tab_training, tab_architecture = st.tabs([
-    "🚛 Live Dispatch Console",
-    "📊 Empirical Benchmark & Proof",
-    "📋 Offline Confusion Audit Queue",
-    "📈 Dataset Training Ledger",
-    "⚙️ Architecture & Safety Gate"
+    "Live Dispatch Console",
+    "Empirical Benchmark & Proof",
+    "Offline Confusion Audit Queue",
+    "Dataset Training Ledger",
+    "Architecture & Safety Gate"
 ])
 
 
@@ -329,7 +650,7 @@ with tab_console:
     # LEFT COLUMN: Telematics & Vehicle State
     # ---------------------------------------------------------
     with col_left:
-        st.subheader("🚛 Vehicle Telemetry")
+        st.markdown("#### Vehicle Telemetry")
         
         vehicles = list_vehicles()
         vehicle_map = {v.vehicle_id: v for v in vehicles}
@@ -345,41 +666,41 @@ with tab_console:
 
         # Vehicle Info Card
         temp_delta = v_data.current_temp_c - v_data.target_temp_c
-        temp_color = "#10B981" if abs(temp_delta) < 2.0 else ("#F59E0B" if temp_delta < 5.0 else "#EF4444")
+        temp_color = "var(--status-pass)" if abs(temp_delta) < 2.0 else ("var(--status-warn)" if temp_delta < 5.0 else "var(--status-fail)")
 
         st.markdown(f"""
-        <div class="telematics-card">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span class="telematics-label">DRIVER</span>
-                <span style="font-size: 0.8rem; color: #38BDF8; font-family: monospace;">{html.escape(str(v_data.driver_phone))}</span>
+        <div class="control-panel">
+            <div class="panel-header-row">
+                <span class="panel-label">DRIVER PROFILE</span>
+                <span class="panel-meta">{html.escape(str(v_data.driver_phone))}</span>
             </div>
-            <div style="font-size: 1.1rem; font-weight: 700; color: #FFF; margin-top: 2px;">{html.escape(str(v_data.driver_name))}</div>
-            <div style="margin-top: 10px;" class="telematics-label">ROUTE & LOCATION</div>
-            <div style="font-size: 0.9rem; color: #CBD5E1;">{html.escape(str(v_data.route))}</div>
-            <div style="font-size: 0.8rem; color: #94A3B8; margin-top: 2px;">📍 {html.escape(str(v_data.last_known_location))}</div>
+            <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">{html.escape(str(v_data.driver_name))}</div>
+            <div style="margin-top: 10px;" class="panel-label">ACTIVE ROUTE & WAYPOINT</div>
+            <div style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 2px;">{html.escape(str(v_data.route))}</div>
+            <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">Milestone: {html.escape(str(v_data.last_known_location))}</div>
         </div>
         """, unsafe_allow_html=True)
 
         col_t1, col_t2 = st.columns(2)
         with col_t1:
             st.markdown(f"""
-            <div class="telematics-card">
-                <div class="telematics-label">TARGET TEMP</div>
-                <div class="telematics-value" style="color: #60A5FA;">{v_data.target_temp_c}°C</div>
-                <div style="font-size: 0.7rem; color: #64748B;">{html.escape(str(v_data.cargo_type))}</div>
+            <div class="control-panel">
+                <div class="panel-label">TARGET SETPOINT</div>
+                <div class="panel-value-primary" style="color: var(--accent-blue);">{v_data.target_temp_c}°C</div>
+                <div class="panel-caption">{html.escape(str(v_data.cargo_type))}</div>
             </div>
             """, unsafe_allow_html=True)
         with col_t2:
             st.markdown(f"""
-            <div class="telematics-card">
-                <div class="telematics-label">CURRENT SENSOR</div>
-                <div class="telematics-value" style="color: {temp_color};">{v_data.current_temp_c}°C</div>
-                <div style="font-size: 0.7rem; color: {temp_color};">Δ {temp_delta:+.1f}°C breach</div>
+            <div class="control-panel">
+                <div class="panel-label">LIVE SENSOR</div>
+                <div class="panel-value-primary" style="color: {temp_color};">{v_data.current_temp_c}°C</div>
+                <div class="panel-caption" style="color: {temp_color};">Δ {temp_delta:+.1f}°C excursion</div>
             </div>
             """, unsafe_allow_html=True)
 
         # Audio Degradation Controls
-        st.subheader("🔊 Audio Channel Simulation")
+        st.markdown("#### Audio Channel Simulation")
         noise_mode = st.radio(
             "Channel Acoustic Condition",
             options=["clean", "telephony_8khz", "telephony_10db", "telephony_5db"],
@@ -393,7 +714,7 @@ with tab_console:
         )
         st.session_state.noise_condition = noise_mode
 
-        st.info("💡 **Demo Tip:** Use headphones during live testing so your microphone does not pick up the agent's voice.")
+        st.caption("Acoustic simulation: GSM bandpass filtering combined with real Indian highway cabin rumble.")
 
     # ---------------------------------------------------------
     # MIDDLE COLUMN: Voice Interaction & FSM HUD
@@ -402,13 +723,13 @@ with tab_console:
         ctrl: DialogueController = st.session_state.controller
 
         # State Machine Progress HUD
-        st.subheader("⚡ Dialogue State Machine")
+        st.markdown("#### Dialogue State Machine Interlock")
         current_st = ctrl.state.value
 
         states_order = ["LISTENING", "EXTRACTING", "CONFIRMING", "ACTING", "DONE"]
-        hud_html = '<div class="fsm-container">'
+        hud_html = '<div class="fsm-pipeline">'
         for s in states_order:
-            cls = "fsm-step"
+            cls = "fsm-node"
             if s == current_st:
                 cls += " active"
             elif current_st == "CORRECTING" and s == "CONFIRMING":
@@ -420,7 +741,7 @@ with tab_console:
         st.markdown(hud_html, unsafe_allow_html=True)
 
         # Audio Input: Live Mic or Sample Audio
-        st.markdown("#### 🎙️ Driver Speech Input")
+        st.markdown("#### Driver Voice Ingestion")
         input_type = st.radio("Input Source", ["Pre-recorded Benchmark Clip", "Live Microphone (st.audio_input)"], horizontal=True)
 
         audio_bytes = None
@@ -453,9 +774,9 @@ with tab_console:
         # Process Driver Report Button
         col_btn1, col_btn2 = st.columns([1, 1])
         with col_btn1:
-            if st.button("🚀 Process Voice Report", type="primary", use_container_width=True):
+            if st.button("Process Voice Report", type="primary", use_container_width=True):
                 if audio_bytes or reference_text:
-                    with st.spinner("Prisma transcribing & Evon extracting..."):
+                    with st.spinner("Transcribing speech and extracting telemetry..."):
                         # Reset controller for new utterance
                         ctrl.reset()
                         ctrl.vehicle_id = st.session_state.selected_vehicle
@@ -487,7 +808,7 @@ with tab_console:
                         st.session_state.audio_to_play = tts_bytes
 
         with col_btn2:
-            if st.button("🔄 Reset Session", use_container_width=True):
+            if st.button("Reset Session", use_container_width=True):
                 ctrl.reset()
                 st.session_state.current_transcript = ""
                 st.session_state.current_readback = ""
@@ -501,49 +822,59 @@ with tab_console:
             latency = asr_meta.get("latency", 0.4)
             conf = asr_meta.get("confidence", 0.97)
             st.markdown(f"""
-            <div style="background: #1E293B; border-radius: 8px; padding: 12px; margin-top: 10px; border-left: 4px solid #3B82F6;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="telematics-label">{source_name.upper()}</span>
-                    <span style="font-size: 0.75rem; color: #34D399; font-family: monospace;">⚡ {latency}s latency • {int(conf*100)}% conf</span>
+            <div class="asr-stream-panel" role="region" aria-label="Live ASR Telemetry Stream" aria-live="polite">
+                <div class="asr-stream-header">
+                    <span class="asr-badge">{source_name.upper()}</span>
+                    <span class="asr-stats">⚡ {latency}s latency • {int(conf*100)}% conf</span>
                 </div>
-                <div style="font-size: 1.05rem; font-weight: 600; color: #38BDF8; margin-top: 6px;">
+                <div class="asr-transcript">
                     "{html.escape(str(st.session_state.current_transcript))}"
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-        # Spoken Read-Back Confirmation Gate
+        # Spoken Read-Back Confirmation Gate (Interlock)
         if ctrl.state in (DialogueState.CONFIRMING, DialogueState.CORRECTING, DialogueState.ASKING):
             st.markdown(f"""
-            <div class="readback-box">
-                <div class="readback-title">🔊 GNANI TIMBRE READ-BACK PROMPT (Awaiting Driver Confirmation)</div>
-                <div class="readback-text">"{html.escape(str(ctrl.last_agent_prompt))}"</div>
+            <div class="safety-interlock-panel" role="alert" aria-label="Safety Interlock Read-back Prompt" aria-live="assertive">
+                <div class="interlock-header">
+                    <div class="interlock-title-group">
+                        <span class="interlock-title">SAFETY INTERLOCK // TIMBRE SPOKEN READ-BACK</span>
+                    </div>
+                    <span class="interlock-tag">AWAITING CONFIRMATION</span>
+                </div>
+                <div class="interlock-prompt">
+                    "{html.escape(str(ctrl.last_agent_prompt))}"
+                </div>
+                <div class="interlock-subtext">
+                    Safety rule: No fleet action will be authorized until the driver verifies parameters aloud.
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
             if st.session_state.audio_to_play:
                 st.audio(st.session_state.audio_to_play, format="audio/mp3", autoplay=True)
 
-            st.markdown("#### 🗣️ Driver Confirmation Response")
-            st.caption("Driver hears the read-back. Will they confirm or correct?")
+            st.markdown("#### Driver Spoken Response Simulation")
+            st.caption("Driver hears the read-back. Will they confirm, correct, or reject?")
             
             c_yes, c_corr, c_rej = st.columns(3)
             with c_yes:
-                if st.button("✅ 'Haan, sahi hai'", use_container_width=True):
+                if st.button("Confirm: 'Haan, sahi hai'", type="primary", use_container_width=True):
                     reply = DriverReply(intent="CONFIRM", raw_text="haan bhaiya sahi hai")
                     state, prompt = ctrl.handle_confirmation_reply(reply)
                     st.session_state.audio_to_play = speak_text(prompt)
                     st.rerun()
 
             with c_corr:
-                if st.button("✏️ 'Nahi, 18 degree'", use_container_width=True):
+                if st.button("Correct: 'Nahi, 18 degree'", use_container_width=True):
                     reply = DriverReply(intent="CORRECT", corrected_temperature_c=18.0, raw_text="nahi 28 nahi 18 degree hai")
                     state, prompt = ctrl.handle_confirmation_reply(reply)
                     st.session_state.audio_to_play = speak_text(prompt)
                     st.rerun()
 
             with c_rej:
-                if st.button("❌ 'Galat hai'", use_container_width=True):
+                if st.button("Reject: 'Galat hai'", use_container_width=True):
                     reply = DriverReply(intent="REJECT", raw_text="galat hai samajh nahi aya")
                     state, prompt = ctrl.handle_confirmation_reply(reply)
                     st.session_state.audio_to_play = speak_text(prompt)
@@ -551,15 +882,16 @@ with tab_console:
 
         elif ctrl.state == DialogueState.DONE and ctrl.last_action_result:
             st.markdown(f"""
-            <div class="gate-shield">
-                <div style="font-size: 2rem;">🛡️</div>
+            <div class="gate-unlocked-card" role="status" aria-label="Dispatch Ticket Gate Unlocked" aria-live="polite">
+                <div class="gate-unlocked-icon">✔</div>
                 <div>
-                    <div style="font-weight: 800; color: #34D399; font-size: 1.1rem;">
+                    <div class="gate-unlocked-title">
                         DISPATCH GATE UNLOCKED & TICKET ISSUED
                     </div>
-                    <div style="font-size: 0.85rem; color: #CBD5E1; margin-top: 2px;">
-                        Ticket <strong>{html.escape(str(ctrl.last_action_result['ticket_id']))}</strong> dispatched for vehicle 
-                        <strong>{html.escape(str(ctrl.last_action_result['vehicle_id']))}</strong>. Estimated technician arrival: {ctrl.last_action_result['technician_eta_min']} min.
+                    <div class="gate-unlocked-desc">
+                        Ticket <strong>{html.escape(str(ctrl.last_action_result['ticket_id']))}</strong> authorized for vehicle 
+                        <strong>{html.escape(str(ctrl.last_action_result['vehicle_id']))}</strong>.
+                        Estimated technician arrival: <strong>{ctrl.last_action_result['technician_eta_min']} min</strong>. Action committed to SQLite fleet log.
                     </div>
                 </div>
             </div>
@@ -568,7 +900,7 @@ with tab_console:
                 st.audio(st.session_state.audio_to_play, format="audio/mp3", autoplay=True)
 
         elif ctrl.state == DialogueState.ESCALATING:
-            st.error("🚨 ESCALATION: 2 correction rounds failed. Handed over to human fleet supervisor.")
+            st.error("ESCALATION ALERT: 2 correction rounds failed. Handover initiated to Human Fleet Control Tower.")
             if st.session_state.audio_to_play:
                 st.audio(st.session_state.audio_to_play, format="audio/mp3", autoplay=True)
 
@@ -576,54 +908,56 @@ with tab_console:
     # RIGHT COLUMN: Structured Schema Gate & SQLite Log
     # ---------------------------------------------------------
     with col_right:
-        st.subheader("🛡️ Pydantic Schema Gate")
+        st.markdown("#### Pydantic Schema Gate")
         
         if ctrl.current_record:
             rec = ctrl.current_record
+            temp_val = f"{rec.temperature_c}°C" if rec.temperature_c is not None else "null"
+            dist_val = f"{rec.distance_km} km" if rec.distance_km is not None else "null"
             st.markdown(f"""
-            <div class="telematics-card">
-                <div style="display: flex; justify-content: space-between;">
-                    <span class="telematics-label">EXTRACTED SLOTS</span>
-                    <span style="font-size: 0.75rem; color: #10B981; font-weight: 700;">SCHEMA VALIDATED</span>
+            <div class="control-panel">
+                <div class="panel-header-row">
+                    <span class="panel-label">EXTRACTED SCHEMA SLOTS</span>
+                    <span style="font-size: 0.72rem; color: var(--status-pass); font-weight: 700; font-family: var(--font-mono);">BOUNDS CHECK PASS</span>
                 </div>
-                <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; margin-top: 8px;">
-                    <div><strong>Incident:</strong> <span style="color: #FBBF24;">{html.escape(str(rec.incident_type.value))}</span></div>
-                    <div><strong>Temperature:</strong> <span style="color: #60A5FA;">{rec.temperature_c if rec.temperature_c is not None else 'null'}°C</span></div>
-                    <div><strong>Location:</strong> <span style="color: #38BDF8;">{html.escape(str(rec.location_text or 'null'))}</span></div>
-                    <div><strong>Distance:</strong> <span style="color: #C084FC;">{rec.distance_km if rec.distance_km is not None else 'null'} km</span></div>
-                    <div><strong>Correction Rounds:</strong> <span style="color: #F87171;">{ctrl.correction_rounds} / {ctrl.max_correction_rounds}</span></div>
+                <div style="font-family: var(--font-mono); font-size: 0.82rem; margin-top: 8px; line-height: 1.8;">
+                    <div><strong>Incident Type:</strong> <span style="color: var(--status-warn);">{html.escape(str(rec.incident_type.value))}</span></div>
+                    <div><strong>Verified Temp:</strong> <span style="color: var(--accent-blue);">{temp_val}</span></div>
+                    <div><strong>Milestone:</strong> <span style="color: var(--text-primary);">{html.escape(str(rec.location_text or 'null'))}</span></div>
+                    <div><strong>Distance:</strong> <span style="color: var(--accent-blue);">{dist_val}</span></div>
+                    <div><strong>Retry Count:</strong> <span style="color: var(--status-fail);">{ctrl.correction_rounds} / {ctrl.max_correction_rounds}</span></div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
         else:
             st.markdown("""
-            <div class="telematics-card" style="text-align: center; color: #64748B; padding: 24px;">
-                Waiting for voice input to populate extraction schema...
+            <div class="control-panel" style="text-align: center; color: var(--text-tertiary); padding: 28px 16px;">
+                Awaiting voice stream to populate extraction schema...
             </div>
             """, unsafe_allow_html=True)
 
         # SQLite Action Log
-        st.subheader("📋 Dispatch Action Log")
-        st.caption("Directly queried from SQLite (data/fleet.sqlite)")
+        st.markdown("#### Dispatch Action Log")
+        st.caption("Queried directly from SQLite (data/fleet.sqlite)")
 
         logs = get_action_log(limit=5)
         if logs:
             for l in logs:
                 st.markdown(f"""
-                <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid #1F2937; border-radius: 6px; padding: 10px; margin-bottom: 8px; font-size: 0.8rem;">
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; font-size: 0.8rem;">
                     <div style="display: flex; justify-content: space-between; font-weight: 700;">
-                        <span style="color: #38BDF8;">{html.escape(str(l['ticket_id']))} • {html.escape(str(l['vehicle_id']))}</span>
-                        <span style="color: #FBBF24;">{html.escape(str(l['priority']))}</span>
+                        <span style="color: var(--accent-blue); font-family: var(--font-mono);">{html.escape(str(l['ticket_id']))} • {html.escape(str(l['vehicle_id']))}</span>
+                        <span style="color: var(--status-warn);">{html.escape(str(l['priority']))}</span>
                     </div>
-                    <div style="color: #E2E8F0; margin-top: 4px;">{html.escape(str(l['incident_type']))} at {html.escape(str(l['location']))} ({html.escape(str(l['temp_c']))})</div>
-                    <div style="display: flex; justify-content: space-between; color: #64748B; font-size: 0.7rem; margin-top: 4px;">
-                        <span>{html.escape(str(l['created_at']))}</span>
-                        <span style="color: #F59E0B;">{html.escape(str(l['source']))}</span>
+                    <div style="color: var(--text-primary); margin-top: 4px;">{html.escape(str(l['incident_type']))} at {html.escape(str(l['location']))} ({html.escape(str(l['temp_c']))})</div>
+                    <div style="display: flex; justify-content: space-between; color: var(--text-secondary); font-size: 0.72rem; margin-top: 6px;">
+                        <span style="font-family: var(--font-mono);">{html.escape(str(l['created_at']))}</span>
+                        <span style="color: var(--status-pass);">{html.escape(str(l['source']))}</span>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
         else:
-            st.caption("No dispatches issued yet. Dispatches trigger only upon driver confirmation.")
+            st.caption("No dispatches issued yet. Dispatches trigger only upon driver verification.")
 
 
 # =============================================================
@@ -631,12 +965,11 @@ with tab_console:
 # =============================================================
 with tab_benchmark:
     st.markdown("""
-    <div style="margin-bottom: 18px;">
-        <h2 style="font-size: 1.4rem; font-weight: 800; margin: 0; color: #F8FAFC;">
-            📊 Empirical Benchmark: Noisy Telephonic Audio Evaluation
-        </h2>
-        <p style="color: #94A3B8; font-size: 0.85rem; margin-top: 4px;">
-            100 audio clips (25 tricky Hinglish utterances × 4 channel conditions). The empirical proof that read-back confirmation eliminates wrong dispatches.
+    <div style="margin-bottom: 20px;">
+        <h3 style="margin: 0; font-size: 1.35rem; font-weight: 700;">Empirical Benchmark: Noisy Telephonic Audio Evaluation</h3>
+        <p style="color: #8B949E; font-size: 0.85rem; margin-top: 4px;">
+            100 acoustic test clips (25 tricky Hinglish utterances × 4 channel degradation conditions).
+            Empirical validation proving spoken read-back eliminates catastrophic misdispatches.
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -648,7 +981,7 @@ with tab_benchmark:
         sum_df = pd.read_csv(summary_file)
         raw_df = pd.read_csv(raw_file)
 
-        # Derive final accuracy percentage and WER if formatted or stored in related model evaluation tables
+        # Derive final accuracy percentage and WER
         if "Final Dispatch Accuracy (%)" not in sum_df.columns:
             if "Successful Dispatches (%)" in sum_df.columns:
                 extracted = sum_df["Successful Dispatches (%)"].astype(str).str.extract(r"\(([\d\.]+)%\)")
@@ -696,59 +1029,61 @@ with tab_benchmark:
                 delta_color="normal"
             )
 
-        # Plotly Visualizations
-        st.markdown("### 📈 Acoustic Degradation vs Read-Back Safety Gate")
+        st.markdown("---")
+        st.markdown("#### Acoustic Degradation vs Read-Back Safety Gate")
+
         chart_col1, chart_col2 = st.columns(2)
 
         with chart_col1:
-            # Comparison: Raw Slot Accuracy vs Final Accuracy after Read-Back
             fig_comp = go.Figure()
             fig_comp.add_trace(go.Bar(
                 x=sum_df["Condition"],
                 y=sum_df["Raw Slot Acc (%)"],
                 name="Raw Extraction (No Gate)",
-                marker_color="#EF4444"
+                marker_color="#F85149"
             ))
             fig_comp.add_trace(go.Bar(
                 x=sum_df["Condition"],
                 y=sum_df["Final Dispatch Accuracy (%)"],
                 name="Vaani Read-Back (Gated)",
-                marker_color="#10B981"
+                marker_color="#2EA043"
             ))
             fig_comp.update_layout(
-                title="Critical-Slot Accuracy: Raw Extraction vs Vaani Gate",
-                paper_bgcolor="#111827",
-                plot_bgcolor="#111827",
-                font=dict(color="#CBD5E1", family="Plus Jakarta Sans"),
-                yaxis=dict(title="Accuracy (%)", range=[0, 105]),
+                title=dict(text="Critical-Slot Accuracy: Raw Extraction vs Vaani Gate", font=dict(color="#F0F6FC", size=13)),
+                paper_bgcolor="#161B22",
+                plot_bgcolor="#161B22",
+                font=dict(color="#8B949E", family="Archivo, sans-serif"),
+                yaxis=dict(title="Accuracy (%)", range=[0, 105], gridcolor="#21262D"),
+                xaxis=dict(gridcolor="#21262D"),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
             st.plotly_chart(fig_comp, use_container_width=True)
 
         with chart_col2:
-            # WER Curve across conditions
             fig_wer = px.line(
                 sum_df,
                 x="Condition",
                 y="WER (%)",
                 markers=True,
                 title="Word Error Rate (WER) vs Noise Condition",
-                color_discrete_sequence=["#38BDF8"]
+                color_discrete_sequence=["#58A6FF"]
             )
             fig_wer.update_layout(
-                paper_bgcolor="#111827",
-                plot_bgcolor="#111827",
-                font=dict(color="#CBD5E1", family="Plus Jakarta Sans"),
-                yaxis=dict(title="WER (%)", range=[0, max(sum_df["WER (%)"]) + 2])
+                title=dict(text="Word Error Rate (WER) vs Noise Condition", font=dict(color="#F0F6FC", size=13)),
+                paper_bgcolor="#161B22",
+                plot_bgcolor="#161B22",
+                font=dict(color="#8B949E", family="Archivo, sans-serif"),
+                yaxis=dict(title="WER (%)", range=[0, max(sum_df["WER (%)"]) + 2], gridcolor="#21262D"),
+                xaxis=dict(gridcolor="#21262D")
             )
             st.plotly_chart(fig_wer, use_container_width=True)
 
         # Official Benchmark Summary Table
-        st.markdown("### 📋 Official Benchmark Scorecard")
+        st.markdown("#### Official Benchmark Scorecard")
         st.dataframe(sum_df, use_container_width=True, hide_index=True)
 
         # Interactive Utterance Explorer
-        st.markdown("### 🔍 Interactive Utterance & Error Inspector")
+        st.markdown("#### Interactive Utterance & Error Inspector")
         filter_cond = st.selectbox("Filter Condition", ["All", "clean", "telephony_8khz", "telephony_10db", "telephony_5db"])
         filter_err = st.checkbox("Show Only ASR / Acoustic Errors Caught", value=True)
 
@@ -780,7 +1115,7 @@ with tab_benchmark:
 
     else:
         st.warning("Benchmark results not yet computed. Click below to run the full 100-clip benchmark suite.")
-        if st.button("▶️ Run 100-Clip Benchmark Now"):
+        if st.button("Run 100-Clip Benchmark Now"):
             from benchmark.run_benchmark import run_full_benchmark
             from benchmark.score import compute_metrics
             with st.spinner("Executing benchmark across all 4 noise conditions..."):
@@ -796,13 +1131,11 @@ with tab_benchmark:
 with tab_learning:
     st.markdown("""
     <div style="margin-bottom: 20px;">
-        <h2 style="font-size: 1.4rem; font-weight: 800; margin: 0; color: #F8FAFC;">
-            📋 Offline Acoustic Confusion Logging & Supervisor Audit Queue
-        </h2>
-        <p style="color: #94A3B8; font-size: 0.85rem; margin-top: 4px;">
+        <h3 style="margin: 0; font-size: 1.35rem; font-weight: 700;">Offline Acoustic Confusion Logging & Supervisor Audit Queue</h3>
+        <p style="color: #8B949E; font-size: 0.85rem; margin-top: 4px;">
             Captures read-back discrepancies and driver corrections for offline analytics, error analysis, and supervised model retraining.
             Unreviewed runtime corrections are strictly quarantined in this supervisor queue (never injected into live extraction prompts)
-            to eliminate stored prompt injection vulnerabilities and preserve true extreme alarms.
+            to eliminate prompt injection vulnerabilities and preserve authentic extreme temperature alarms.
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -843,7 +1176,7 @@ with tab_learning:
     col_l1, col_l2 = st.columns([1.2, 1.0], gap="large")
 
     with col_l1:
-        st.markdown("### 📋 Active Learned Phonetic Rules")
+        st.markdown("#### Active Learned Phonetic Rules")
         st.caption("Disambiguation heuristics synthesized from real driver confirmation responses:")
 
         if adaptive_rules:
@@ -863,15 +1196,15 @@ with tab_learning:
         else:
             st.info("No custom rules generated yet.")
 
-        if st.button("⚡ Run LLM Self-Reflection & Synthesize New Rules", type="primary"):
+        if st.button("Run LLM Self-Reflection & Synthesize Rules", type="primary"):
             with st.spinner("Analyzing recent driver feedback to extract phonetic rules..."):
                 res = synthesize_new_rules()
                 st.success(f"Reflection complete! Analyzed {res['total_corrections_analyzed']} corrections. Active rules: {res['active_rules_count']}.")
                 st.rerun()
 
     with col_l2:
-        st.markdown("### 🔍 Live In-Context Dynamic Prompt")
-        st.caption("The exact few-shot learning context dynamically injected into the LLM system prompt:")
+        st.markdown("#### Live Dynamic Prompt Context")
+        st.caption("The few-shot learning context dynamically formatted into the LLM system prompt:")
         
         sample_prompt = get_few_shot_prompt_context()
         st.text_area(
@@ -881,7 +1214,7 @@ with tab_learning:
             disabled=True
         )
 
-    st.markdown("### 📝 Driver Feedback & Acoustic Correction Log")
+    st.markdown("#### Driver Feedback & Acoustic Correction Log")
     st.caption("Raw feedback captured from driver interventions during read-back confirmations:")
 
     if learned_corrections:
@@ -893,15 +1226,15 @@ with tab_learning:
                 "Timestamp": c["created_at"],
                 "Acoustic Audio Input": c["raw_transcript"],
                 "Misheard ASR Value": f"{orig.get('temperature_c', 'N/A')}°C ({orig.get('location_text', 'N/A')})",
-                "Driver's Spoken Correction": c["driver_correction"],
+                "Driver Correction": c["driver_correction"],
                 "Corrected Result": f"{corr.get('temperature_c', 'N/A')}°C ({corr.get('location_text', 'N/A')})",
                 "Trap Category": c["acoustic_trap"]
             })
         st.dataframe(pd.DataFrame(corr_display), use_container_width=True, hide_index=True)
     else:
         st.markdown("""
-        <div style="background: rgba(15, 23, 42, 0.6); border: 1px dashed #334155; border-radius: 8px; padding: 20px; text-align: center; color: #94A3B8;">
-            No driver corrections recorded in this session yet. Test a scenario on the <strong>Live Dispatch Console</strong>, click <strong>"Nahi, 18 degree"</strong> on the read-back gate, and watch it immediately appear here!
+        <div style="background: var(--bg-surface); border: 1px dashed var(--border-subtle); border-radius: 8px; padding: 24px; text-align: center; color: var(--text-secondary);">
+            No driver corrections recorded in this session yet. Test a scenario on the <strong>Live Dispatch Console</strong>, click <strong>"Correct: 'Nahi, 18 degree'"</strong> on the read-back gate, and watch it immediately appear here.
         </div>
         """, unsafe_allow_html=True)
 
@@ -910,12 +1243,16 @@ with tab_learning:
 # TAB 4: DATASET TRAINING LEDGER & CHUNK MANAGER
 # =============================================================
 with tab_training:
-    st.markdown("### 📈 Dataset Training Ledger & Auto-Purge Pipeline")
     st.markdown("""
-    To handle massive Indian speech databases without exhausting local storage, Vaani utilizes a 
-    **Chunk -> Train -> Auto-Purge** pipeline. Audio data is streamed in controlled batches (up to 10 GB),
-    used to fine-tune the model on the RTX 5070 GPU, and then **immediately deleted from disk** after gradient updates.
-    """)
+    <div style="margin-bottom: 20px;">
+        <h3 style="margin: 0; font-size: 1.35rem; font-weight: 700;">Dataset Training Ledger & Auto-Purge Pipeline</h3>
+        <p style="color: #8B949E; font-size: 0.85rem; margin-top: 4px;">
+            To process massive Indian speech corpora without exhausting storage, Vaani utilizes a
+            <strong>Chunk -> Train -> Auto-Purge</strong> pipeline. Audio data is streamed in controlled batches,
+            fine-tuned on the RTX 5070 GPU, and immediately deleted from disk after gradient updates.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
     from core.chunked_trainer import load_ledger, stage_and_train_chunk
 
@@ -927,40 +1264,32 @@ with tab_training:
     # Metric KPI Cards
     k1, k2, k3, k4 = st.columns(4)
     with k1:
-        st.markdown(f"""
-        <div class="telematics-card">
-            <span class="telematics-label">TOTAL DATA PROCESSED</span>
-            <div class="telematics-val" style="color: #38BDF8;">{cum_gb:.2f} GB</div>
-            <div class="telematics-sub">Streamed & trained</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric(
+            label="TOTAL DATA PROCESSED",
+            value=f"{cum_gb:.2f} GB",
+            delta="Streamed & Trained"
+        )
     with k2:
-        st.markdown(f"""
-        <div class="telematics-card">
-            <span class="telematics-label">AUDIO DURATION</span>
-            <div class="telematics-val" style="color: #34D399;">{cum_hrs:.2f} hrs</div>
-            <div class="telematics-sub">Indian speech audio</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric(
+            label="AUDIO DURATION",
+            value=f"{cum_hrs:.2f} hrs",
+            delta="Indian Speech Audio"
+        )
     with k3:
-        st.markdown(f"""
-        <div class="telematics-card">
-            <span class="telematics-label">TOTAL UTTERANCES</span>
-            <div class="telematics-val" style="color: #F59E0B;">{cum_samples:,}</div>
-            <div class="telematics-sub">Trained across chunks</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric(
+            label="TOTAL UTTERANCES",
+            value=f"{cum_samples:,}",
+            delta="Trained Across Chunks"
+        )
     with k4:
-        st.markdown("""
-        <div class="telematics-card">
-            <span class="telematics-label">LOCAL DISK RETAINED</span>
-            <div class="telematics-val" style="color: #A855F7;">0.00 GB</div>
-            <div class="telematics-sub">100% Raw data purged</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric(
+            label="LOCAL DISK RETAINED",
+            value="0.00 GB",
+            delta="100% Raw Audio Purged"
+        )
 
     st.markdown("---")
-    st.markdown("#### 📜 Persistent Chunk Training History")
+    st.markdown("#### Persistent Chunk Training History")
 
     history = ledger_data.get("history", [])
     if history:
@@ -985,7 +1314,7 @@ with tab_training:
         st.info("No training chunks recorded yet.")
 
     st.markdown("---")
-    st.markdown("#### 🚀 Trigger Next Training Chunk")
+    st.markdown("#### Trigger Next Training Chunk")
     
     col_t1, col_t2, col_t3 = st.columns([1.5, 1, 1])
     with col_t1:
@@ -1002,12 +1331,12 @@ with tab_training:
     with col_t3:
         chunk_epochs = st.number_input("Epochs per Chunk", min_value=1, max_value=10, value=3, step=1)
 
-    if st.button("⚡ Download Chunk, Train & Auto-Delete", type="primary", use_container_width=True):
+    if st.button("Download Chunk, Train & Auto-Delete", type="primary", use_container_width=True):
         ds_slug = "dianavdavidson/gram-vaani-preprocessed" if "gram-vaani" in target_ds else ("google/fleurs" if "fleurs" in target_ds else "agarwalayushi/hinglish")
         ds_cfg = "hi_in" if "fleurs" in target_ds else None
         next_chunk_id = f"chunk_{len(history):02d}_{ds_slug.split('/')[-1]}"
 
-        with st.spinner(f"Streaming {chunk_sample_count} samples from {ds_slug}, fine-tuning on RTX 5070 GPU, and auto-deleting..."):
+        with st.spinner(f"Streaming {chunk_sample_count} samples from {ds_slug}, fine-tuning on GPU, and auto-deleting..."):
             rec = stage_and_train_chunk(
                 dataset_name=ds_slug,
                 dataset_config=ds_cfg,
@@ -1024,22 +1353,22 @@ with tab_training:
 # =============================================================
 with tab_architecture:
     st.markdown("""
-    ### 🏛️ Vaani System Architecture & Core Design Principle
+    ### Vaani System Architecture & Core Safety Invariant
     
-    > **The most important design rule:**  
-    > *The language model never decides whether a dispatch happens. The model proposes structured details. Your controller checks that they are valid, reads them back, and only the driver's confirmation unlocks the action.*
+    > **The Primary Safety Rule:**  
+    > *The language model never decides whether a dispatch happens. The model proposes structured details. The deterministic code gate checks validity, reads back aloud via TTS, and only explicit confirmation unlocks the action.*
     
-    #### 1. End-to-End Pipeline
-    1. **Driver Audio Input:** Microphone or 8 kHz degraded telephony audio with synthesized truck rumble at 10 dB / 5 dB SNR.
-    2. **Gnani Prisma STT:** Converts noisy Hinglish speech into text.
-    3. **Gnani Evon v3.3:** Structured slot extraction into Pydantic schema with bounds checking (-40°C to +50°C).
-    4. **Dialogue Controller (Code Gate):** Plain Python Finite State Machine. Blocks action dispatch until affirmative confirmation.
-    5. **Gnani Timbre TTS:** Spoken Hinglish read-back aloud to driver.
-    6. **Driver Confirmation Loop:** Driver confirms or corrects. Unclear replies are treated as 'not confirmed'. Max 2 retries before escalating to human control tower.
-    7. **Simulated SQLite Tool Execution:** Dispatches assistance tickets and updates fleet ETAs.
+    #### 1. End-to-End Operational Pipeline
+    1. **Driver Audio Ingestion:** Live microphone or degraded 8 kHz telephony audio with synthetic highway truck rumble at 10 dB / 5 dB SNR.
+    2. **ASR Speech-to-Text:** Fine-Tuned Whisper-LoRA or Gnani Prisma STT converts noisy Hinglish speech into text.
+    3. **Gnani Evon Extraction:** Structured extraction into Pydantic schema with hard bounds checking (-40°C to +50°C).
+    4. **Dialogue Controller Code Gate:** Plain Python Finite State Machine blocks action dispatch until affirmative confirmation.
+    5. **Gnani Timbre TTS:** Synthesizes spoken Hinglish read-back aloud to the driver.
+    6. **Driver Confirmation Interlock:** Driver confirms or corrects. Unclear replies are treated as 'not confirmed'. Maximum 2 correction rounds before escalation to human supervisor.
+    7. **SQLite Action Execution:** Dispatches assistance tickets and updates fleet ETAs.
 
-    #### 2. Verification via Pytest
-    The state machine safety gate is verified with automated tests:
+    #### 2. Verification via Automated Regression Tests
+    The state machine safety gate is verified with 66 automated tests:
     - `test_core_safety_guarantee_dispatch_cannot_run_without_confirmation`
     - `test_happy_path_confirmation_to_dispatch`
     - `test_readback_catches_misheard_number_and_corrects`

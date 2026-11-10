@@ -89,12 +89,13 @@ Truck drivers and cold-chain ground crews operate in deafening cabin environment
 
 ## 1. The Core Idea
 
-Truck drivers and cold-chain ground crews operate in deafening cabin environments (diesel engine rumble, highway wind, horn reverberation) where typing on a mobile screen at 70 km/h is impossible and speech recognition inevitably makes acoustic mistakes (confusing *18°C* with *80°C* or *14 km* with *40 km*). A single misread number can spoil an entire refrigerated consignment or dispatch roadside mechanics to the wrong highway milestone.
+In Indian freight and cold-chain logistics, transport drivers navigate high-noise cabin environments (diesel engine rumble, highway wind, horn reverberations) over lossy 8 kHz cellular channels. Spoken communication is the only viable hands-free interface while driving, yet acoustic confusion is an unavoidable reality of telephonic speech recognition: *18°C* sounds deceptively like *80°C*, *14 km* is easily transcribed as *40 km*, and negative polarity signs vanish in background noise.
 
-**Vaani's Claim:**  
-> **Read-back confirmation catches speech-recognition errors that would otherwise cause a wrong dispatch. The safety gate is ordinary code, not the language model.**
+**Vaani's Core Thesis:**  
+> **Acoustic confusion in noisy telephony is inevitable; catastrophic misdispatch is not.**  
+> Spoken read-back confirmation combined with deterministic code validation intercepts speech-recognition errors before any fleet action occurs. The safety gate is ordinary, deterministic Python code—never a probabilistic language model.
 
-The language model proposes structured details. The Python state machine validates them against strict physical constraints, reads them aloud in natural Hinglish to the driver, and **only the driver's affirmative confirmation unlocks the dispatch action**.
+The AI proposes candidate structured slots; deterministic rules cross-check physical constraints (-40°C to +50°C) and real-time IoT vehicle telematics; the conversational voice engine synthesizes an audio read-back aloud in natural Hinglish; and **only the driver's spoken affirmative confirmation authorizes action execution**.
 
 ---
 
@@ -339,8 +340,6 @@ The table below lists all 7 held-out clips, their ground truth numeric slots, an
 
 ---
 
----
-
 ### Official Scorecard Track 2B: Live Empirical Verification on Gnani AI Stack
 
 Live empirical runs were conducted against the Gnani AI platform (`api.vachana.ai`) using contest credentials to evaluate the primary endpoints under real HTTP conditions:
@@ -488,38 +487,66 @@ if self.state != DialogueState.ACTING:
 
 ```
 VoiceAI/
-├── README.md                      # Complete project documentation & limitations
-├── requirements.txt               # Dependencies
-├── app.py                         # Root entrypoint
+├── README.md                      # Comprehensive project documentation & benchmark evidence
+├── requirements.txt               # Core Python dependencies
+├── requirements-gpu.txt           # GPU / PyTorch CUDA fine-tuning dependencies
+├── app.py                         # Root entrypoint (forwards execution to dashboard)
+├── verify.py                      # Unified health check & 66-test regression verifier
+├── demo.py                        # Interactive 4-scene spoken CLI simulation
+├── run_all.bat                    # Windows batch launcher (verify + tests + dashboard)
+├── Dockerfile                     # Production container spec (Hugging Face / Cloud)
+├── packages.txt                   # Linux system packages (libsndfile1, ffmpeg)
+├── DESIGN.md                      # Impeccable design system tokens & UI specification
+├── PRODUCT.md                     # Product definition, users, and safety commitments
 ├── app/
-│   └── dashboard.py               # Streamlit Telematics Console & Benchmark UI
+│   ├── dashboard.py               # Streamlit Telematics Console & Benchmark Analytics UI
+│   └── telephony_server.py        # Full-duplex WebSocket PCM16 streaming gateway
 ├── core/
-│   ├── schemas.py                 # Pydantic schemas for extraction & validation
-│   ├── state_machine.py           # Finite State Machine & Safety Gate
-│   └── tools.py                   # Simulated fleet operations (lookup, dispatch, ETA)
+│   ├── schemas.py                 # Pydantic schemas, validation gates & excursion bounds
+│   ├── state_machine.py           # Finite State Machine & deterministic safety gate
+│   ├── tools.py                   # Fleet operations (vehicle lookup, ticket dispatch, ETA)
+│   ├── chunked_trainer.py         # Streaming dataset chunking with instant auto-purge
+│   ├── learning.py                # Acoustic confusion review ledger & cache hashing
+│   ├── asr.py                     # Whisper-LoRA inference engine
+│   └── denoiser.py                # 8 kHz neural Conv-BiGRU denoiser architecture
 ├── gnani/
-│   ├── client.py                  # Thin wrappers for Prisma, Evon, Timbre + Cache
+│   ├── client.py                  # API client for Gnani Prisma STT, Evon NLU & Timbre TTS
 │   └── __init__.py
 ├── benchmark/
 │   ├── utterances.csv             # 25 Hinglish test cases with acoustic traps
-│   ├── make_noisy.py              # Telephony 8 kHz filter & SNR noise mixing
-│   ├── run_benchmark.py           # 100-clip execution engine with caching
+│   ├── make_noisy.py              # Telephony 8 kHz filter & SNR noise mixing engine
+│   ├── run_benchmark.py           # 100-clip benchmark runner with disk caching
 │   ├── score.py                   # jiwer WER and slot accuracy scorer
+│   ├── measure_latency.py         # Empirical per-stage pipeline latency profiler
+│   ├── evaluate_trained_models.py # Held-out acoustic generalization evaluation
+│   ├── evaluate_held_out_e2e.py   # Audio-to-slot end-to-end evaluation
+│   ├── sync_readme_tables.py      # Automated benchmark table synchronizer
 │   ├── audio/                     # 100 synthesized and degraded WAV clips
-│   └── results/
-│       ├── raw_benchmark_results.csv
-│       ├── summary_metrics.csv
-│       └── benchmark_cache.json
+│   └── results/                   # Raw JSON responses, metrics CSVs, and audit logs
+├── real voice/                    # 83 authentic WhatsApp GSM voice notes from 7 real drivers
 ├── data/
 │   ├── fleet.sqlite               # Simulated fleet database (vehicles, tickets, ETAs)
 │   ├── training_ledger.json       # Persistent data usage tracker (GBs, hours, utterances)
+│   ├── driver_cohort_per_clip_results.csv # Itemized real driver cohort evaluations
 │   └── training_ledger.csv        # Tabular training audit export
 ├── models/
 │   ├── whisper_hinglish_lora/     # Fine-tuned Whisper-LoRA adapters
-│   ├── denoiser_8khz.pt           # 8 kHz Telephony Neural Denoiser
-│   └── nlu_slot_extractor/        # Flan-T5 slot extraction adapter
+│   ├── denoiser_8khz.pt           # Pinned 8 kHz Telephony Neural Denoiser weights
+│   ├── nlu_slot_extractor/        # Flan-T5 slot extraction adapter
+│   └── download_adapters.py       # SHA256 integrity verifier for weights
+├── docs/
+│   ├── ARCHITECTURE.md            # System architecture & telephony streaming deep-dive
+│   ├── SAFETY_CASE.md             # Safety case & 16 adversarial scenario evaluation
+│   ├── BENCHMARK_METHODOLOGY.md   # Dual-track benchmark & denoiser ablation analysis
+│   └── 60_SECOND_DEMO_GUIDE.md    # 60-second video demo walkthrough script
+├── scripts/
+│   ├── evaluate_thesis_on_real_failures.py # 10 acoustic traps evaluated against FSM gate
+│   ├── evaluate_real_driver_cohort.py      # Strict cloud benchmark on 83 real driver clips
+│   ├── package_submission.py               # Clean zip packager excluding secrets
+│   └── run_live_prisma_benchmark.py        # Live Gnani Prisma HTTP evaluation harness
 └── tests/
-    └── test_state_machine.py      # Pytest suite verifying the safety gate
+    ├── test_state_machine.py      # 45 FSM safety, timing, and telematics tests
+    └── test_extractor_and_safety.py # 21 Pydantic extraction, bounds, & regex tests
 ```
 
 ---
@@ -564,8 +591,9 @@ In adherence to Section 16 (Claims Policy):
 ### 1. Configure Environment & Dependencies
 ```bash
 python -m pip install -r requirements.txt
-# Copy example configuration and add your rotated GNANI_API_KEY from https://app.gnani.ai
+# Copy example configuration (cp .env.example .env or 'copy .env.example .env' on Windows)
 cp .env.example .env
+# Add your rotated GNANI_API_KEY from https://app.gnani.ai into .env
 ```
 
 ### 2. Run Interactive 2-3 Minute Demonstration
@@ -697,10 +725,10 @@ python -m pytest tests/ -v
 python benchmark/run_benchmark.py
 python benchmark/sync_readme_tables.py
 
-# 7. Launch live telephony WebSocket server or telematics dashboard
-# 8. Package submission archive safely (excludes .env and credentials)
+# 7. Package submission archive safely (excludes .env and credentials)
 python scripts/package_submission.py
 
+# 8. Launch live telephony WebSocket server or telematics dashboard
 uvicorn app.telephony_server:app --port 8000
 streamlit run app/dashboard.py
 ```
