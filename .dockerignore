@@ -1,0 +1,14 @@
+.git
+.github
+.pytest_cache
+__pycache__
+*.pyc
+.env
+.env.*
+*.zip
+*.pptx
+*.ppt
+*presentation*
+real voice/
+scratch/
+benchmark/audio/tts_cache/

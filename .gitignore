@@ -12,3 +12,8 @@ benchmark/audio/tts_cache/
 models/*.pt
 benchmark/results/*cache.json
 *.zip
+*.pptx
+*.ppt
+*presentation*
+
+

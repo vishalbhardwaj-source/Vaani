@@ -1,3 +1,16 @@
+---
+title: Vaani Voice AI Dispatcher
+emoji: 🎙️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 8501
+tags:
+  - streamlit
+pinned: false
+license: mit
+---
+
 # Vaani (वाणी) 🎙️
 ### A Voice Dispatcher That Confirms Before It Acts
 **Built for the Great Indian AI Internship Challenge by Gnani AI**  
