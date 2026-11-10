@@ -16,13 +16,22 @@ license: mit
 **Built for the Great Indian AI Internship Challenge by Gnani AI**  
 **Target Award Category:** *Noisy Telephonic Audio*  
 
----
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://vaani-voice-ai.streamlit.app/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests: 66 Passed](https://img.shields.io/badge/tests-66%20passed-brightgreen.svg)](tests/)
+
+> 🚀 **Live Interactive Cloud Demo:** [**vaani-voice-ai.streamlit.app**](https://vaani-voice-ai.streamlit.app/)  
+> Test live Indic speech recognition, highway noise degradation simulation (Clean, 8 kHz GSM, 10 dB & 5 dB SNR), deterministic safety gate interception, and telematics read-back directly in your browser.
 
 ---
 
 ## ⚡ 30-Second Quickstart & Jury Verification
 
 Evaluate the complete end-to-end pipeline in **under 30 seconds**:
+
+- 🌐 **Live Web Application:** [https://vaani-voice-ai.streamlit.app/](https://vaani-voice-ai.streamlit.app/)
+- 💻 **Local Execution:**
 
 ```bash
 # 1. Run the Unified Health & 66-Test Regression Verifier (or double-click run_all.bat)
