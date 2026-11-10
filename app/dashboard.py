@@ -1285,7 +1285,9 @@ with tab_learning:
         if st.button("Run LLM Self-Reflection & Synthesize Rules", type="primary"):
             with st.spinner("Analyzing recent driver feedback to extract phonetic rules..."):
                 res = synthesize_new_rules()
-                st.success(f"Reflection complete! Analyzed {res['total_corrections_analyzed']} corrections. Active rules: {res['active_rules_count']}.")
+                total_analyzed = res.get("total_corrections_analyzed", res.get("pending_supervisor_reviews", 0))
+                active_rules_cnt = res.get("active_rules_count", len(adaptive_rules) if adaptive_rules else 0)
+                st.success(f"Reflection complete! Analyzed {total_analyzed} corrections. Active rules: {active_rules_cnt}.")
                 st.rerun()
 
     with col_l2:
