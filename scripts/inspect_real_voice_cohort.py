@@ -3,7 +3,8 @@ import re
 from pathlib import Path
 import whisper
 
-p = Path(r"C:\Users\visha\Downloads\VoiceAI\real voice")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+p = PROJECT_ROOT / "real voice"
 model = whisper.load_model("base")
 
 script_sentences = [

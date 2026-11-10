@@ -4,8 +4,9 @@ import json
 import subprocess
 from pathlib import Path
 
-REAL_VOICE_DIR = Path(r"C:\Users\visha\Downloads\VoiceAI\real voice")
-OUT_DIR = Path(r"C:\Users\visha\Downloads\VoiceAI\data\real_driver_cohort")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+REAL_VOICE_DIR = PROJECT_ROOT / "real voice"
+OUT_DIR = PROJECT_ROOT / "data" / "real_driver_cohort"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # 12 Ground truth sentences

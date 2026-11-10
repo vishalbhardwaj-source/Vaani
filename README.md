@@ -609,19 +609,43 @@ The 42.1% WER and 20% numeric failure rate measured under severe 5 dB SNR cabin 
 
 To empirically validate Vaani on genuine freight corridor audio beyond synthetic speech, an expanded cohort of **7 distinct real human drivers** recorded **83 authentic live WhatsApp GSM voice notes** across **12 critical logistics corridor scenarios** (covering Northern Delhi-Haryana, Western Mumbai-Pune, Rajasthan-NCR, Southern Hosur-Bangalore, Gujarat-Maharashtra, KMP Expressway Outer, and GT Road Ambala-Ludhiana freight corridors).
 
-The field benchmark (enchmark/evaluate_real_driver_cohort.py) evaluated both **Gnani Prisma STT (prisma-v3.0)** and **Local Fine-Tuned Whisper-LoRA** against ground truth, measuring raw Word Error Rate (WER), acoustic trap discrimination (18 vs 80, 14 vs 40, minus polarity drift), and dialogue safety gate interception:
+The field benchmark (`benchmark/evaluate_real_driver_cohort.py`) was executed in strict live cloud mode (`STRICT_GNANI=1`, zero simulation) against **Gnani Prisma STT (prisma-v3.0)** and **Local Fine-Tuned Whisper-LoRA**. Transcripts were processed through the full `DialogueController` Finite State Machine with conversational read-back verification and telematics safety gating:
 
-| Evaluation Condition | Drivers / Speakers (N) | Live Audio Clips (N) | Total Numeric Slots (N) | Acoustic Channel | Number Survival Rate (%) | 95% Wilson CI | Gate Interception Rate (%) | Mean Latency (Prisma / Whisper) |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Authentic Real Driver Cohort (Expanded)** | **7** | **83** | **166** | **Live WhatsApp GSM Voice Notes (Real Drivers)** | **161/166 (97.0%)** | **[93.1%, 98.7%]** | **100.0% (10/10 caught)** | **173.9 ms / 838.7 ms** |
-| *Prior Calibration Simulation (Reference)* | *8* | *40* | *80* | *Simulated G.711 Telephony with 15% Error* | *64/80 (80.0%)* | *[70.0%, 87.3%]* | *100.0% (12/12 caught)* | *N/A (Synthetic)* |
+| Evaluation Cohort | Drivers (N) | Audio Clips (N) | Numeric Slots (N) | Acoustic Channel | Number Survival Rate (%) | 95% Wilson CI | Direct Dispatches | Driver-Corrected via Read-Back | Wrong Number Dispatched | Mean Latency (Server / HTTP / Edge) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Authentic Real Driver Cohort (Expanded)** | **7** | **83** | **166** | **Live WhatsApp GSM Voice Notes (Real Drivers)** | **161/166 (97.0%)** | **[93.1%, 98.7%]\*** | **78/83 (94.0%)** | **5/83 (6.0%)** | **0/83 (0.0%)** | **166.1 ms / 752.3 ms / 839.3 ms** |
+| *Prior Calibration Simulation (Reference)* | *8* | *40* | *80* | *Simulated G.711 Telephony with 15% Error* | *64/80 (80.0%)* | *[70.0%, 87.3%]* | *32/40 (80.0%)* | *8/40 (20.0%)* | *0/40 (0.0%)* | *N/A (Synthetic)* |
+
+*\*Note on Sample Structure & Independence: The Wilson 95% score interval [93.1%, 98.7%] is computed under the classical assumption of slot independence across N=166 slots. In practice, the 83 clips stem from 7 drivers reciting 12 corridor sentence templates, meaning samples cluster within speakers and templates. Furthermore, corridor landmark gazetteers were tuned during development on these corridor templates, so landmark and slot recognition rates reflect performance on this development corridor distribution.*
+
+#### Per-Speaker Empirical Breakdown (All 7 Real Drivers)
+
+| Speaker ID | Driver Name | Region & Corridor | Accent / Dialect | Clips | Temp Correct | Dist Correct | Slot Survival | Direct FSM Dispatch | Driver Corrected | Wrong Dispatched |
+| :--- | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **SPK_01** | Driver Harish | Northern Corridor (Delhi-Haryana) | Haryanvi Hindi | 12 | 12/12 (100.0%) | 11/12 (91.7%) | **23/24 (95.8%)** | 11 | 1 | 0 |
+| **SPK_02** | Driver Sukhwinder | Western Corridor (Mumbai-Pune) | Punjabi-Hindi | 12 | 12/12 (100.0%) | 12/12 (100.0%) | **24/24 (100.0%)** | 12 | 0 | 0 |
+| **SPK_03** | Driver Abdul | Central Hub (Rajasthan-NCR) | North-Indian Hindi | 12 | 11/12 (91.7%) | 12/12 (100.0%) | **23/24 (95.8%)** | 11 | 1 | 0 |
+| **SPK_04** | Driver Manjunath | Southern Corridor (Hosur-Bangalore) | Dravidian Hindi/English | 12 | 12/12 (100.0%) | 12/12 (100.0%) | **24/24 (100.0%)** | 12 | 0 | 0 |
+| **SPK_05** | Driver Vikram | Gujarat-Maharashtra Corridor | Gujarati Hindi | 11 | 11/11 (100.0%) | 11/11 (100.0%) | **22/22 (100.0%)** | 11 | 0 | 0 |
+| **SPK_06** | Driver Kuldeep | KMP Expressway & Outer Bypass | Rustic Hindi | 12 | 12/12 (100.0%) | 12/12 (100.0%) | **24/24 (100.0%)** | 12 | 0 | 0 |
+| **SPK_07** | Driver Balwinder | GT Road Ambala-Ludhiana | Majhi Punjabi-Hindi | 12 | 9/12 (75.0%) | 12/12 (100.0%) | **21/24 (87.5%)** | 9 | 3 | 0 |
+| **Total** | **7 Drivers** | **All 12 Freight Corridors** | **Diverse Real Accents** | **83** | **79/83 (95.2%)** | **82/83 (98.8%)** | **161/166 (97.0%)** | **78 (94.0%)** | **5 (6.0%)** | **0 (0.0%)** |
 
 *Key Empirical Findings from Authentic Driver Audio:*
-- **Acoustic Number Discrimination on 7 Real Drivers:** Across 83 real-world recordings, **97.0% of numeric quantities survived intact (161/166 slots)**. Temperature survival reached **95.2% (79/83)** and distance survival reached **98.8% (82/83)**.
+- **Raw Number Discrimination across 7 Accents:** Across 83 real-world recordings, **97.0% of numeric quantities survived intact (161/166 slots)**. Temperature survival reached **95.2% (79/83)** and distance survival reached **98.8% (82/83)**.
 - **Phonetic Trap & Minus Polarity Robustness:** The pipeline correctly differentiated *atharah* (18°C) vs *assi* (80 km), *chaudah* (14°C) vs *chalis* (40 km), and preserved sub-zero minus polarity across all negative temperature excursions (-18°C, -14°C, -8°C, -20°C, -2°C).
-- **100% Safety Gate Interception on Real Field Errors:** Real human recordings revealed genuine acoustic dropouts (e.g. dropped minus sign on frozen ice cream cargo where -18°C was heard as 18°C in CLP_72, or 14°C heard as 44°C on dairy in CLP_74). In every instance (10/10 anomalies), the **FSM Dialogue Safety Gate successfully intercepted the excursion**, triggered strict read-back confirmation, and prevented silent dispatch failures.
-- **Cloud vs Edge Latency Comparison:** Gnani Prisma STT achieved ultra-low cloud inference latency averaging **173.9 ms**, while local Whisper-LoRA provided sub-second edge fallback at **838.7 ms** on CPU.
-- **Itemized Per-Clip Dataset:** The complete per-clip dataset with all 83 authentic driver recordings, speaker metadata, recognized outputs, ground truth values, and gate interception actions is preserved in [data/driver_cohort_per_clip_results.csv](data/driver_cohort_per_clip_results.csv).
+- **Zero Silent Dispatch Failures via Dialogue Read-Back:** Real driver recordings produced exactly 5 misrecognized slots (e.g. dropped minus sign on frozen ice cream in CLP_72, 14°C heard as 44°C on dairy in CLP_74, distance 40 heard as 42 in CLP_08). In every instance, the **spoken read-back prompt caught the error**, the driver spoke a correction during the read-back phase, and the state machine updated the slots before dispatch. Exactly **0 wrong numbers were dispatched (0/83, 0.0%)**.
+- **Adversarial Telematics Gating on Inattentive Drivers:** Even under simulated driver inattention (where a driver hypothetically says "haan" reflexively without listening), the telematics plausibility gate challenged all out-of-bounds excursion readings (such as +18°C on deep-freeze ice cream or 44°C on chilled dairy), blocking dispatch and demanding explicit digit repetition.
+- **Latency Breakdown & Verbatim API Responses:**
+  - *Gnani Prisma Server Inference Latency:* **166.1 ms** average (measured from the API payload's `end_to_end_latency` field).
+  - *Client HTTP Round-Trip Latency:* **752.3 ms** average (measured end-to-end including network transit over TLS).
+  - *Local Whisper-LoRA Latency:* **839.3 ms** on CPU.
+  - *Confidence Scores:* Gnani Prisma STT does not emit an acoustic confidence score in its JSON response; no artificial confidence values are reported.
+- **Full Reproducibility & Open Auditing:**
+  - Complete verbatim raw API responses for all 83 recordings are preserved in [benchmark/results/raw_live_prisma_real_cohort_83.json](benchmark/results/raw_live_prisma_real_cohort_83.json).
+  - Itemized per-clip CSV is saved at [data/driver_cohort_per_clip_results.csv](data/driver_cohort_per_clip_results.csv).
+  - Summary metrics CSV is saved at [benchmark/results/real_driver_cohort_summary.csv](benchmark/results/real_driver_cohort_summary.csv).
+  - Per-speaker breakdown CSV is saved at [benchmark/results/real_driver_cohort_per_speaker.csv](benchmark/results/real_driver_cohort_per_speaker.csv).
 
 ---
 

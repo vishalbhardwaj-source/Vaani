@@ -1,0 +1,1662 @@
+{
+  "CLP_01": {
+    "clip_id": "CLP_01",
+    "speaker_id": "SPK_01",
+    "speaker_name": "Driver Harish",
+    "sentence_id": 1,
+    "source_file": "WhatsApp Ptt 2026-11-08 at 11.17.58 PM.ogg",
+    "wav_file": "SPK_01_utt_01.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 768.0,
+    "server_latency_ms": 175.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c439-78c3-769c-bad8-70e4fab8f8f1",
+      "transcript": "भैया, refer display -18 दिखा रहा है, पानी खुद से 25 km।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17337703704833984,
+      "end_to_end_latency": 0.1752004623413086,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_02": {
+    "clip_id": "CLP_02",
+    "speaker_id": "SPK_01",
+    "speaker_name": "Driver Harish",
+    "sentence_id": 2,
+    "source_file": "WhatsApp Ptt 2026-11-08 at 11.18.05 PM.ogg",
+    "wav_file": "SPK_01_utt_02.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 680.0,
+    "server_latency_ms": 165.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c439-7ee1-7303-924b-0e2a197db945",
+      "transcript": "temperature 18 degree हो गया है, toll plaza से 42 kilometers आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16299104690551758,
+      "end_to_end_latency": 0.16519689559936523,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_03": {
+    "clip_id": "CLP_03",
+    "speaker_id": "SPK_01",
+    "speaker_name": "Driver Harish",
+    "sentence_id": 3,
+    "source_file": "WhatsApp Ptt 2026-11-08 at 11.18.11 PM.ogg",
+    "wav_file": "SPK_01_utt_03.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 736.0,
+    "server_latency_ms": 150.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c439-8e30-7ae5-9a79-3e3481df291a",
+      "transcript": "cabin का temperature 14 degree है, मानीसर से 35 km दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.14805054664611816,
+      "end_to_end_latency": 0.15000128746032715,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_04": {
+    "clip_id": "CLP_04",
+    "speaker_id": "SPK_01",
+    "speaker_name": "Driver Harish",
+    "sentence_id": 4,
+    "source_file": "WhatsApp Ptt 2026-11-08 at 11.18.30 PM.ogg",
+    "wav_file": "SPK_01_utt_04.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 677.0,
+    "server_latency_ms": 165.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c439-9f95-796c-8b5a-7c10ac8700d6",
+      "transcript": "सर, -14° हो गया, हौसले से 12 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16388320922851562,
+      "end_to_end_latency": 0.16529011726379395,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_05": {
+    "clip_id": "CLP_05",
+    "speaker_id": "SPK_01",
+    "speaker_name": "Driver Harish",
+    "sentence_id": 5,
+    "source_file": "WhatsApp Ptt 2026-11-08 at 11.18.36 PM.ogg",
+    "wav_file": "SPK_01_utt_05.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 769.0,
+    "server_latency_ms": 145.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c439-bc02-7e3b-a8bd-8fe2487db2e4",
+      "transcript": "दे फिर 8 degree दिखा रहे, 80 km पहले breakdown।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.14274072647094727,
+      "end_to_end_latency": 0.1445021629333496,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_06": {
+    "clip_id": "CLP_06",
+    "speaker_id": "SPK_01",
+    "speaker_name": "Driver Harish",
+    "sentence_id": 6,
+    "source_file": "WhatsApp Ptt 2026-11-08 at 11.18.41 PM.ogg",
+    "wav_file": "SPK_01_utt_06.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 932.0,
+    "server_latency_ms": 146.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c439-cd83-76b1-b708-45840f7d225c",
+      "transcript": "-8 degree है, कुंडली border से 15 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.14384722709655762,
+      "end_to_end_latency": 0.14583778381347656,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_07": {
+    "clip_id": "CLP_07",
+    "speaker_id": "SPK_01",
+    "speaker_name": "Driver Harish",
+    "sentence_id": 7,
+    "source_file": "WhatsApp Ptt 2026-11-08 at 11.18.48 PM.ogg",
+    "wav_file": "SPK_01_utt_07.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 841.0,
+    "server_latency_ms": 153.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c439-e1f1-7425-8e29-9c79f687673b",
+      "transcript": "trailer temperature 5° है, तालेगांव से 18 km दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1517472267150879,
+      "end_to_end_latency": 0.15343451499938965,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_08": {
+    "clip_id": "CLP_08",
+    "speaker_id": "SPK_01",
+    "speaker_name": "Driver Harish",
+    "sentence_id": 8,
+    "source_file": "WhatsApp Ptt 2026-11-08 at 11.18.56 PM.ogg",
+    "wav_file": "SPK_01_utt_08.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 759.0,
+    "server_latency_ms": 155.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c439-f06d-787c-a5d3-f96c11b20013",
+      "transcript": "temperature -20 degree, धारूहेरा से 42 km पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15262913703918457,
+      "end_to_end_latency": 0.15451908111572266,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_09": {
+    "clip_id": "CLP_09",
+    "speaker_id": "SPK_01",
+    "speaker_name": "Driver Harish",
+    "sentence_id": 9,
+    "source_file": "WhatsApp Ptt 2026-11-08 at 11.19.06 PM.ogg",
+    "wav_file": "SPK_01_utt_09.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 957.0,
+    "server_latency_ms": 158.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-03ba-7d9c-afaf-4b61a5747641",
+      "transcript": "Diesel 4 degree पर चल रहा है, 14 km आगे रुकना है।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15608930587768555,
+      "end_to_end_latency": 0.15768694877624512,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_10": {
+    "clip_id": "CLP_10",
+    "speaker_id": "SPK_01",
+    "speaker_name": "Driver Harish",
+    "sentence_id": 10,
+    "source_file": "WhatsApp Ptt 2026-11-08 at 11.19.14 PM.ogg",
+    "wav_file": "SPK_01_utt_10.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 851.0,
+    "server_latency_ms": 179.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-14c9-7a08-bfe8-ede5b17bb6cb",
+      "transcript": "यह फिर -2° दिखा रहा है, मुंबई पुणे expressway 68 km पर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1768031120300293,
+      "end_to_end_latency": 0.1785883903503418,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_11": {
+    "clip_id": "CLP_11",
+    "speaker_id": "SPK_01",
+    "speaker_name": "Driver Harish",
+    "sentence_id": 11,
+    "source_file": "WhatsApp Ptt 2026-11-08 at 11.19.20 PM.ogg",
+    "wav_file": "SPK_01_utt_11.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 722.0,
+    "server_latency_ms": 164.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-25d5-7cb6-ad0c-96cbeebcb233",
+      "transcript": "The temperature is 18 degrees and I am 80 kilometers from the depot.",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1619112491607666,
+      "end_to_end_latency": 0.1638331413269043,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_12": {
+    "clip_id": "CLP_12",
+    "speaker_id": "SPK_01",
+    "speaker_name": "Driver Harish",
+    "sentence_id": 12,
+    "source_file": "WhatsApp Ptt 2026-11-08 at 11.19.39 PM.ogg",
+    "wav_file": "SPK_01_utt_12.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 781.0,
+    "server_latency_ms": 145.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-2e39-7f5e-aa80-28ea50a00dbf",
+      "transcript": "Temperature is -18 degrees and 14 kilometers from the total.",
+      "model": "prisma-v3.0",
+      "processing_time": 0.14307546615600586,
+      "end_to_end_latency": 0.14457988739013672,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_13": {
+    "clip_id": "CLP_13",
+    "speaker_id": "SPK_02",
+    "speaker_name": "Driver Sukhwinder",
+    "sentence_id": 1,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 1.48.07 PM.ogg",
+    "wav_file": "SPK_02_utt_01.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 841.0,
+    "server_latency_ms": 197.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-3689-7878-9a68-a68adb199cf7",
+      "transcript": "भैया, refer display -18° दिखा रहा है, पानीपत से 25 km पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.19446873664855957,
+      "end_to_end_latency": 0.19651389122009277,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_14": {
+    "clip_id": "CLP_14",
+    "speaker_id": "SPK_02",
+    "speaker_name": "Driver Sukhwinder",
+    "sentence_id": 2,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 1.48.22 PM.ogg",
+    "wav_file": "SPK_02_utt_02.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 777.0,
+    "server_latency_ms": 167.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-451b-7b8d-b86e-668ef43a7be8",
+      "transcript": "temperature 18 degree हो गया है, toll plaza से 42 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16523385047912598,
+      "end_to_end_latency": 0.1671125888824463,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_15": {
+    "clip_id": "CLP_15",
+    "speaker_id": "SPK_02",
+    "speaker_name": "Driver Sukhwinder",
+    "sentence_id": 3,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 1.48.33 PM.ogg",
+    "wav_file": "SPK_02_utt_03.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 752.0,
+    "server_latency_ms": 177.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-4dc6-7344-95ea-cd164280c297",
+      "transcript": "cabin का temperature 14° है, मानेसर से 35 km दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1754152774810791,
+      "end_to_end_latency": 0.17728734016418457,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_16": {
+    "clip_id": "CLP_16",
+    "speaker_id": "SPK_02",
+    "speaker_name": "Driver Sukhwinder",
+    "sentence_id": 4,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 1.48.45 PM.ogg",
+    "wav_file": "SPK_02_utt_04.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 867.0,
+    "server_latency_ms": 187.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-5e41-7892-80f6-a296f9c19035",
+      "transcript": "सर, -14° हो गया है, होसर से 12 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.18536758422851562,
+      "end_to_end_latency": 0.18696928024291992,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_17": {
+    "clip_id": "CLP_17",
+    "speaker_id": "SPK_02",
+    "speaker_name": "Driver Sukhwinder",
+    "sentence_id": 5,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 1.49.00 PM.ogg",
+    "wav_file": "SPK_02_utt_05.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 919.0,
+    "server_latency_ms": 178.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-676a-7908-bee3-9b99857affea",
+      "transcript": "reaper 8° दिखा रहा है, 80 km पहले breakdown हुआ।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17590785026550293,
+      "end_to_end_latency": 0.17768049240112305,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_18": {
+    "clip_id": "CLP_18",
+    "speaker_id": "SPK_02",
+    "speaker_name": "Driver Sukhwinder",
+    "sentence_id": 6,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 1.49.48 PM.ogg",
+    "wav_file": "SPK_02_utt_06.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 772.0,
+    "server_latency_ms": 144.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-709d-744e-9f75-f33d63d85562",
+      "transcript": "-8 degree है कुंडली border से 15 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.14191269874572754,
+      "end_to_end_latency": 0.14358901977539062,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_19": {
+    "clip_id": "CLP_19",
+    "speaker_id": "SPK_02",
+    "speaker_name": "Driver Sukhwinder",
+    "sentence_id": 7,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 1.50.29 PM.ogg",
+    "wav_file": "SPK_02_utt_07.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 912.0,
+    "server_latency_ms": 170.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-7a16-70b1-8e2e-907f65574b2e",
+      "transcript": "चिल्लर temperature 5° है, कलेगाँव से 18 km दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1683940887451172,
+      "end_to_end_latency": 0.17021894454956055,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_20": {
+    "clip_id": "CLP_20",
+    "speaker_id": "SPK_02",
+    "speaker_name": "Driver Sukhwinder",
+    "sentence_id": 8,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 1.50.49 PM.ogg",
+    "wav_file": "SPK_02_utt_08.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 892.0,
+    "server_latency_ms": 156.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-8412-7211-9891-1fd4f9d2cfc2",
+      "transcript": "temperature -20 degree, धरुहेरा से 40 kilometer पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15381360054016113,
+      "end_to_end_latency": 0.15557217597961426,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_21": {
+    "clip_id": "CLP_21",
+    "speaker_id": "SPK_02",
+    "speaker_name": "Driver Sukhwinder",
+    "sentence_id": 9,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 1.50.58 PM.ogg",
+    "wav_file": "SPK_02_utt_09.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 713.0,
+    "server_latency_ms": 178.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-8c9f-7846-87a5-97edd5eabee5",
+      "transcript": "फ्रीज़र 4° पर चल रहा है, 14 km आगे रुकना है।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17592453956604004,
+      "end_to_end_latency": 0.17763018608093262,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_22": {
+    "clip_id": "CLP_22",
+    "speaker_id": "SPK_02",
+    "speaker_name": "Driver Sukhwinder",
+    "sentence_id": 10,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 1.51.09 PM.ogg",
+    "wav_file": "SPK_02_utt_10.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 897.0,
+    "server_latency_ms": 175.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-99d0-7b9a-a4dc-84dbd9f0b37e",
+      "transcript": "refer -2 degree दिखा रहा है, मुंबई पुणे expressway 68 km पर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17256474494934082,
+      "end_to_end_latency": 0.17482852935791016,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_23": {
+    "clip_id": "CLP_23",
+    "speaker_id": "SPK_02",
+    "speaker_name": "Driver Sukhwinder",
+    "sentence_id": 11,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 1.51.21 PM.ogg",
+    "wav_file": "SPK_02_utt_11.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 816.0,
+    "server_latency_ms": 169.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-a2ac-7c16-9dd2-a71f8b1237f8",
+      "transcript": "The temperature is 18 degree and I am 80 kilometers from the depot.",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16678929328918457,
+      "end_to_end_latency": 0.16936349868774414,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_24": {
+    "clip_id": "CLP_24",
+    "speaker_id": "SPK_02",
+    "speaker_name": "Driver Sukhwinder",
+    "sentence_id": 12,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 1.51.41 PM.ogg",
+    "wav_file": "SPK_02_utt_12.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 797.0,
+    "server_latency_ms": 154.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-ab61-7039-a17f-1425933b7eea",
+      "transcript": "Temperature is -18 degrees I am 14 kilometers from the toll.",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15211987495422363,
+      "end_to_end_latency": 0.1542501449584961,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_25": {
+    "clip_id": "CLP_25",
+    "speaker_id": "SPK_03",
+    "speaker_name": "Driver Abdul",
+    "sentence_id": 1,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 11.05.01 AM.ogg",
+    "wav_file": "SPK_03_utt_01.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 868.0,
+    "server_latency_ms": 206.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-b41a-7dea-a216-76c887a69678",
+      "transcript": "भैया जी, इसे display -18° दिखा रहा है, पानीपत से 25 km पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.2045600414276123,
+      "end_to_end_latency": 0.20642685890197754,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_26": {
+    "clip_id": "CLP_26",
+    "speaker_id": "SPK_03",
+    "speaker_name": "Driver Abdul",
+    "sentence_id": 2,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 3.15.33 PM.ogg",
+    "wav_file": "SPK_03_utt_02.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 739.0,
+    "server_latency_ms": 181.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-be8a-7148-abe7-197460297730",
+      "transcript": "temperature 18 degree हो गया है, toll plaza से 42 kilometer आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1782512664794922,
+      "end_to_end_latency": 0.18056273460388184,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_27": {
+    "clip_id": "CLP_27",
+    "speaker_id": "SPK_03",
+    "speaker_name": "Driver Abdul",
+    "sentence_id": 3,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 3.15.42 PM.ogg",
+    "wav_file": "SPK_03_utt_03.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 768.0,
+    "server_latency_ms": 159.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-c837-7a2b-bdc0-82e754062c04",
+      "transcript": "cabin का temperature 14° है, मानेसर से 35 km दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15774869918823242,
+      "end_to_end_latency": 0.1594843864440918,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_28": {
+    "clip_id": "CLP_28",
+    "speaker_id": "SPK_03",
+    "speaker_name": "Driver Abdul",
+    "sentence_id": 4,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 3.15.52 PM.ogg",
+    "wav_file": "SPK_03_utt_04.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 764.0,
+    "server_latency_ms": 171.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-cdce-76eb-adbe-d0e881182db2",
+      "transcript": "सर, -14° हो गया है, होसुर से 12 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16929221153259277,
+      "end_to_end_latency": 0.17097163200378418,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_29": {
+    "clip_id": "CLP_29",
+    "speaker_id": "SPK_03",
+    "speaker_name": "Driver Abdul",
+    "sentence_id": 5,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 3.16.08 PM.ogg",
+    "wav_file": "SPK_03_utt_05.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 787.0,
+    "server_latency_ms": 164.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-dac9-74cd-9314-0740ce8586e0",
+      "transcript": "wrapper 8 दिख रहा है, 80 km पहले break down हुआ है।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16218185424804688,
+      "end_to_end_latency": 0.16397428512573242,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_30": {
+    "clip_id": "CLP_30",
+    "speaker_id": "SPK_03",
+    "speaker_name": "Driver Abdul",
+    "sentence_id": 6,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 3.16.17 PM.ogg",
+    "wav_file": "SPK_03_utt_06.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 681.0,
+    "server_latency_ms": 143.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-f367-70cd-9092-d0fd3ac625d2",
+      "transcript": "-8 degree है, कुंडली border से 15 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.14107561111450195,
+      "end_to_end_latency": 0.14261674880981445,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_31": {
+    "clip_id": "CLP_31",
+    "speaker_id": "SPK_03",
+    "speaker_name": "Driver Abdul",
+    "sentence_id": 7,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 3.16.30 PM.ogg",
+    "wav_file": "SPK_03_utt_07.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 691.0,
+    "server_latency_ms": 142.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43a-f8de-7eed-9d67-d4f2ada41cdd",
+      "transcript": "ज़िला temperature 5° है, तेलगाँव से 18 km दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.14115428924560547,
+      "end_to_end_latency": 0.1424088478088379,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_32": {
+    "clip_id": "CLP_32",
+    "speaker_id": "SPK_03",
+    "speaker_name": "Driver Abdul",
+    "sentence_id": 8,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 3.16.46 PM.ogg",
+    "wav_file": "SPK_03_utt_08.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 696.0,
+    "server_latency_ms": 174.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-0171-7604-b09d-fe39dec60ded",
+      "transcript": "temperature -20 degree हो चुका है, धारुएडा से 40 km पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17125844955444336,
+      "end_to_end_latency": 0.17356514930725098,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_33": {
+    "clip_id": "CLP_33",
+    "speaker_id": "SPK_03",
+    "speaker_name": "Driver Abdul",
+    "sentence_id": 9,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 3.16.55 PM.ogg",
+    "wav_file": "SPK_03_utt_09.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 677.0,
+    "server_latency_ms": 162.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-0995-7619-94af-844b8ae8693d",
+      "transcript": "teaser 4° पर चल रहा है, 14 km आगे रुकना है।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1599431037902832,
+      "end_to_end_latency": 0.16163110733032227,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_34": {
+    "clip_id": "CLP_34",
+    "speaker_id": "SPK_03",
+    "speaker_name": "Driver Abdul",
+    "sentence_id": 10,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 3.17.08 PM.ogg",
+    "wav_file": "SPK_03_utt_10.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 685.0,
+    "server_latency_ms": 162.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-11ba-76be-9524-ea4550aa65f4",
+      "transcript": "refer -2° दिखा रहा है, मुंबई पुणे express 68 km पर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15839695930480957,
+      "end_to_end_latency": 0.16151833534240723,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_35": {
+    "clip_id": "CLP_35",
+    "speaker_id": "SPK_03",
+    "speaker_name": "Driver Abdul",
+    "sentence_id": 11,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 3.17.18 PM.ogg",
+    "wav_file": "SPK_03_utt_11.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 769.0,
+    "server_latency_ms": 170.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-1976-7b18-93a5-308616f8fc84",
+      "transcript": "The temperature is 18 degree and I am 80 kilometers from the depot.",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16801118850708008,
+      "end_to_end_latency": 0.16964960098266602,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_36": {
+    "clip_id": "CLP_36",
+    "speaker_id": "SPK_03",
+    "speaker_name": "Driver Abdul",
+    "sentence_id": 12,
+    "source_file": "WhatsApp Ptt 2026-11-09 at 3.17.31 PM.ogg",
+    "wav_file": "SPK_03_utt_12.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 795.0,
+    "server_latency_ms": 139.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-1f1b-7642-bb71-5582ca5c12f0",
+      "transcript": "Temperature is -18 degree. I am 14 kilometer from the toll.",
+      "model": "prisma-v3.0",
+      "processing_time": 0.13790440559387207,
+      "end_to_end_latency": 0.13935518264770508,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_37": {
+    "clip_id": "CLP_37",
+    "speaker_id": "SPK_04",
+    "speaker_name": "Driver Manjunath",
+    "sentence_id": 1,
+    "source_file": "WhatsApp Audio 2026-11-09 at 11.41.21 PM.ogg",
+    "wav_file": "SPK_04_utt_01.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 799.0,
+    "server_latency_ms": 208.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-27df-7ef8-9e7c-bb5b0c8e6872",
+      "transcript": "भैया, जीफर display -18° दिखा रहा है, पानीपत से 25 km पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.20643019676208496,
+      "end_to_end_latency": 0.20814299583435059,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_38": {
+    "clip_id": "CLP_38",
+    "speaker_id": "SPK_04",
+    "speaker_name": "Driver Manjunath",
+    "sentence_id": 2,
+    "source_file": "WhatsApp Audio 2026-11-09 at 11.41.21 PM (1).ogg",
+    "wav_file": "SPK_04_utt_02.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 798.0,
+    "server_latency_ms": 171.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-319c-7b9a-8864-c641b145adfa",
+      "transcript": "temperature 18° हो गया है, toll plaza से 42 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16872739791870117,
+      "end_to_end_latency": 0.17052674293518066,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_39": {
+    "clip_id": "CLP_39",
+    "speaker_id": "SPK_04",
+    "speaker_name": "Driver Manjunath",
+    "sentence_id": 3,
+    "source_file": "WhatsApp Audio 2026-11-09 at 11.41.22 PM.ogg",
+    "wav_file": "SPK_04_utt_03.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 812.0,
+    "server_latency_ms": 164.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-3af0-79a7-b6c1-5aea852b7c61",
+      "transcript": "cabin का temperature 14° है, मानेसर से 35 km दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1622457504272461,
+      "end_to_end_latency": 0.16409063339233398,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_40": {
+    "clip_id": "CLP_40",
+    "speaker_id": "SPK_04",
+    "speaker_name": "Driver Manjunath",
+    "sentence_id": 4,
+    "source_file": "WhatsApp Audio 2026-11-09 at 11.41.22 PM (1).ogg",
+    "wav_file": "SPK_04_utt_04.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 880.0,
+    "server_latency_ms": 155.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-4220-700f-af33-754d85848c07",
+      "transcript": "सर, -14° हो गया है, होसर से 12 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15327978134155273,
+      "end_to_end_latency": 0.15544819831848145,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_41": {
+    "clip_id": "CLP_41",
+    "speaker_id": "SPK_04",
+    "speaker_name": "Driver Manjunath",
+    "sentence_id": 5,
+    "source_file": "WhatsApp Audio 2026-11-09 at 11.41.22 PM (2).ogg",
+    "wav_file": "SPK_04_utt_05.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 785.0,
+    "server_latency_ms": 161.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-486a-7667-b79b-6feb41a73ec8",
+      "transcript": "जीफर 8° दिखा रहा है, 80 km पहले break down हुआ।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15983223915100098,
+      "end_to_end_latency": 0.1613759994506836,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_42": {
+    "clip_id": "CLP_42",
+    "speaker_id": "SPK_04",
+    "speaker_name": "Driver Manjunath",
+    "sentence_id": 6,
+    "source_file": "WhatsApp Audio 2026-11-09 at 11.41.23 PM.ogg",
+    "wav_file": "SPK_04_utt_06.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 699.0,
+    "server_latency_ms": 147.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-515c-76e9-9f3f-c6bf591793b3",
+      "transcript": "-8° है, कुंडली border से 15 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.14564037322998047,
+      "end_to_end_latency": 0.1468946933746338,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_43": {
+    "clip_id": "CLP_43",
+    "speaker_id": "SPK_04",
+    "speaker_name": "Driver Manjunath",
+    "sentence_id": 7,
+    "source_file": "WhatsApp Audio 2026-11-09 at 11.41.23 PM (1).ogg",
+    "wav_file": "SPK_04_utt_07.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 696.0,
+    "server_latency_ms": 170.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-5975-7b43-a908-0e4b5963f008",
+      "transcript": "चिल्लर temperature 5° है, तेलगाँव से 18 km दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.168287992477417,
+      "end_to_end_latency": 0.16984248161315918,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_44": {
+    "clip_id": "CLP_44",
+    "speaker_id": "SPK_04",
+    "speaker_name": "Driver Manjunath",
+    "sentence_id": 8,
+    "source_file": "WhatsApp Audio 2026-11-09 at 11.41.23 PM (2).ogg",
+    "wav_file": "SPK_04_utt_08.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 686.0,
+    "server_latency_ms": 159.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-6197-7163-bb5b-9877624d745b",
+      "transcript": "temperature -20 degree, दाहुएरा से 40 km पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15704965591430664,
+      "end_to_end_latency": 0.15889930725097656,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_45": {
+    "clip_id": "CLP_45",
+    "speaker_id": "SPK_04",
+    "speaker_name": "Driver Manjunath",
+    "sentence_id": 9,
+    "source_file": "WhatsApp Audio 2026-11-09 at 11.41.23 PM (3).ogg",
+    "wav_file": "SPK_04_utt_09.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 670.0,
+    "server_latency_ms": 166.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-6952-7c28-ad0e-410df7f81826",
+      "transcript": "freezer 4° पर चल रहा है, 14 km आगे रुकना है।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16431069374084473,
+      "end_to_end_latency": 0.16623973846435547,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_46": {
+    "clip_id": "CLP_46",
+    "speaker_id": "SPK_04",
+    "speaker_name": "Driver Manjunath",
+    "sentence_id": 10,
+    "source_file": "WhatsApp Audio 2026-11-09 at 11.41.24 PM.ogg",
+    "wav_file": "SPK_04_utt_10.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 708.0,
+    "server_latency_ms": 166.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-71c4-704d-8e52-01a6723fa008",
+      "transcript": "reaper -2° दिखा रहा है, मुंबई पुणे expressway 68 km पर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16455984115600586,
+      "end_to_end_latency": 0.16625404357910156,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_47": {
+    "clip_id": "CLP_47",
+    "speaker_id": "SPK_04",
+    "speaker_name": "Driver Manjunath",
+    "sentence_id": 11,
+    "source_file": "WhatsApp Audio 2026-11-09 at 11.41.24 PM (1).ogg",
+    "wav_file": "SPK_04_utt_11.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 663.0,
+    "server_latency_ms": 156.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-798c-7e19-a638-27f8dd73e47a",
+      "transcript": "The temperature is 18 degrees and I am 80 kilometers from the depot.",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1547245979309082,
+      "end_to_end_latency": 0.15637493133544922,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_48": {
+    "clip_id": "CLP_48",
+    "speaker_id": "SPK_04",
+    "speaker_name": "Driver Manjunath",
+    "sentence_id": 12,
+    "source_file": "WhatsApp Audio 2026-11-09 at 11.41.24 PM (2).ogg",
+    "wav_file": "SPK_04_utt_12.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 715.0,
+    "server_latency_ms": 160.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-7eec-7103-a026-e92f32354fe0",
+      "transcript": "Temperature is -18 degrees, I am 14 kilometers from the toll.",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1576077938079834,
+      "end_to_end_latency": 0.1602787971496582,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_49": {
+    "clip_id": "CLP_49",
+    "speaker_id": "SPK_05",
+    "speaker_name": "Driver Vikram",
+    "sentence_id": 2,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.30.45 AM.ogg",
+    "wav_file": "SPK_05_utt_02.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 677.0,
+    "server_latency_ms": 164.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-8644-71c8-b539-ea3f1030ea14",
+      "transcript": "temperature 18° हो गया है, toll plaza से 42 km।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16136908531188965,
+      "end_to_end_latency": 0.16376972198486328,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_50": {
+    "clip_id": "CLP_50",
+    "speaker_id": "SPK_05",
+    "speaker_name": "Driver Vikram",
+    "sentence_id": 3,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.31.23 AM.ogg",
+    "wav_file": "SPK_05_utt_03.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 667.0,
+    "server_latency_ms": 160.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-8ed9-7f61-9ab1-b9310b18fd10",
+      "transcript": "cabin temperature 14° है, मनेसर से 35 km दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1580367088317871,
+      "end_to_end_latency": 0.15973973274230957,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_51": {
+    "clip_id": "CLP_51",
+    "speaker_id": "SPK_05",
+    "speaker_name": "Driver Vikram",
+    "sentence_id": 4,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.31.31 AM.ogg",
+    "wav_file": "SPK_05_utt_04.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 679.0,
+    "server_latency_ms": 170.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-96bf-7287-b856-17ba6575126a",
+      "transcript": "Sir, minus 14 degree हो गया है होसर से 12 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16833829879760742,
+      "end_to_end_latency": 0.17005538940429688,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_52": {
+    "clip_id": "CLP_52",
+    "speaker_id": "SPK_05",
+    "speaker_name": "Driver Vikram",
+    "sentence_id": 5,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.31.44 AM.ogg",
+    "wav_file": "SPK_05_utt_05.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 677.0,
+    "server_latency_ms": 166.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-9f88-79ec-a09b-9374753430f3",
+      "transcript": "D4 8° दिखा रहा है, 80 km पहले breakdown हुआ।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16433382034301758,
+      "end_to_end_latency": 0.1660473346710205,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_53": {
+    "clip_id": "CLP_53",
+    "speaker_id": "SPK_05",
+    "speaker_name": "Driver Vikram",
+    "sentence_id": 6,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.31.52 AM.ogg",
+    "wav_file": "SPK_05_utt_06.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 637.0,
+    "server_latency_ms": 133.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-a762-72b1-a20f-8e12c618a62c",
+      "transcript": "-8° है, कुंडली border से 15 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.13089728355407715,
+      "end_to_end_latency": 0.1326160430908203,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_54": {
+    "clip_id": "CLP_54",
+    "speaker_id": "SPK_05",
+    "speaker_name": "Driver Vikram",
+    "sentence_id": 7,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.32.17 AM.ogg",
+    "wav_file": "SPK_05_utt_07.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 752.0,
+    "server_latency_ms": 170.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-ad5c-7e11-96df-913246911b75",
+      "transcript": "चिल्लर temperature 5° है, तलेगाँव से 18 km दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16893219947814941,
+      "end_to_end_latency": 0.17042160034179688,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_55": {
+    "clip_id": "CLP_55",
+    "speaker_id": "SPK_05",
+    "speaker_name": "Driver Vikram",
+    "sentence_id": 8,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.32.27 AM.ogg",
+    "wav_file": "SPK_05_utt_08.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 683.0,
+    "server_latency_ms": 156.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-b54f-7cd6-93e3-e49299d430ab",
+      "transcript": "temperature -20°, धरूहेरा से 40 km पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15479493141174316,
+      "end_to_end_latency": 0.1563892364501953,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_56": {
+    "clip_id": "CLP_56",
+    "speaker_id": "SPK_05",
+    "speaker_name": "Driver Vikram",
+    "sentence_id": 9,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.32.39 AM.ogg",
+    "wav_file": "SPK_05_utt_09.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 692.0,
+    "server_latency_ms": 166.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-bd4a-79c4-a3e8-ea08bd8a2f93",
+      "transcript": "freezer 4° पर चल रहा है, 14 km आगे रुकना है।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1641373634338379,
+      "end_to_end_latency": 0.16596412658691406,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_57": {
+    "clip_id": "CLP_57",
+    "speaker_id": "SPK_05",
+    "speaker_name": "Driver Vikram",
+    "sentence_id": 10,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.32.49 AM.ogg",
+    "wav_file": "SPK_05_utt_10.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 707.0,
+    "server_latency_ms": 173.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-c489-7698-b252-eace829d8d7b",
+      "transcript": "differ -2° दिखा रहा है, मुंबई पुणे expressway 68 km पर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1709892749786377,
+      "end_to_end_latency": 0.1734921932220459,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_58": {
+    "clip_id": "CLP_58",
+    "speaker_id": "SPK_05",
+    "speaker_name": "Driver Vikram",
+    "sentence_id": 11,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.33.29 AM.ogg",
+    "wav_file": "SPK_05_utt_11.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 703.0,
+    "server_latency_ms": 150.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-cc8d-7970-b6e0-09594b56dfa7",
+      "transcript": "The temperature is 18 degrees and I am 80 kilometers from the depot.",
+      "model": "prisma-v3.0",
+      "processing_time": 0.14849138259887695,
+      "end_to_end_latency": 0.15021133422851562,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_59": {
+    "clip_id": "CLP_59",
+    "speaker_id": "SPK_05",
+    "speaker_name": "Driver Vikram",
+    "sentence_id": 12,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.34.12 AM.ogg",
+    "wav_file": "SPK_05_utt_12.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 732.0,
+    "server_latency_ms": 158.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-d1fe-7900-9553-81508f68877b",
+      "transcript": "The temperature is -18 degrees I am 14 kilometers from the toll.",
+      "model": "prisma-v3.0",
+      "processing_time": 0.155853271484375,
+      "end_to_end_latency": 0.15783166885375977,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_60": {
+    "clip_id": "CLP_60",
+    "speaker_id": "SPK_06",
+    "speaker_name": "Driver Kuldeep",
+    "sentence_id": 1,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.33.57 AM.ogg",
+    "wav_file": "SPK_06_utt_01.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 767.0,
+    "server_latency_ms": 193.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-d98d-7a42-b323-44e5d08ac7b2",
+      "transcript": "भैया, refer display -18° दिखा रहा है, पानीपत से 25 km पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.19173741340637207,
+      "end_to_end_latency": 0.1933910846710205,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_61": {
+    "clip_id": "CLP_61",
+    "speaker_id": "SPK_06",
+    "speaker_name": "Driver Kuldeep",
+    "sentence_id": 2,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.34.05 AM.ogg",
+    "wav_file": "SPK_06_utt_02.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 718.0,
+    "server_latency_ms": 157.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-dff3-704a-8831-208e5f856d49",
+      "transcript": "temperature 18° हो गया है, toll plaza से 42 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15537548065185547,
+      "end_to_end_latency": 0.1566762924194336,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_62": {
+    "clip_id": "CLP_62",
+    "speaker_id": "SPK_06",
+    "speaker_name": "Driver Kuldeep",
+    "sentence_id": 3,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.34.13 AM.ogg",
+    "wav_file": "SPK_06_utt_03.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 653.0,
+    "server_latency_ms": 149.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-e53c-776b-af85-00cfa2039d5b",
+      "transcript": "cabin का temperature 14° है, मानेसर से 35 km दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1469278335571289,
+      "end_to_end_latency": 0.1487410068511963,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_63": {
+    "clip_id": "CLP_63",
+    "speaker_id": "SPK_06",
+    "speaker_name": "Driver Kuldeep",
+    "sentence_id": 4,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.34.47 AM.ogg",
+    "wav_file": "SPK_06_utt_04.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 721.0,
+    "server_latency_ms": 182.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-eae8-7c4f-9e80-f1574fc1eef3",
+      "transcript": "Sir, -14° हो गया, मसूर से 12 km।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1802351474761963,
+      "end_to_end_latency": 0.18224501609802246,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_64": {
+    "clip_id": "CLP_64",
+    "speaker_id": "SPK_06",
+    "speaker_name": "Driver Kuldeep",
+    "sentence_id": 5,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.34.54 AM.ogg",
+    "wav_file": "SPK_06_utt_05.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 693.0,
+    "server_latency_ms": 170.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-f2ee-7bcb-9a1d-2a03a89bca45",
+      "transcript": "refer 8 degree दिखा रहा है, 80 km पहले break down हुआ है।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16830992698669434,
+      "end_to_end_latency": 0.17038369178771973,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_65": {
+    "clip_id": "CLP_65",
+    "speaker_id": "SPK_06",
+    "speaker_name": "Driver Kuldeep",
+    "sentence_id": 6,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.35.01 AM.ogg",
+    "wav_file": "SPK_06_utt_06.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 709.0,
+    "server_latency_ms": 159.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43b-fb46-75e8-b5eb-66bb09719bee",
+      "transcript": "-8 degree है, कुंडली border से 15 km।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15671491622924805,
+      "end_to_end_latency": 0.15895652770996094,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_66": {
+    "clip_id": "CLP_66",
+    "speaker_id": "SPK_06",
+    "speaker_name": "Driver Kuldeep",
+    "sentence_id": 7,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.35.11 AM.ogg",
+    "wav_file": "SPK_06_utt_07.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 692.0,
+    "server_latency_ms": 157.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-0346-7bac-ab12-23a50adcd401",
+      "transcript": "chiller temperature 5° है, तेलगांव से 18 km दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1555006504058838,
+      "end_to_end_latency": 0.15690326690673828,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_67": {
+    "clip_id": "CLP_67",
+    "speaker_id": "SPK_06",
+    "speaker_name": "Driver Kuldeep",
+    "sentence_id": 8,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.36.32 AM.ogg",
+    "wav_file": "SPK_06_utt_08.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 687.0,
+    "server_latency_ms": 156.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-0b2e-7465-b706-be45de34cd5a",
+      "transcript": "temperature -20 degree, दारोएरा से 40 km पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15326905250549316,
+      "end_to_end_latency": 0.15559005737304688,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_68": {
+    "clip_id": "CLP_68",
+    "speaker_id": "SPK_06",
+    "speaker_name": "Driver Kuldeep",
+    "sentence_id": 9,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.36.40 AM.ogg",
+    "wav_file": "SPK_06_utt_09.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 680.0,
+    "server_latency_ms": 160.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-138d-7b24-a106-d9d246e6a7e7",
+      "transcript": "freezer 4° पर चल रहा है, 14 km आगे रुकना है।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15896391868591309,
+      "end_to_end_latency": 0.16008210182189941,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_69": {
+    "clip_id": "CLP_69",
+    "speaker_id": "SPK_06",
+    "speaker_name": "Driver Kuldeep",
+    "sentence_id": 10,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.36.49 AM.ogg",
+    "wav_file": "SPK_06_utt_10.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 731.0,
+    "server_latency_ms": 167.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-198b-7a6c-abc0-f69edbb2d7a3",
+      "transcript": "refer -2° दिखा रहा है, मुंबई पुणे expressway 68 km पार।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1647794246673584,
+      "end_to_end_latency": 0.1665651798248291,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_70": {
+    "clip_id": "CLP_70",
+    "speaker_id": "SPK_06",
+    "speaker_name": "Driver Kuldeep",
+    "sentence_id": 11,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.37.00 AM.ogg",
+    "wav_file": "SPK_06_utt_11.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 689.0,
+    "server_latency_ms": 181.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-21d5-726e-81cf-f1c4b3bd072f",
+      "transcript": "The temperature is 18 degrees and i am 80 kilometers from the deep.",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17868375778198242,
+      "end_to_end_latency": 0.18116331100463867,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_71": {
+    "clip_id": "CLP_71",
+    "speaker_id": "SPK_06",
+    "speaker_name": "Driver Kuldeep",
+    "sentence_id": 12,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.37.12 AM.ogg",
+    "wav_file": "SPK_06_utt_12.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 680.0,
+    "server_latency_ms": 156.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-2918-709e-bda7-d295addf68c8",
+      "transcript": "Temperature is -18 degrees. I am 14 kilometers from the toll.",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15432357788085938,
+      "end_to_end_latency": 0.15596270561218262,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_72": {
+    "clip_id": "CLP_72",
+    "speaker_id": "SPK_07",
+    "speaker_name": "Driver Balwinder",
+    "sentence_id": 1,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.37.35 AM.ogg",
+    "wav_file": "SPK_07_utt_01.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 743.0,
+    "server_latency_ms": 171.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-30e0-7ed1-881f-dfe312ad958f",
+      "transcript": "भैया, refer display में 18° दिखा रहा है। पानीपत से 25 km पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15881848335266113,
+      "end_to_end_latency": 0.17099523544311523,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_73": {
+    "clip_id": "CLP_73",
+    "speaker_id": "SPK_07",
+    "speaker_name": "Driver Balwinder",
+    "sentence_id": 2,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.38.10 AM.ogg",
+    "wav_file": "SPK_07_utt_02.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 672.0,
+    "server_latency_ms": 169.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-43b3-722f-bec2-c8a2345e8935",
+      "transcript": "temperature 18° हो गया है, toll plaza से 42 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16730451583862305,
+      "end_to_end_latency": 0.16930651664733887,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_74": {
+    "clip_id": "CLP_74",
+    "speaker_id": "SPK_07",
+    "speaker_name": "Driver Balwinder",
+    "sentence_id": 3,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.38.29 AM.ogg",
+    "wav_file": "SPK_07_utt_03.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 729.0,
+    "server_latency_ms": 171.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-4cc0-79d0-893c-f50f146c8121",
+      "transcript": "cabin का temperature 44 degree है, मानेसा से 35 km दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1689167022705078,
+      "end_to_end_latency": 0.1705625057220459,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_75": {
+    "clip_id": "CLP_75",
+    "speaker_id": "SPK_07",
+    "speaker_name": "Driver Balwinder",
+    "sentence_id": 4,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.38.50 AM.ogg",
+    "wav_file": "SPK_07_utt_04.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 679.0,
+    "server_latency_ms": 174.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-5d90-7587-860e-da8108b0c9f2",
+      "transcript": "Sir, -14° हो गया, होसुर से 12 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17164349555969238,
+      "end_to_end_latency": 0.1735057830810547,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_76": {
+    "clip_id": "CLP_76",
+    "speaker_id": "SPK_07",
+    "speaker_name": "Driver Balwinder",
+    "sentence_id": 5,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.40.04 AM.ogg",
+    "wav_file": "SPK_07_utt_05.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 790.0,
+    "server_latency_ms": 157.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-677c-7ce2-a4ca-4ae1fc8f7cef",
+      "transcript": "refer art degree दिखा रहा है, 80 km पहले break down हुआ।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.15534758567810059,
+      "end_to_end_latency": 0.1570901870727539,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_77": {
+    "clip_id": "CLP_77",
+    "speaker_id": "SPK_07",
+    "speaker_name": "Driver Balwinder",
+    "sentence_id": 6,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.40.18 AM.ogg",
+    "wav_file": "SPK_07_utt_06.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 796.0,
+    "server_latency_ms": 163.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-7100-7a38-9709-13b789bf0d54",
+      "transcript": "-8 degree है, कु कुंडली border से 15 km आगे।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16080784797668457,
+      "end_to_end_latency": 0.16277337074279785,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_78": {
+    "clip_id": "CLP_78",
+    "speaker_id": "SPK_07",
+    "speaker_name": "Driver Balwinder",
+    "sentence_id": 7,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.42.13 AM.ogg",
+    "wav_file": "SPK_07_utt_07.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 819.0,
+    "server_latency_ms": 188.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-7999-7594-b3eb-48a74a7fce88",
+      "transcript": "chiller temperature 5° है, तेलंगौआ से 18 km दूर।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.18558788299560547,
+      "end_to_end_latency": 0.18759989738464355,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_79": {
+    "clip_id": "CLP_79",
+    "speaker_id": "SPK_07",
+    "speaker_name": "Driver Balwinder",
+    "sentence_id": 8,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.42.24 AM.ogg",
+    "wav_file": "SPK_07_utt_08.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 878.0,
+    "server_latency_ms": 245.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-82cd-783e-8b39-7a0b50920411",
+      "transcript": "temperature -20°, देहरा देहरादुवारा से 40 km पहले।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1828913688659668,
+      "end_to_end_latency": 0.24537086486816406,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_80": {
+    "clip_id": "CLP_80",
+    "speaker_id": "SPK_07",
+    "speaker_name": "Driver Balwinder",
+    "sentence_id": 9,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.42.34 AM.ogg",
+    "wav_file": "SPK_07_utt_09.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 707.0,
+    "server_latency_ms": 166.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-8bed-73e3-8653-28d7d4b469df",
+      "transcript": "freezer 4° पर चल रहा है, 14 km आगे रुकना है।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.1646261215209961,
+      "end_to_end_latency": 0.1663365364074707,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_81": {
+    "clip_id": "CLP_81",
+    "speaker_id": "SPK_07",
+    "speaker_name": "Driver Balwinder",
+    "sentence_id": 10,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.42.46 AM.ogg",
+    "wav_file": "SPK_07_utt_10.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 790.0,
+    "server_latency_ms": 180.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-957b-758a-a99f-6a570ecbd2c8",
+      "transcript": "refer -2° दिखा रहा है, मुंबई पुणे expressway 68 km पार।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.17731451988220215,
+      "end_to_end_latency": 0.18016433715820312,
+      "detected_language_code": "hi-IN"
+    }
+  },
+  "CLP_82": {
+    "clip_id": "CLP_82",
+    "speaker_id": "SPK_07",
+    "speaker_name": "Driver Balwinder",
+    "sentence_id": 11,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.42.56 AM.ogg",
+    "wav_file": "SPK_07_utt_11.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 766.0,
+    "server_latency_ms": 171.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-9e33-703a-b3e9-af81c5464f16",
+      "transcript": "temperature is 18 degrees and I am 80 kilometer from the depot।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16955256462097168,
+      "end_to_end_latency": 0.1713392734527588,
+      "detected_language_code": "en-IN"
+    }
+  },
+  "CLP_83": {
+    "clip_id": "CLP_83",
+    "speaker_id": "SPK_07",
+    "speaker_name": "Driver Balwinder",
+    "sentence_id": 12,
+    "source_file": "WhatsApp Ptt 2026-11-10 at 11.43.05 AM.ogg",
+    "wav_file": "SPK_07_utt_12.wav",
+    "status_code": 200,
+    "http_roundtrip_ms": 785.0,
+    "server_latency_ms": 169.0,
+    "raw_response": {
+      "success": true,
+      "request_id": "01a1c43c-a7b0-7c87-9ea8-ebc091d8a9ce",
+      "transcript": "temperature is -18 degree, I am 14 kilometer from the toll।",
+      "model": "prisma-v3.0",
+      "processing_time": 0.16755104064941406,
+      "end_to_end_latency": 0.1693251132965088,
+      "detected_language_code": "en-IN"
+    }
+  }
+}

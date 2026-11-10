@@ -1,0 +1,8 @@
+speaker_id,speaker_name,region,accent,clips_count,temp_survived,dist_survived,slot_survival,both_survived,fsm_direct_dispatch,fsm_driver_corrected,fsm_wrong_dispatched,mean_server_lat_ms,mean_http_lat_ms
+SPK_01,Driver Harish,Northern Corridor (Delhi-Haryana),Haryanvi Hindi,12,12/12 (100.0%),11/12 (91.7%),23/24 (95.8%),11/12 (91.7%),11,1,0,158.3,789.4
+SPK_02,Driver Sukhwinder,Western Freight Corridor (Mumbai-Pune),Punjabi-Hindi,12,12/12 (100.0%),12/12 (100.0%),24/24 (100.0%),12/12 (100.0%),12,0,0,171.0,829.6
+SPK_03,Driver Abdul,Central Hub (Rajasthan-NCR),Standard North-Indian Hindi,12,11/12 (91.7%),12/12 (100.0%),23/24 (95.8%),11/12 (91.7%),11,1,0,164.4,743.3
+SPK_04,Driver Manjunath,Southern Freight Corridor (Hosur-Bangalore),Dravidian-accented Hindi/English,12,12/12 (100.0%),12/12 (100.0%),24/24 (100.0%),12/12 (100.0%),12,0,0,165.2,742.6
+SPK_05,Driver Vikram,Gujarat-Maharashtra Corridor,Gujarati Hindi,11,11/11 (100.0%),11/11 (100.0%),22/22 (100.0%),11/11 (100.0%),11,0,0,160.5,691.5
+SPK_06,Driver Kuldeep,KMP Expressway & Outer Bypass,Rustic Hindi,12,12/12 (100.0%),12/12 (100.0%),24/24 (100.0%),12/12 (100.0%),12,0,0,165.6,701.7
+SPK_07,Driver Balwinder,GT Road Ambala-Ludhiana,Majhi Punjabi-Hindi,12,9/12 (75.0%),12/12 (100.0%),21/24 (87.5%),9/12 (75.0%),9,3,0,177.0,762.8
