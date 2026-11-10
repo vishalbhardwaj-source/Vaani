@@ -7,7 +7,6 @@ sdk: docker
 app_port: 8501
 tags:
   - streamlit
-pinned: false
 license: mit
 ---
 
