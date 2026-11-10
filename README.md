@@ -99,7 +99,146 @@ The AI proposes candidate structured slots; deterministic rules cross-check phys
 
 ---
 
-## 2. Benchmark Proof (The Evidence)
+## 2. End-to-End Operational Workflow: How Vaani Works
+
+Vaani operates as an industrial voice dispatcher that connects transport drivers on noisy cellular connections directly to fleet logistics control towers. The entire lifecycle is governed by an absolute invariant: **the voice pipeline proposes, deterministic code validates, and the driver confirms before any action is executed.**
+
+### 2.1 The Operational Sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Driver as 🚚 Transport Driver<br/>(Cabin Roar / GSM Phone)
+    participant Telephony as 📡 Telephony Gateway<br/>(WebSocket / G.711 PCM16)
+    participant ASR as 🎙️ Dual ASR Engine<br/>(Prisma STT / Whisper-LoRA)
+    participant NLU as 🔍 Slot Extractor<br/>(Pydantic & Gazetteer)
+    participant FSM as 🛡️ Deterministic Safety Gate<br/>(Pure Python FSM)
+    participant DB as 💾 Telematics DB<br/>(fleet.sqlite IoT Sensors)
+    participant TTS as 🔊 Spoken Read-Back<br/>(Gnani Timbre TTS)
+    actor Tower as 🏢 Control Tower / Supervisor
+
+    Driver->>Telephony: Inbound GSM Call ("Bhaiya, temp 18 degree ho gaya...")
+    Telephony->>DB: Lookup Caller ID (bind vehicle HR-55-TC-1102)
+    DB-->>FSM: Active Cargo: Ice Cream, Target: -22°C, Sensor: -10°C
+    Telephony->>ASR: Transcode & Stream 16 kHz Linear PCM
+    ASR-->>NLU: Spoken Transcript ("Temp 18 degree toll plaza se 42 km")
+    NLU->>FSM: Candidate Record (incident: reefer, temp: 18°C, dist: 42 km)
+    
+    rect rgb(30, 41, 59)
+        note over FSM,DB: Deterministic Verification (< 2 ms)
+        FSM->>FSM: Check Physical Bounds (-40°C to +50°C) -> 18°C is valid
+        FSM->>DB: Cross-check against -22°C Deep Freeze Target & -10°C Sensor
+        FSM->>FSM: Anomaly Detected! (Target divergence: 40°C > ±12°C tolerance)
+        FSM->>FSM: Enforce Phonetic Trap Challenge (18 vs 80 / dropped minus check)
+    end
+
+    FSM->>TTS: Generate Spoken Challenge ("Temp 18 (ek, aath) degree dikh raha hai?")
+    TTS->>Telephony: Synthesize 16 kHz Natural Hindi Audio (Timbre)
+    Telephony->>Driver: Spoken Read-Back Aloud over Earpiece
+    
+    alt Driver Confirms Erroneous Reading ("Haan bhaiya sahi hai")
+        Driver->>FSM: Reflexive Agreement Received
+        FSM->>FSM: 🚨 BLOCKED: Reflexive confirm disallowed on divergent readings!
+        FSM->>Tower: Enqueue to Supervisor Queue (Flag: REFLEXIVE_OVERRIDE_PREVENTED)
+    else Driver Corrects ASR Slip ("Nahi, minus 14 degree hai")
+        Driver->>FSM: Spoken Correction Spoken
+        FSM->>FSM: Transition to CORRECTING -> Update Temp Slot to -14°C
+        FSM->>TTS: Spoken Read-back ("Minus 14 degree, sahi hai?")
+        Driver->>FSM: Explicit Confirmation ("Haan sahi hai")
+        FSM->>FSM: Transition to ACTING state (Safety Gate Unlocked)
+        FSM->>DB: Dispatch Roadside Assistance Ticket (Priority: CRITICAL)
+        FSM->>Tower: Telematics HUD Updated & Cryptographic Audit Logged
+        FSM->>Driver: "Dispatch confirm ho gaya hai. Help on the way."
+    end
+```
+
+---
+
+### 2.2 Step-by-Step System Lifecycle
+
+#### Stage 1: Call Ingestion & Telematics Binding
+- **Carrier / CPaaS Connection:** The driver dials the fleet dispatch number. Audio connects via the full-duplex WebSocket server (`app/telephony_server.py`), compatible with Twilio Media Streams, Exotel, Asterisk, and FreeSWITCH.
+- **Caller-ID Telematics Lookup:** The system inspects the incoming telephony ANI/Caller ID (`lookup_vehicle_by_phone`), immediately retrieving the assigned truck record from `data/fleet.sqlite` (vehicle ID `HR-55-TC-1102`, cargo profile *Deep Freeze Ice Cream*, target setpoint `-22°C`, and live IoT reefer sensor reading `current_temp_c`).
+- **Caller-ID Fallback & Retry Cap:** If the driver calls from an unregistered personal phone, Vaani prompts for vehicle registration or the last 4 digits (e.g., *'1102'*). To prevent infinite loop traps in high-stress road situations, registration retries are strictly capped at 2 attempts before escalating to a human dispatcher.
+
+#### Stage 2: Audio Transcoding & Dual ASR Transcription
+- **Narrowband Transcoding:** Cellular 8 kHz narrowband telephony audio (G.711 / AMR) is upsampled and normalized into 16 kHz Linear PCM.
+- **Dual ASR Engine:**
+  - *Cloud Route:* Transcribed live via **Gnani Prisma STT** (`prisma-v3.0` at `https://api.vachana.ai/stt/v3`), delivering high-fidelity Indic/Devanagari transcripts with ~800 ms HTTP round-trip latency.
+  - *Local Route:* Fallback to local **Fine-Tuned Whisper-LoRA** (`openai/whisper-tiny` with PEFT adapters), operating with a 384 ms GPU / 891 ms CPU turnaround without cloud API dependency.
+- **Real-Time Voice Activity Detection (VAD):** An energy-based VAD frames incoming audio packets, detecting driver speech onset within 20 ms.
+
+#### Stage 3: Structured Slot Extraction & Geographic Grounding
+- **Pydantic Validation Gate:** The spoken transcript is parsed into a structured `ExtractionRecord` schema containing:
+  - `incident_type` (`reefer_temperature`, `breakdown`, `delay`, `accident`, `tyre_puncture`)
+  - `temperature_c` (parsed via regex and Hindi number words, e.g., *atharah* $ightarrow$ 18.0)
+  - `distance_km` (e.g., *42 km*)
+  - `location_text` (landmark or freight corridor)
+- **Indian Freight Corridor Gazetteer:** Resolves landmarks against a curated national highway gazetteer using fuzzy matching with a 0.80 cutoff and a mandatory 0.10 margin rule (`(best_score - second_score) >= 0.10`) plus a `KNOWN_CONFUSABLE_PAIRS` dictionary (preventing misclassification of *Rewari* vs *Rewa*, *Neemrana* vs *Nimrana*, *Shahbad* vs *Shahabad*).
+- **Non-Circular GPS Telematics Grounding:** Generic or unlocatable fragments (*"toll"*, *"flyover"*, *"highway"*) are rejected and anchored to live vehicle GPS coordinates (`gps_lat`, `gps_lng`) with fix age announcements (*"GPS telemetry (4 minute purana) ke mutabik..."*).
+
+#### Stage 4: Deterministic FSM Safety Gate & Verification
+The core differentiator of Vaani is that **the language model never authorizes actions**. Plain Python code executes deterministic checks:
+1. **Physical Plausibility Bounds:** Validates that reefer temperatures fall strictly between `-40°C` and `+50°C`. Out-of-bounds acoustic slips (such as *80°C*) are immediately quarantined from execution.
+2. **Four Live-Sensor Decision Rules:**
+   - *Rule 1 (Matches Live Sensor within per-cargo tolerance):* Spoken report matches reefer cab display ($\pm 0.8^\circ	ext{C}$ to $\pm 2.0^\circ	ext{C}$). The gate ALLOWs the report without nuisance challenges. If the reading breaches cargo storage safety limits, `check_cargo_temperature_excursion()` independently triggers a `CRITICAL` dispatch priority.
+   - *Rule 2 (Matches Target Only):* Driver reports target setpoint while sensor diverges. Gate issues a cab display confirmation challenge.
+   - *Rule 3 (Matches Neither):* Serious anomaly or phonetic trap (e.g., *18* misheard as *80*). Gate issues a mandatory explicit repetition prompt.
+   - *Rule 4 (Stale or Faulty Sensor):* If sensor fix age > 15 minutes or sensor is flagged faulty, gate safely falls back to cargo-target bounds with full audit trail.
+3. **Bi-Directional Sign-Flip & Dropped-Minus Protection:** Detects dropped minus signs (e.g., `-14°C` reported or transcribed as `+14°C` on deep freeze cargo) and forces immediate clarification.
+4. **Carrier Echo Loop Rejection:** Rejects reflected prompt audio echoing from truck cabin speakers (`ACOUSTIC_ECHO_REJECTED`), preventing self-confirmation loops.
+
+#### Stage 5: Spoken Hinglish Read-Back & Disambiguation (TTS)
+- **Conversational Hindi/Hinglish Synthesis:** Formulates a concise read-back prompt and synthesizes natural audio using **Gnani Timbre** (`timbre-v2.5` / `timbre-v3.0` using *Pranav* or *Devansh* voices).
+- **Phonetic Disambiguation via Digit-by-Digit Spelling:** For confusable numbers, Vaani generates explicit digit-by-digit read-backs:
+  - Spoken temperature: *"Reefer temperature 18 (ek, aath) degree. Sahi hai bhaiya?"*
+  - Spoken distance: *"Panipat Toll se 68 (chhah, aath) km."*
+- **Split-Turn Challenge Architecture:** When an acoustic trap is flagged, the system splits verification into two short, manageable turns (~4.3 s each) instead of a tiring monologue, reducing cognitive load on drivers in noisy cabins.
+- **Sub-Word Slot Barge-In:** Drivers can interrupt playback immediately; if barge-in occurs after a slot is spoken, the state machine isolates the target slot without re-asking unaffected fields.
+
+#### Stage 6: Confirmation, Correction & Dispatch Execution
+- **State Transition Gate:** The finite state machine evaluates the driver's response:
+  - *Affirmative Confirmation ("Haan, sahi hai"):* Unlocks transition from `CONFIRMING` $ightarrow$ `ACTING`.
+  - *Spoken Correction ("Nahi bhaiya, 18 degree hai"):* Transitions to `CORRECTING`, extracts corrected values, updates the slot, and generates a fresh read-back.
+  - *Unclear Response / Silence:* Reprompts up to 2 times before escalating.
+  - *Abrupt Call Drop / Hangup:* If call drops during `CONFIRMING` on a sensor-corroborated excursion, automatically logs a priority ticket in the Supervisor Queue.
+- **The Non-Negotiable Tool Lock:**
+  ```python
+  if self.state != DialogueState.ACTING:
+      raise PermissionError("SAFETY GATE VIOLATION: Dispatch action rejected! State is not ACTING.")
+  ```
+- **Backend Execution & Cryptographic Audit:** Once `ACTING` is reached, simulated fleet tools (`core/tools.py`) dispatch assistance tickets, update vehicle telemetry in `data/fleet.sqlite`, notify the control tower HUD, and persist an immutable dispute audit bundle (audio hash, raw transcript, extracted JSON, and timestamped driver confirmation).
+
+---
+
+### 2.3 Finite State Machine Dialogue Flow
+
+```mermaid
+stateDiagram-v2
+    [*] --> IDLE
+    IDLE --> LISTENING: Inbound Call / Caller ID Bound
+    LISTENING --> EXTRACTING: Speech Ingestion (ASR)
+    
+    EXTRACTING --> ASKING: Missing Required Slots / Out-of-Bounds
+    ASKING --> EXTRACTING: Driver Clarification Received
+    
+    EXTRACTING --> CONFIRMING: Slots Extracted & Telematics Cross-Checked
+    
+    CONFIRMING --> CORRECTING: Driver Speaks Correction ("Nahi, 18 degree")
+    CORRECTING --> CONFIRMING: Slots Updated & Re-Read
+    
+    CONFIRMING --> ACTING: Explicit Spoken Affirmation ("Haan sahi hai")
+    CONFIRMING --> ESCALATING: Max Retries (2) Exceeded / Disconnect / Reflexive Block
+    
+    ACTING --> DONE: Dispatch Assistance Ticket & Log Telematics
+    ESCALATING --> DONE: Enqueue to Human Supervisor Control Tower
+    
+    DONE --> [*]: Session Persisted to fleet.sqlite
+```
+
+---
+
+## 3. Benchmark Proof (The Evidence)
 
 Our empirical benchmark evaluates **100 audio clips** across 4 acoustic conditions:
 - **Clean:** Studio quality 16 kHz Hinglish recordings.
@@ -417,7 +556,7 @@ To avoid data contamination and memorization on small corpora:
 
 ---
 
-## 3. System Architecture & Dual ASR Execution
+## 4. System Architecture & Dual ASR Execution
 
 Vaani supports both **Cloud STT (Gnani Prisma)** and **On-Device Local STT (Fine-Tuned Whisper-LoRA)**:
 
@@ -483,7 +622,7 @@ if self.state != DialogueState.ACTING:
 
 ---
 
-## 4. Repository Structure
+## 5. Repository Structure
 
 ```
 VoiceAI/
@@ -551,7 +690,7 @@ VoiceAI/
 
 ---
 
-## 5. Chunked Training & Data Usage Ledger
+## 6. Chunked Training & Data Usage Ledger
 
 To train on massive Indian speech corpora (Gram Vaani ~1,100 hrs, FLEURS, agarwalayushi/hinglish ~2,200 hrs) without filling local disk space, Vaani implements a **Chunk -> Train -> Auto-Purge** loop:
 1. **Bounded Staging:** Streams audio in controlled chunks (up to target GB / samples) to a temporary staging folder.
@@ -569,7 +708,7 @@ python core/chunked_trainer.py --summary
 
 ---
 
-## 6. What Is Real vs. What Is Simulated
+## 7. What Is Real vs. What Is Simulated
 
 In adherence to Section 16 (Claims Policy):
 - **Real:**
@@ -586,7 +725,7 @@ In adherence to Section 16 (Claims Policy):
 
 ---
 
-## 7. How to Run & Quickstart Walkthrough
+## 8. How to Run & Quickstart Walkthrough
 
 ### 1. Configure Environment & Dependencies
 ```bash
@@ -632,9 +771,9 @@ uvicorn app.telephony_server:app --port 8000
 
 ---
 
-## 8. Model Architecture & Scaling Considerations
+## 9. Model Architecture & Scaling Considerations
 
-### 8.1 Evaluated Checkpoint: Fine-Tuned Whisper-LoRA (Tiny)
+### 9.1 Evaluated Checkpoint: Fine-Tuned Whisper-LoRA (Tiny)
 Whisper-tiny (39M parameters) was selected as the operational base acoustic model to enable fully offline, local inference with a sub-1 GB VRAM footprint, suitable for embedded telematics gateways or low-tier depot servers without external cloud API dependencies.
 
 - **Checkpoint & Adapters:** Base `openai/whisper-tiny` (pinned revision `169d4a4341b33bc18d8881c4b69c2e104e1cc0af`) fine-tuned via PEFT LoRA ($r=16, \alpha=32$) on calibrated Hinglish telematics utterances.
@@ -645,7 +784,7 @@ Whisper-tiny (39M parameters) was selected as the operational base acoustic mode
   - Held-out clean: **21.05% WER**, 10/10 (100.0%) number survival.
   - Held-out telephony (8 kHz): **23.16% WER**, 10/10 (100.0%) number survival.
 
-### 8.2 Scaling Path & Engineering Trade-Offs (Qualitative Analysis)
+### 9.2 Scaling Path & Engineering Trade-Offs (Qualitative Analysis)
 The 42.1% WER and 20% numeric failure rate measured under severe 5 dB SNR cabin noise reflect several compounding factors: Whisper-Tiny's small 39M-parameter acoustic modeling capacity, domain mismatch between synthetic training speech (18 gTTS clips) and real Indian freight drivers, and acoustic degradations introduced by mobile telephony codecs. Upgrading the base checkpoint offers a direct engineering trade-off:
 
 1. **Larger Whisper Checkpoints (`whisper-base` 74M, `whisper-small` 244M):**
@@ -655,7 +794,7 @@ The 42.1% WER and 20% numeric failure rate measured under severe 5 dB SNR cabin 
 3. **Hardware Requirements:**
    While Whisper-Tiny runs in <1 GB VRAM at ~880 ms pipeline latency, `whisper-small` requires ~2 GB VRAM and ~1.2-1.8 s compute turnaround on equivalent edge hardware. For resource-constrained fleet hubs, Whisper-Tiny combined with Vaani's strict telematics confirmation gate provides the highest safety per watt.
 
-### 8.3 Authentic Real Driver Cohort Benchmark (Expanded N = 83 Live Human Recordings, 166 Numeric Slots)
+### 9.3 Authentic Real Driver Cohort Benchmark (Expanded N = 83 Live Human Recordings, 166 Numeric Slots)
 
 To empirically validate Vaani on genuine freight corridor audio beyond synthetic speech, an expanded cohort of **7 distinct real human drivers** recorded **83 authentic live WhatsApp GSM voice notes** across **12 critical logistics corridor scenarios** (covering Northern Delhi-Haryana, Western Mumbai-Pune, Rajasthan-NCR, Southern Hosur-Bangalore, Gujarat-Maharashtra, KMP Expressway Outer, and GT Road Ambala-Ludhiana freight corridors).
 
@@ -699,7 +838,7 @@ The field benchmark (`benchmark/evaluate_real_driver_cohort.py`) was executed in
 
 ---
 
-## 9. Clean-Clone Reproduction Protocol
+## 10. Clean-Clone Reproduction Protocol
 
 To verify this repository from a fresh clone without environment leakage:
 
@@ -735,10 +874,10 @@ streamlit run app/dashboard.py
 
 ---
 
-## 10. Known Limitations Stated Honestly
+## 11. Known Limitations Stated Honestly
 
 1. **Synthetic Training Audio:** Acoustic model fine-tuning and pipeline development relied on synthetic speech (`gTTS`) augmented with mathematical noise models (diesel engine harmonics, pink road friction, horn reflections) rather than a multi-thousand-hour proprietary cab recording dataset.
-2. **Acoustic Evaluation Scope:** Initial lab benchmarks were evaluated on synthetic speech across 4 channel conditions (Clean, 8 kHz Butterworth telephony bandpass, 10 dB SNR, and 5 dB SNR engine noise). To validate genuine field performance beyond synthetic audio, Section 8.3 introduces an empirical benchmark on 83 authentic live WhatsApp recordings from 7 real human drivers across 12 corridors (166 numeric slots), demonstrating 97.0% number survival and 100% safety gate interception.
+2. **Acoustic Evaluation Scope:** Initial lab benchmarks were evaluated on synthetic speech across 4 channel conditions (Clean, 8 kHz Butterworth telephony bandpass, 10 dB SNR, and 5 dB SNR engine noise). To validate genuine field performance beyond synthetic audio, Section 9.3 introduces an empirical benchmark on 83 authentic live WhatsApp recordings from 7 real human drivers across 12 corridors (166 numeric slots), demonstrating 97.0% number survival and 100% safety gate interception.
 3. **No Live Carrier Trunk Integration:** Telephony streaming is implemented and verified over local WebSocket full-duplex PCM16 streaming (`app/telephony_server.py`), but has not been deployed on live telco carrier trunks (E1/PRI or SIP trunks) with hardware line echo cancelers (AEC).
 4. **Thresholds Not Validated on Real Historical Incidents:** Safety gate plausibility bands and excursion thresholds were designed against engineering cold-chain criteria, not backtested against real-world insurance claim histories or refrigerated spoilage audit logs.
 5. **Heuristic Gate Tolerances:** Plausibility bands ($\pm 4^\circ\text{C}$ to $\pm 15^\circ\text{C}$) and sensor match windows ($\pm 0.8^\circ\text{C}$ to $\pm 2.0^\circ\text{C}$) are engineering heuristics informed by cold-chain guidelines (WHO PQS, FSSAI, Codex, APEDA), not statutory standards for speech recognition plausibility.

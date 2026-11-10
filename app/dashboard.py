@@ -251,6 +251,72 @@ st.markdown("""
         background: var(--accent-blue-bg);
     }
 
+    /* Project Objective Banner */
+    .objective-banner {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-left: 3px solid var(--accent-blue);
+        border-radius: 8px;
+        padding: 14px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .objective-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .objective-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent-blue);
+        background: var(--accent-blue-bg);
+        border: 1px solid var(--accent-blue-border);
+        border-radius: 4px;
+        padding: 2px 8px;
+    }
+    .objective-target {
+        font-size: 0.76rem;
+        color: var(--text-tertiary);
+        font-family: var(--font-mono);
+    }
+    .objective-text {
+        font-size: 0.88rem;
+        line-height: 1.5;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+    .objective-text strong {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+    .objective-pills {
+        display: flex;
+        gap: 16px;
+        margin-top: 4px;
+        flex-wrap: wrap;
+    }
+    .objective-pill {
+        font-size: 0.76rem;
+        color: var(--text-secondary);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .objective-pill strong {
+        color: var(--text-primary);
+    }
+
     /* High-density Telematics Panels */
     .control-panel {
         background: var(--bg-surface);
@@ -626,6 +692,26 @@ st.markdown("""
         <div class="telemetry-tag">
             <span>VERIFIED ZERO-DISPATCH ERROR</span>
         </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# -------------------------------------------------------------
+# Project Objective Callout Section (Concise & Focused)
+# -------------------------------------------------------------
+st.markdown("""
+<div class="objective-banner">
+    <div class="objective-header">
+        <span class="objective-badge">MISSION & OBJECTIVE</span>
+        <span class="objective-target">Cold-Chain Reefer Logistics • Gnani AI Telephony Challenge</span>
+    </div>
+    <p class="objective-text">
+        Eliminate catastrophic cargo loss and fleet misdispatch on noisy Indian highway telephonic channels (8 kHz GSM, 5–10 dB cabin SNR). <strong>Vaani</strong> enforces a <strong>deterministic safety gate</strong>: Hinglish voice reports are extracted into strictly validated schemas and <strong>read back aloud for confirmation</strong> before any ticket or dispatch action can execute—guaranteeing <strong>zero silent dispatch errors</strong>.
+    </p>
+    <div class="objective-pills">
+        <span class="objective-pill">🛡️ <strong>Safety Invariant:</strong> LLM proposes details; deterministic code gate & driver confirmation authorize dispatch</span>
+        <span class="objective-pill">🎙️ <strong>Channel Hardened:</strong> 8 kHz GSM Narrowband &amp; 5–10 dB Highway Acoustic Roar</span>
+        <span class="objective-pill">🎯 <strong>Phonetic Trap Proof:</strong> Catches critical acoustic ambiguities (e.g. 18°C vs 80°C)</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
