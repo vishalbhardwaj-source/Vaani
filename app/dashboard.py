@@ -904,8 +904,7 @@ with tab_console:
                 if audio_bytes or reference_text:
                     with st.spinner("Transcribing speech and extracting telemetry..."):
                         # Reset controller for new utterance
-                        ctrl.reset()
-                        ctrl.vehicle_id = st.session_state.selected_vehicle
+                        ctrl.reset(st.session_state.selected_vehicle)
                         
                         # Transcribe via Selected ASR Engine
                         chosen_engine = "whisper_lora" if "Whisper" in asr_engine_option else ("prisma" if "Prisma" in asr_engine_option else "simulated")
@@ -960,7 +959,7 @@ with tab_console:
             """, unsafe_allow_html=True)
 
         # Spoken Read-Back Confirmation Gate (Interlock)
-        if ctrl.state in (DialogueState.CONFIRMING, DialogueState.CORRECTING, DialogueState.ASKING):
+        if ctrl.state in (DialogueState.CONFIRMING, DialogueState.CORRECTING):
             st.markdown(f"""
             <div class="safety-interlock-panel" role="alert" aria-label="Safety Interlock Read-back Prompt" aria-live="assertive">
                 <div class="interlock-header">
@@ -987,22 +986,85 @@ with tab_console:
             c_yes, c_corr, c_rej = st.columns(3)
             with c_yes:
                 if st.button("Confirm: 'Haan, sahi hai'", type="primary", use_container_width=True):
-                    reply = DriverReply(intent="CONFIRM", raw_text="haan bhaiya sahi hai")
-                    state, prompt = ctrl.handle_confirmation_reply(reply)
-                    st.session_state.audio_to_play = speak_text(prompt)
-                    st.rerun()
+                    try:
+                        reply = DriverReply(intent="CONFIRM", raw_text="haan bhaiya sahi hai")
+                        state, prompt = ctrl.handle_confirmation_reply(reply)
+                        st.session_state.audio_to_play = speak_text(prompt)
+                        st.rerun()
+                    except RuntimeError as e:
+                        st.warning(f"Safety Gate Interlock: {e}")
 
             with c_corr:
                 if st.button("Correct: 'Nahi, 18 degree'", use_container_width=True):
-                    reply = DriverReply(intent="CORRECT", corrected_temperature_c=18.0, raw_text="nahi 28 nahi 18 degree hai")
-                    state, prompt = ctrl.handle_confirmation_reply(reply)
-                    st.session_state.audio_to_play = speak_text(prompt)
-                    st.rerun()
+                    try:
+                        reply = DriverReply(intent="CORRECT", corrected_temperature_c=18.0, raw_text="nahi 28 nahi 18 degree hai")
+                        state, prompt = ctrl.handle_confirmation_reply(reply)
+                        st.session_state.audio_to_play = speak_text(prompt)
+                        st.rerun()
+                    except RuntimeError as e:
+                        st.warning(f"Safety Gate Interlock: {e}")
 
             with c_rej:
                 if st.button("Reject: 'Galat hai'", use_container_width=True):
-                    reply = DriverReply(intent="REJECT", raw_text="galat hai samajh nahi aya")
-                    state, prompt = ctrl.handle_confirmation_reply(reply)
+                    try:
+                        reply = DriverReply(intent="REJECT", raw_text="galat hai samajh nahi aya")
+                        state, prompt = ctrl.handle_confirmation_reply(reply)
+                        st.session_state.audio_to_play = speak_text(prompt)
+                        st.rerun()
+                    except RuntimeError as e:
+                        st.warning(f"Safety Gate Interlock: {e}")
+
+        elif ctrl.state == DialogueState.ASKING:
+            st.markdown(f"""
+            <div class="safety-interlock-panel" style="border-left: 4px solid var(--accent-amber);" role="alert" aria-label="Clarification Prompt" aria-live="assertive">
+                <div class="interlock-header">
+                    <div class="interlock-title-group">
+                        <span class="interlock-title">SAFETY INTERLOCK // CLARIFICATION REQUIRED</span>
+                    </div>
+                    <span class="interlock-tag" style="background: rgba(210, 153, 34, 0.2); color: var(--accent-amber);">AWAITING CLARIFICATION</span>
+                </div>
+                <div class="interlock-prompt">
+                    "{html.escape(str(ctrl.last_agent_prompt))}"
+                </div>
+                <div class="interlock-subtext">
+                    Safety rule: Critical parameters missing or unverified. Fleet action paused until verified.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            if st.session_state.audio_to_play:
+                st.audio(st.session_state.audio_to_play, format="audio/mp3", autoplay=True)
+
+            st.markdown("#### Driver Spoken Clarification Simulation")
+            st.caption("Agent is asking for missing information. Simulate driver providing details:")
+
+            c_clar1, c_clar2 = st.columns(2)
+            with c_clar1:
+                if st.button("Clarify Temp: '18 degree, toll plaza se 42 km aage'", type="primary", use_container_width=True):
+                    clar_text = "reefer ka temperature 18 degree hai toll plaza se 42 km aage"
+                    rec_upd = extract_incident_details(clar_text, vehicle_id_fallback=st.session_state.selected_vehicle)
+                    if ctrl.current_record:
+                        if rec_upd.temperature_c is not None:
+                            ctrl.current_record.temperature_c = rec_upd.temperature_c
+                        if rec_upd.location_text:
+                            ctrl.current_record.location_text = rec_upd.location_text
+                        if rec_upd.distance_km is not None:
+                            ctrl.current_record.distance_km = rec_upd.distance_km
+                        rec_upd = ctrl.current_record
+                    state, prompt = ctrl.receive_missing_slot_reply(clar_text, rec_upd)
+                    st.session_state.current_readback = prompt
+                    st.session_state.audio_to_play = speak_text(prompt)
+                    st.rerun()
+
+            with c_clar2:
+                if st.button("Clarify Vehicle Reg: 'HR-55-TC-1102'", use_container_width=True):
+                    if ctrl.is_unverified_vehicle:
+                        state, prompt = ctrl.receive_vehicle_identification_reply("1102")
+                    else:
+                        clar_text = "gaadi ka number HR-55-TC-1102 hai"
+                        rec_upd = ctrl.current_record or extract_incident_details(clar_text, vehicle_id_fallback="HR-55-TC-1102")
+                        state, prompt = ctrl.receive_missing_slot_reply(clar_text, rec_upd)
+                    st.session_state.current_readback = prompt
                     st.session_state.audio_to_play = speak_text(prompt)
                     st.rerun()
 
