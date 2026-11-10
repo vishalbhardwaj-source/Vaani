@@ -20,6 +20,7 @@ import time
 import os
 import html
 from pathlib import Path
+from dotenv import load_dotenv
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -30,6 +31,9 @@ import streamlit as st
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
+
+# Explicitly load .env from project root
+load_dotenv(ROOT_DIR / ".env")
 
 from core.schemas import DialogueState, ExtractionRecord, DriverReply, IncidentType
 from core.state_machine import DialogueController
@@ -620,12 +624,12 @@ if "audio_to_play" not in st.session_state:
 with st.sidebar:
     st.markdown("### Speech-to-Text Engine")
     has_gnani_key = bool(os.getenv("GNANI_API_KEY") and os.getenv("GNANI_API_KEY") != "your_gnani_api_key_here")
-    default_asr_idx = 1 if has_gnani_key else 0
+    default_asr_idx = 0
     asr_engine_option = st.selectbox(
         "ASR Architecture",
         options=[
-            "Fine-Tuned Whisper-LoRA (Local / Edge)",
             "Gnani Prisma STT (Cloud)",
+            "Fine-Tuned Whisper-LoRA (Local / Edge)",
             "Acoustic Noise Simulation (Offline)"
         ],
         index=default_asr_idx
@@ -642,6 +646,7 @@ with st.sidebar:
             "Gnani API Key",
             type="password",
             value=os.getenv("GNANI_API_KEY", "") if os.getenv("GNANI_API_KEY") != "your_gnani_api_key_here" else "",
+            key="gnani_stt_key",
             help="Enter your Gnani API key from app.gnani.ai to route speech to Prisma STT."
         )
         if gnani_stt_key:
@@ -656,13 +661,13 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("### LLM & Extraction Engine")
-    default_llm_idx = 2 if has_gnani_key else 0
+    default_llm_idx = 0
     llm_provider = st.selectbox(
         "Model Architecture",
         options=[
+            "Gnani Evon v3.3 (Hosted API)",
             "Adaptive Few-Shot Neural Engine (Active Learning)",
-            "Google Gemini 1.5 Flash (Live LLM)",
-            "Gnani Evon v3.3 (Hosted API)"
+            "Google Gemini 1.5 Flash (Live LLM)"
         ],
         index=default_llm_idx
     )

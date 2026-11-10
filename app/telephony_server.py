@@ -184,15 +184,14 @@ async def telephony_audio_stream(
                         turn_audio_bytes = bytes(speech_buffer)
                         speech_buffer.clear()
 
-                        # Pass through Whisper-LoRA ASR
+                        # Pass through Gnani Prisma ASR (or configured ASR_ENGINE)
                         try:
-                            from core.asr_model import get_asr_service
-                            asr_svc = get_asr_service()
-                            asr_res = asr_svc.transcribe(turn_audio_bytes)
-                            transcript = asr_res["transcript"]
-                            confidence = asr_res["confidence"]
+                            from gnani.client import transcribe_audio
+                            asr_res = transcribe_audio(turn_audio_bytes, engine=os.getenv("ASR_ENGINE", "prisma"))
+                            transcript = asr_res.get("transcript", "")
+                            confidence = asr_res.get("confidence", 0.95)
                         except Exception as e:
-                            logger.warning(f"Whisper ASR inference fallback: {e}")
+                            logger.warning(f"Prisma ASR inference fallback: {e}")
                             transcript = ""
                             confidence = 0.50
 
