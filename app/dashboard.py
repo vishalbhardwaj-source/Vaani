@@ -46,6 +46,20 @@ from benchmark.make_noisy import process_audio_file, resample_audio, apply_bandp
 import soundfile as sf
 
 # -------------------------------------------------------------
+# Streamlit Cloud Secrets & Environment Bridging
+# -------------------------------------------------------------
+if hasattr(st, "secrets"):
+    try:
+        for k in ["GNANI_API_KEY", "GEMINI_API_KEY", "GNANI_PRISMA_URL", "GNANI_EVON_URL", "GNANI_TIMBRE_URL"]:
+            if k in st.secrets and not os.environ.get(k):
+                os.environ[k] = str(st.secrets[k])
+        if "GNANI_API_KEY" in st.secrets and str(st.secrets["GNANI_API_KEY"]).strip():
+            import gnani.client
+            gnani.client.GNANI_API_KEY = str(st.secrets["GNANI_API_KEY"]).strip()
+    except Exception:
+        pass
+
+# -------------------------------------------------------------
 # Streamlit Page Config & Custom Styling (Impeccable Operate Mode)
 # -------------------------------------------------------------
 st.set_page_config(
@@ -605,28 +619,44 @@ if "audio_to_play" not in st.session_state:
 # -------------------------------------------------------------
 with st.sidebar:
     st.markdown("### Speech-to-Text Engine")
+    has_gnani_key = bool(os.getenv("GNANI_API_KEY") and os.getenv("GNANI_API_KEY") != "your_gnani_api_key_here")
+    default_asr_idx = 1 if has_gnani_key else 0
     asr_engine_option = st.selectbox(
         "ASR Architecture",
         options=[
-            "Fine-Tuned Whisper-LoRA (Local RTX 5070 GPU)",
+            "Fine-Tuned Whisper-LoRA (Local / Edge)",
             "Gnani Prisma STT (Cloud)",
             "Acoustic Noise Simulation (Offline)"
         ],
-        index=0
+        index=default_asr_idx
     )
     if "Whisper" in asr_engine_option:
         st.markdown("""
         <div style="background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.3); border-radius: 6px; padding: 8px 12px; font-size: 0.75rem; color: #58A6FF; margin-bottom: 8px;">
-            <strong>RTX 5070 Engine Active</strong><br>Whisper-LoRA fine-tuned on 8 kHz Hinglish dispatch recordings.
+            <strong>Local / Edge Model Active</strong><br>Whisper-LoRA fine-tuned on 8 kHz Hinglish dispatch recordings.
         </div>
         """, unsafe_allow_html=True)
     elif "Prisma" in asr_engine_option:
-        st.caption("Cloud STT Active: Gnani Prisma API endpoint.")
+        st.caption("Cloud STT Active: Gnani Prisma API endpoint (vachana.ai).")
+        gnani_stt_key = st.text_input(
+            "Gnani API Key",
+            type="password",
+            value=os.getenv("GNANI_API_KEY", "") if os.getenv("GNANI_API_KEY") != "your_gnani_api_key_here" else "",
+            help="Enter your Gnani API key from app.gnani.ai to route speech to Prisma STT."
+        )
+        if gnani_stt_key:
+            os.environ["GNANI_API_KEY"] = gnani_stt_key
+            import gnani.client
+            gnani.client.GNANI_API_KEY = gnani_stt_key
+            st.success("✔ Gnani Prisma API Linked")
+        elif not has_gnani_key:
+            st.warning("⚠️ Enter your Gnani API key or configure Streamlit Secrets to call live Prisma STT.")
     else:
         st.caption("Simulation Active: Deterministic acoustic confusion rules.")
 
     st.markdown("---")
     st.markdown("### LLM & Extraction Engine")
+    default_llm_idx = 2 if has_gnani_key else 0
     llm_provider = st.selectbox(
         "Model Architecture",
         options=[
@@ -634,8 +664,11 @@ with st.sidebar:
             "Google Gemini 1.5 Flash (Live LLM)",
             "Gnani Evon v3.3 (Hosted API)"
         ],
-        index=0
+        index=default_llm_idx
     )
+    os.environ["LLM_PROVIDER"] = llm_provider
+    import gnani.client
+    gnani.client.LLM_PROVIDER = llm_provider
     
     if "Gemini" in llm_provider:
         gemini_input = st.text_input("Gemini API Key", type="password", value=os.getenv("GEMINI_API_KEY", ""))
@@ -643,10 +676,17 @@ with st.sidebar:
             os.environ["GEMINI_API_KEY"] = gemini_input
             st.success("Gemini API linked")
     elif "Gnani Evon" in llm_provider:
-        gnani_input = st.text_input("Gnani API Key", type="password", value=os.getenv("GNANI_API_KEY", ""))
+        gnani_input = st.text_input(
+            "Gnani API Key",
+            type="password",
+            value=os.getenv("GNANI_API_KEY", "") if os.getenv("GNANI_API_KEY") != "your_gnani_api_key_here" else "",
+            key="gnani_evon_key"
+        )
         if gnani_input:
             os.environ["GNANI_API_KEY"] = gnani_input
-            st.success("Gnani API linked")
+            import gnani.client
+            gnani.client.GNANI_API_KEY = gnani_input
+            st.success("✔ Gnani Evon API linked")
 
     st.markdown("---")
     st.markdown("### Continuous Learning Loop")
