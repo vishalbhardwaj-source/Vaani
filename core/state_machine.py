@@ -293,12 +293,14 @@ class DialogueController:
         self,
         vehicle_id: Optional[str] = "HR-55-TC-1102",
         caller_phone: Optional[str] = None,
-        max_correction_rounds: int = 2
+        max_correction_rounds: int = 2,
+        use_gps_telemetry: bool = True
     ):
         self.state: DialogueState = DialogueState.LISTENING
         self.caller_phone = caller_phone
         self.max_correction_rounds = max_correction_rounds
         self.correction_rounds = 0
+        self.use_gps_telemetry = use_gps_telemetry
         self.requires_forced_confirmation = False
         self.last_gate_residual_risk = False
         self.registration_retries = 0
@@ -521,8 +523,8 @@ class DialogueController:
         if not record.vehicle_id:
             record.vehicle_id = self.vehicle_id
 
-        # Telematics location anchor: If spoken location is missing or generic, anchor to telematics GPS
-        if not record.location_text:
+        # Telematics location anchor: Only anchor to GPS if explicitly enabled (disabled for live testing)
+        if self.use_gps_telemetry and not record.location_text:
             if self.veh_telemetry and getattr(self.veh_telemetry, "last_known_location", None):
                 record.location_text = f"GPS: {self.veh_telemetry.last_known_location}"
 
@@ -741,8 +743,11 @@ class DialogueController:
 
         if record.location_text:
             if record.location_text.startswith("GPS: "):
-                age_str = f" ({self.veh_telemetry.gps_fix_age_minutes} minute purana)" if (self.veh_telemetry and getattr(self.veh_telemetry, "gps_fix_age_minutes", None)) else ""
-                parts.append(f"GPS telemetry{age_str} ke mutabik {record.location_text[5:]}")
+                if self.use_gps_telemetry:
+                    age_str = f" ({self.veh_telemetry.gps_fix_age_minutes} minute purana)" if (self.veh_telemetry and getattr(self.veh_telemetry, "gps_fix_age_minutes", None)) else ""
+                    parts.append(f"GPS telemetry{age_str} ke mutabik {record.location_text[5:]}")
+                else:
+                    parts.append(f"{record.location_text[5:]} ke paas")
             elif record.distance_km is not None:
                 dist_num = int(record.distance_km) if record.distance_km.is_integer() else record.distance_km
                 if use_spelling:

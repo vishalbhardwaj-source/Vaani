@@ -398,13 +398,27 @@ def test_generic_location_fragments_rejected_and_anchored_to_gps():
     assert rec.location_text is None  # Bare generic 'toll' is REJECTED by extractor
 
     # Fed into DialogueController with valid vehicle having GPS telematics
-    controller = DialogueController(vehicle_id="HR-55-TC-1102")
+    controller = DialogueController(vehicle_id="HR-55-TC-1102", use_gps_telemetry=True)
     controller.receive_driver_utterance("Bhaiya reefer 18 degree ho gaya hai toll ke paas")
     state, prompt = controller.process_extraction(rec)
 
     # State machine anchors to vehicle's telematics GPS
     assert state == DialogueState.CONFIRMING
     assert "GPS" in prompt and ("Corridor" in prompt or "NH-44" in prompt)
+
+
+def test_location_slot_filling_with_gps_fallback_disabled():
+    from gnani.client import extract_incident_details
+    rec = extract_incident_details("Bhaiya reefer 18 degree ho gaya hai toll ke paas")
+    assert rec.location_text is None
+
+    controller = DialogueController(vehicle_id="HR-55-TC-1102", use_gps_telemetry=False)
+    controller.receive_driver_utterance("Bhaiya reefer 18 degree ho gaya hai toll ke paas")
+    state, prompt = controller.process_extraction(rec)
+
+    # With GPS disabled, it must ask for location clarification instead of anchoring
+    assert state == DialogueState.ASKING
+    assert "landmark" in prompt.lower() or "toll" in prompt.lower()
 
 
 def test_live_sensor_rule_exhaustive_cases():

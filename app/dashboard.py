@@ -604,8 +604,10 @@ st.markdown("""
 # -------------------------------------------------------------
 # Session State Initialization
 # -------------------------------------------------------------
+if "use_gps_telemetry" not in st.session_state:
+    st.session_state.use_gps_telemetry = False
 if "controller" not in st.session_state:
-    st.session_state.controller = DialogueController(vehicle_id="HR-55-TC-1102")
+    st.session_state.controller = DialogueController(vehicle_id="HR-55-TC-1102", use_gps_telemetry=False)
 if "selected_vehicle" not in st.session_state:
     st.session_state.selected_vehicle = "HR-55-TC-1102"
 if "noise_condition" not in st.session_state:
@@ -792,7 +794,7 @@ with tab_console:
         )
         if st.session_state.selected_vehicle != selected_id:
             st.session_state.selected_vehicle = selected_id
-            st.session_state.controller = DialogueController(vehicle_id=selected_id)
+            st.session_state.controller = DialogueController(vehicle_id=selected_id, use_gps_telemetry=st.session_state.get("use_gps_telemetry", False))
         v_data = vehicle_map[selected_id]
 
         # Vehicle Info Card
@@ -831,6 +833,17 @@ with tab_console:
             """, unsafe_allow_html=True)
 
         # Audio Degradation Controls
+        # Live Testing Controls: GPS Telemetry Toggle
+        gps_toggle = st.toggle(
+            "Use Vehicle GPS Telemetry Fallback",
+            value=st.session_state.get("use_gps_telemetry", False),
+            help="OFF for Live Testing (recommended). When disabled, the agent never assumes static mock GPS coordinates and requires the driver to speak their location."
+        )
+        if gps_toggle != st.session_state.get("use_gps_telemetry", False):
+            st.session_state.use_gps_telemetry = gps_toggle
+            if "controller" in st.session_state:
+                st.session_state.controller.use_gps_telemetry = gps_toggle
+
         st.markdown("#### Audio Channel Simulation")
         noise_mode = st.radio(
             "Channel Acoustic Condition",
@@ -1043,10 +1056,17 @@ with tab_console:
             st.markdown("#### Driver Spoken Clarification Simulation")
             st.caption("Agent is asking for missing information. Simulate driver providing details:")
 
-            c_clar1, c_clar2 = st.columns(2)
+            # Missing slot detection for dynamic clarification options
+            missing_fields = ctrl.current_record.compute_missing_fields() if ctrl.current_record else []
+            
+            c_clar1, c_clar2, c_clar3 = st.columns(3)
             with c_clar1:
-                if st.button("Clarify Temp: '18 degree, toll plaza se 42 km aage'", type="primary", use_container_width=True):
-                    clar_text = "reefer ka temperature 18 degree hai toll plaza se 42 km aage"
+                btn_label = "Clarify Temp: '18 degree'" if "temperature_c" in missing_fields else "Clarify Temp: '18 degree, toll plaza se 42 km aage'"
+                if st.button(btn_label, type="primary", use_container_width=True):
+                    if "temperature_c" in missing_fields and "location_text" not in missing_fields:
+                        clar_text = "reefer ka temperature 18 degree hai"
+                    else:
+                        clar_text = "reefer ka temperature 18 degree hai toll plaza se 42 km aage"
                     rec_upd = extract_incident_details(clar_text, vehicle_id_fallback=st.session_state.selected_vehicle)
                     if ctrl.current_record:
                         if rec_upd.temperature_c is not None:
@@ -1062,13 +1082,49 @@ with tab_console:
                     st.rerun()
 
             with c_clar2:
-                if st.button("Clarify Vehicle Reg: 'HR-55-TC-1102'", use_container_width=True):
+                if st.button("Clarify Location: 'Panipat Toll se 10 km aage'", use_container_width=True):
+                    clar_text = "hum abhi Panipat toll se 10 km aage hain"
+                    rec_upd = extract_incident_details(clar_text, vehicle_id_fallback=st.session_state.selected_vehicle)
+                    if ctrl.current_record:
+                        if rec_upd.location_text:
+                            ctrl.current_record.location_text = rec_upd.location_text
+                        if rec_upd.distance_km is not None:
+                            ctrl.current_record.distance_km = rec_upd.distance_km
+                        rec_upd = ctrl.current_record
+                    state, prompt = ctrl.receive_missing_slot_reply(clar_text, rec_upd)
+                    st.session_state.current_readback = prompt
+                    st.session_state.audio_to_play = speak_text(prompt)
+                    st.rerun()
+
+            with c_clar3:
+                if st.button("Clarify Vehicle: 'HR-55-TC-1102'", use_container_width=True):
                     if ctrl.is_unverified_vehicle:
                         state, prompt = ctrl.receive_vehicle_identification_reply("1102")
                     else:
                         clar_text = "gaadi ka number HR-55-TC-1102 hai"
                         rec_upd = ctrl.current_record or extract_incident_details(clar_text, vehicle_id_fallback="HR-55-TC-1102")
                         state, prompt = ctrl.receive_missing_slot_reply(clar_text, rec_upd)
+                    st.session_state.current_readback = prompt
+                    st.session_state.audio_to_play = speak_text(prompt)
+                    st.rerun()
+
+            # Custom spoken input for live testing
+            custom_clar_col1, custom_clar_col2 = st.columns([3, 1])
+            with custom_clar_col1:
+                custom_clar = st.text_input("Live Spoken Clarification Input:", placeholder="e.g. Murthal Dhaba ke paas 18 degree hai", label_visibility="collapsed")
+            with custom_clar_col2:
+                clean_input = custom_clar.strip() if custom_clar else ""
+                if st.button("Submit Clarification", use_container_width=True) and clean_input:
+                    rec_upd = extract_incident_details(clean_input, vehicle_id_fallback=st.session_state.selected_vehicle)
+                    if ctrl.current_record:
+                        if rec_upd.temperature_c is not None:
+                            ctrl.current_record.temperature_c = rec_upd.temperature_c
+                        if rec_upd.location_text:
+                            ctrl.current_record.location_text = rec_upd.location_text
+                        if rec_upd.distance_km is not None:
+                            ctrl.current_record.distance_km = rec_upd.distance_km
+                        rec_upd = ctrl.current_record
+                    state, prompt = ctrl.receive_missing_slot_reply(clean_input, rec_upd)
                     st.session_state.current_readback = prompt
                     st.session_state.audio_to_play = speak_text(prompt)
                     st.rerun()
